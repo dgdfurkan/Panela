@@ -28,7 +28,7 @@ export default function Products() {
             setLoading(true)
             const { data, error } = await supabase
                 .from('products')
-                .select('*, profiles(username)')
+                .select('*')
                 .order('created_at', { ascending: false })
 
             if (error) throw error

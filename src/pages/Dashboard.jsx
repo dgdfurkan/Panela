@@ -20,12 +20,45 @@ export default function Dashboard() {
     // fetchStats()
 
     // Using dummy data for immediate visual feedback
-    setStats({
-      products: 12,
-      todos: 5,
-      completedTodos: 3,
-      roadmapStep: 'Pazar Araştırması'
-    })
+    const fetchStats = async () => {
+      try {
+        // Products Count
+        const { count: productsCount } = await supabase
+          .from('products')
+          .select('*', { count: 'exact', head: true })
+
+        // Todos Count
+        const { count: todosCount } = await supabase
+          .from('todos')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'Todo')
+
+        const { count: completedCount } = await supabase
+          .from('todos')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'Done')
+
+        // Active Roadmap Step (first not completed)
+        const { data: step } = await supabase
+          .from('roadmap_steps')
+          .select('title')
+          .neq('status', 'Completed')
+          .order('sort_order', { ascending: true })
+          .limit(1)
+          .single()
+
+        setStats({
+          products: productsCount || 0,
+          todos: todosCount || 0,
+          completedTodos: completedCount || 0,
+          roadmapStep: step?.title || 'Tümü Tamamlandı! 🎉'
+        })
+      } catch (error) {
+        console.error('Error loading stats:', error)
+      }
+    }
+
+    fetchStats()
   }, [])
 
   return (
