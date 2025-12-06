@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { MoreHorizontal, Flag, Edit, Trash2 } from 'lucide-react'
+import { MoreHorizontal, Flag, Edit, Trash2, Plus } from 'lucide-react'
 import '../styles/Kanban.css'
 
-export default function KanbanBoard({ todos, onStatusChange, onEdit, onDelete, users }) {
+export default function KanbanBoard({ todos, onStatusChange, onEdit, onDelete, users, activities }) {
     // Columns definition
     const columns = [
         { id: 'Todo', title: 'Yapılacaklar', tagClass: 'tag-1' },
@@ -115,13 +115,34 @@ export default function KanbanBoard({ todos, onStatusChange, onEdit, onDelete, u
                 </div>
 
                 <div className="task-activity">
-                    <h2>Recent Activity</h2>
+                    <h2>Son Hareketler</h2>
                     <ul>
-                        <li>
-                            <span className="task-icon task-icon--attachment"><Paperclip /></span>
-                            <b>System </b> initialized board
-                            <time>Just now</time>
-                        </li>
+                        {activities && activities.map(act => (
+                            <li key={act.id}>
+                                <span className={`task-icon task-icon--${act.action_type === 'CREATE' ? 'attachment' :
+                                    act.action_type === 'UPDATE' ? 'edit' :
+                                        act.action_type === 'DELETE' ? 'comment' : 'comment'
+                                    }`}>
+                                    {act.action_type === 'CREATE' && <Plus size={12} />}
+                                    {act.action_type === 'UPDATE' && <Edit size={12} />}
+                                    {act.action_type === 'DELETE' && <Trash2 size={12} />}
+                                    {act.action_type === 'MOVE' && <MoreHorizontal size={12} />}
+                                </span>
+                                <b>{act.app_users?.username || 'Kullanıcı'} </b>
+                                {act.action_type === 'CREATE' && 'yeni görev ekledi.'}
+                                {act.action_type === 'UPDATE' && 'görevi güncelledi.'}
+                                {act.action_type === 'DELETE' && `"${act.details}" görevini sildi.`}
+                                {act.action_type === 'MOVE' && `görevi taşıdı: ${act.details}`}
+                                <time>{new Date(act.created_at).toLocaleString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</time>
+                            </li>
+                        ))}
+                        {(!activities || activities.length === 0) && (
+                            <li>
+                                <span className="task-icon task-icon--attachment"><MoreHorizontal size={12} /></span>
+                                <b>Sistem </b> hazır.
+                                <time>Şimdi</time>
+                            </li>
+                        )}
                     </ul>
                 </div>
             </aside>

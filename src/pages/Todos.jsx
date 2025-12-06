@@ -11,6 +11,7 @@ export default function Todos() {
     const [loading, setLoading] = useState(true)
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [users, setUsers] = useState({}) // id -> username map
+    const [activities, setActivities] = useState([])
     const [formData, setFormData] = useState({
         id: null,
         title: '',
@@ -21,7 +22,35 @@ export default function Todos() {
 
     useEffect(() => {
         fetchTodos()
+        fetchActivities()
     }, [])
+
+    const fetchActivities = async () => {
+        const { data } = await supabase
+            .from('todo_activities')
+            .select(`
+                *,
+                app_users (
+                    username
+                )
+            `)
+            .order('created_at', { ascending: false })
+            .limit(20)
+
+        if (data) setActivities(data)
+    }
+
+    const logActivity = async (actionType, details, todoId) => {
+        if (!user?.id) return
+
+        await supabase.from('todo_activities').insert([{
+            todo_id: todoId,
+            user_id: user.id,
+            action_type: actionType,
+            details: details
+        }])
+        fetchActivities()
+    }
 
     const fetchTodos = async () => {
         try {
@@ -77,13 +106,15 @@ export default function Todos() {
                         due_date: payload.due_date,
                         tags: payload.tags
                     })
-                    .eq('id', formData.id)
-
                 if (error) throw error
+                logActivity('UPDATE', 'görevi güncelledi', formData.id)
             } else {
                 // Insert
-                const { error } = await supabase.from('todos').insert([payload])
+                const { data, error } = await supabase.from('todos').insert([payload]).select()
                 if (error) throw error
+                if (data && data[0]) {
+                    logActivity('CREATE', 'yeni görev ekledi', data[0].id)
+                }
             }
 
             setIsModalOpen(false)
@@ -120,12 +151,16 @@ export default function Todos() {
 
     const handleDelete = async (id) => {
         if (!window.confirm('Görevi silmek istiyor musun?')) return
+        const todoToDelete = todos.find(t => t.id === id)
         const { error } = await supabase.from('todos').delete().eq('id', id)
         if (error) {
             console.error('Error deleting:', error)
             alert('Silinirken hata oluştu.')
         } else {
             setTodos(todos.filter(t => t.id !== id))
+            if (todoToDelete) {
+                logActivity('DELETE', todoToDelete.title, id)
+            }
         }
     }
 
@@ -141,6 +176,10 @@ export default function Todos() {
         if (error) {
             console.error('Error updating status:', error)
             fetchTodos() // Revert
+        } else {
+            logActivity('MOVE', newStatus === 'Todo' ? 'Yapılacaklar' :
+                newStatus === 'In Progress' ? 'Devam Edenler' :
+                    newStatus === 'Review' ? 'Kontrol' : 'Tamamlandı', id)
         }
     }
 
@@ -168,6 +207,7 @@ export default function Todos() {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 users={users}
+                activities={activities}
             />
 
             <Modal title={formData.id ? "Görevi Düzenle" : "Yeni Görev Ekle"} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>

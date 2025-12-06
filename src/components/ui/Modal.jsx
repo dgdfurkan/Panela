@@ -5,7 +5,7 @@ export default function Modal({ title, isOpen, onClose, children }) {
 
   return (
     <div className="modal-container">
-      <div className="modal-content glass-panel">
+      <div className="modal-content">
         <div className="modal-header">
           <h3>{title}</h3>
           <button onClick={onClose} className="close-btn">
@@ -24,13 +24,13 @@ export default function Modal({ title, isOpen, onClose, children }) {
           left: 0;
           width: 100vw;
           height: 100vh;
-          /* No background/overlay color as requested */
+          background: rgba(0, 0, 0, 0.2); /* Subtle dim */
+          backdrop-filter: blur(8px); /* Premium blur */
           display: flex;
           align-items: center;
           justify-content: center;
           z-index: 9999;
           animation: fadeIn 0.3s ease-out;
-          pointer-events: none; /* Let clicks pass through outside */
         }
 
         .modal-content {
@@ -40,32 +40,29 @@ export default function Modal({ title, isOpen, onClose, children }) {
           max-height: 85vh;
           display: flex;
           flex-direction: column;
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-          animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-          pointer-events: auto; /* Re-enable clicks for the modal itself */
-          /* Glass panel style is inherited from class */
+          box-shadow: 0 25px 80px -12px rgba(0, 0, 0, 0.4); /* Deep, premium shadow */
+          animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+          background: rgba(255, 255, 255, 0.95); /* Slightly more opaque for readability */
         }
 
         @keyframes slideUp {
-          from { transform: translateY(40px) scale(0.95); opacity: 0; }
+          from { transform: translateY(20px) scale(0.98); opacity: 0; }
           to { transform: translateY(0) scale(1); opacity: 1; }
         }
 
         .modal-header {
           padding: 1.5rem 2rem;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          border-bottom: 1px solid rgba(0, 0, 0, 0.05); /* Softer border */
           display: flex;
           justify-content: space-between;
           align-items: center;
-          background: rgba(255, 255, 255, 0.5);
-          border-radius: var(--radius-xl) var(--radius-xl) 0 0;
         }
 
         .modal-header h3 {
-          font-size: 1.8rem;
-          font-weight: 800;
+          font-size: 1.5rem; /* Clean, not shouting */
+          font-weight: 700;
           color: var(--color-text-main);
-          letter-spacing: -0.025em;
+          letter-spacing: -0.02em;
         }
 
         .close-btn {
@@ -77,6 +74,7 @@ export default function Modal({ title, isOpen, onClose, children }) {
           align-items: center;
           justify-content: center;
           cursor: pointer;
+          background: rgba(0,0,0,0.03);
         }
 
         .close-btn:hover {
@@ -89,8 +87,6 @@ export default function Modal({ title, isOpen, onClose, children }) {
           padding: 2rem;
           overflow-y: auto;
           scrollbar-width: thin;
-          background: rgba(255, 255, 255, 0.4);
-          border-radius: 0 0 var(--radius-xl) var(--radius-xl);
         }
       `}</style>
     </div>
