@@ -1,16 +1,15 @@
 
 import { useEffect, useState } from 'react'
-import { Plus, Calendar, CheckCircle, Circle, Clock, Trash2, Filter, Flag, Edit } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import Modal from '../components/ui/Modal'
-import StatusBadge from '../components/ui/StatusBadge'
+import KanbanBoard from '../components/KanbanBoard'
 
 export default function Todos() {
     const [todos, setTodos] = useState([])
     const [loading, setLoading] = useState(true)
     const [isModalOpen, setIsModalOpen] = useState(false)
-    const [filter, setFilter] = useState('all') // all, today, week
     const [users, setUsers] = useState({}) // id -> username map
     const [formData, setFormData] = useState({
         id: null,
@@ -119,176 +118,57 @@ export default function Todos() {
         setIsModalOpen(true)
     }
 
-    const toggleStatus = async (todo) => {
-        const newStatus = todo.status === 'Done' ? 'Todo' : 'Done'
-        // Optimistic update
-        setTodos(todos.map(t => t.id === todo.id ? { ...t, status: newStatus } : t))
-
-        await supabase.from('todos').update({ status: newStatus }).eq('id', todo.id)
-    }
-
     const handleDelete = async (id) => {
         if (!window.confirm('Görevi silmek istiyor musun?')) return
-        await supabase.from('todos').delete().eq('id', id)
-        setTodos(todos.filter(t => t.id !== id))
+        const { error } = await supabase.from('todos').delete().eq('id', id)
+        if (error) {
+            console.error('Error deleting:', error)
+            alert('Silinirken hata oluştu.')
+        } else {
+            setTodos(todos.filter(t => t.id !== id))
+        }
     }
 
-    // Filtering Logic
-    const filteredTodos = todos.filter(todo => {
-        if (filter === 'all') return true
+    const handleStatusChange = async (id, newStatus) => {
+        // Optimistic update
+        setTodos(todos.map(t => t.id === id ? { ...t, status: newStatus } : t))
 
-        const today = new Date()
-        const taskDate = new Date(todo.due_date)
+        const { error } = await supabase
+            .from('todos')
+            .update({ status: newStatus })
+            .eq('id', id)
 
-        if (filter === 'today') {
-            return taskDate.toDateString() === today.toDateString()
+        if (error) {
+            console.error('Error updating status:', error)
+            fetchTodos() // Revert
         }
-
-        if (filter === 'week') {
-            const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
-            return taskDate >= today && taskDate <= nextWeek
-        }
-        return true
-    })
-
-    const groupedTodos = {
-        'Yapılacak': filteredTodos.filter(t => t.status === 'Todo'),
-        'Tamamlanan': filteredTodos.filter(t => t.status === 'Done')
     }
 
     return (
-        <div className="page-container fade-in">
-            <div className="page-header">
-                <div>
-                    <h1 className="text-2xl font-bold">Yapılacaklar Listesi</h1>
-                    <p className="text-muted">Günlük hedeflerini takip et ve yönet.</p>
-                </div>
-                <button onClick={() => { resetForm(); setIsModalOpen(true) }} className="btn-primary">
-                    <Plus size={18} />
-                    <span>Yeni Görev</span>
-                </button>
-            </div>
+        <div className="page-container fade-in" style={{ padding: 0, maxWidth: '100%', margin: 0 }}>
+            {/* Header and filters removed as they are part of Kanban layout now, or optional */}
+            {/* Keeping the Create Button available via Kanban "Add" button or Floating Action Button if needed, 
+                but for now we rely on the Modal state which is passed down or controlled here.
+                The Kanban layout has its own "Add" buttons usually, but we'll reuse the Modal.
+            */}
 
-            <div className="filters-bar glass-panel">
-                <div className="filter-group">
-                    <button
-                        className={`filter-chip ${filter === 'all' ? 'active' : ''}`}
-                        onClick={() => setFilter('all')}
-                    >
-                        Tümü
-                    </button>
-                    <button
-                        className={`filter-chip ${filter === 'today' ? 'active' : ''}`}
-                        onClick={() => setFilter('today')}
-                    >
-                        Bugün
-                    </button>
-                    <button
-                        className={`filter-chip ${filter === 'week' ? 'active' : ''}`}
-                        onClick={() => setFilter('week')}
-                    >
-                        Bu Hafta
+            <div style={{ padding: '0 2rem' }}>
+                <div className="page-header">
+                    <div></div>
+                    <button onClick={() => { resetForm(); setIsModalOpen(true) }} className="btn-primary">
+                        <Plus size={18} />
+                        <span>Yeni Görev</span>
                     </button>
                 </div>
             </div>
 
-            <div className="todos-grid">
-                {/* Active Todos */}
-                <div className="todo-section">
-                    <h3 className="section-title">
-                        <Circle size={20} className="text-primary" />
-                        Bekleyenler ({groupedTodos['Yapılacak'].length})
-                    </h3>
-                    <div className="todo-list">
-                        {groupedTodos['Yapılacak'].map(todo => (
-                            <div key={todo.id} className="todo-card glass-panel">
-                                <div className="todo-check">
-                                    <button onClick={() => toggleStatus(todo)} className="check-circle">
-                                        <Circle size={24} />
-                                    </button>
-                                </div>
-                                <div className="todo-content">
-                                    <div className="todo-header-row">
-                                        <h4>{todo.title}</h4>
-                                        <div className="action-buttons">
-                                            <button onClick={() => handleEdit(todo)} className="icon-btn edit">
-                                                <Edit size={16} />
-                                            </button>
-                                            <button onClick={() => handleDelete(todo.id)} className="icon-btn delete">
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div className="todo-meta">
-                                        <span className="meta-item">
-                                            <Calendar size={14} />
-                                            {new Date(todo.due_date).toLocaleString('tr-TR', {
-                                                year: 'numeric', month: '2-digit', day: '2-digit',
-                                                hour: '2-digit', minute: '2-digit'
-                                            })}
-                                        </span>
-                                        <span className="creator-badge">
-                                            {users[todo.created_by] || 'Bilinmeyen'}
-                                        </span>
-                                        <StatusBadge value={todo.priority} />
-                                        {todo.tags?.map((tag, i) => (
-                                            <span key={i} className="tag">#{tag}</span>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                        {groupedTodos['Yapılacak'].length === 0 && (
-                            <div className="empty-placeholder">Yapılacak görev kalmadı! 🎉</div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Completed Todos */}
-                <div className="todo-section">
-                    <h3 className="section-title">
-                        <CheckCircle size={20} className="text-success" />
-                        Tamamlananlar ({groupedTodos['Tamamlanan'].length})
-                    </h3>
-                    <div className="todo-list">
-                        {groupedTodos['Tamamlanan'].map(todo => (
-                            <div key={todo.id} className="todo-card glass-panel completed">
-                                <div className="todo-check">
-                                    <button onClick={() => toggleStatus(todo)} className="check-circle checked">
-                                        <CheckCircle size={24} />
-                                    </button>
-                                </div>
-                                <div className="todo-content">
-                                    <div className="todo-header-row">
-                                        <h4 className="strikethrough">{todo.title}</h4>
-                                        <div className="action-buttons">
-                                            <button onClick={() => handleEdit(todo)} className="icon-btn edit">
-                                                <Edit size={16} />
-                                            </button>
-                                            <button onClick={() => handleDelete(todo.id)} className="icon-btn delete">
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div className="todo-meta">
-                                        <span className="meta-item">
-                                            <Calendar size={14} />
-                                            {new Date(todo.due_date).toLocaleString('tr-TR', {
-                                                year: 'numeric', month: '2-digit', day: '2-digit',
-                                                hour: '2-digit', minute: '2-digit'
-                                            })}
-                                        </span>
-                                        <span className="creator-badge">
-                                            {users[todo.created_by] || 'Bilinmeyen'}
-                                        </span>
-                                        <span className="completed-badge">Tamamlandı</span>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
+            <KanbanBoard
+                todos={todos}
+                onStatusChange={handleStatusChange}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                users={users}
+            />
 
             <Modal title={formData.id ? "Görevi Düzenle" : "Yeni Görev Ekle"} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
                 <form onSubmit={handleSubmit} className="form-grid">
@@ -338,223 +218,6 @@ export default function Todos() {
                     <button type="submit" className="btn-primary full-width">Oluştur</button>
                 </form>
             </Modal>
-
-            <style>{`
-        .page-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 2rem;
-        }
-
-        .btn-primary {
-          background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
-          color: white;
-          padding: 0.75rem 1.25rem;
-          border-radius: var(--radius-md);
-          font-weight: 600;
-          display: flex;
-          gap: 0.5rem;
-          align-items: center;
-          box-shadow: var(--shadow-glow);
-        }
-
-        .filters-bar {
-          padding: 0.5rem;
-          margin-bottom: 2rem;
-          display: inline-flex;
-          border-radius: var(--radius-lg);
-        }
-
-        .filter-group {
-          display: flex;
-          gap: 0.5rem;
-        }
-
-        .filter-chip {
-          padding: 0.5rem 1.25rem;
-          border-radius: var(--radius-md);
-          font-size: 0.9rem;
-          font-weight: 500;
-          color: var(--color-text-muted);
-          transition: all 0.2s;
-        }
-
-        .filter-chip:hover {
-          background: rgba(0,0,0,0.05);
-        }
-
-        .filter-chip.active {
-          background: white;
-          color: var(--color-primary);
-          box-shadow: var(--shadow-sm);
-        }
-
-        .todos-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 2rem;
-        }
-
-        .section-title {
-          font-size: 1.1rem;
-          font-weight: 600;
-          margin-bottom: 1rem;
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          color: var(--color-text-main);
-        }
-
-        .text-primary { color: var(--color-primary); }
-        .text-success { color: var(--color-success); }
-
-        .todo-list {
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-        }
-
-        .todo-card {
-          padding: 1rem;
-          display: flex;
-          gap: 1rem;
-          align-items: flex-start;
-          transition: transform 0.2s;
-        }
-        
-        .todo-card:hover {
-          transform: translateY(-2px);
-        }
-
-        .todo-card.completed {
-          opacity: 0.7;
-          background: rgba(241, 245, 249, 0.5);
-        }
-
-        .check-circle {
-          color: var(--color-border);
-          transition: color 0.2s;
-          margin-top: 2px;
-        }
-        
-        .check-circle:hover { color: var(--color-primary); }
-        .check-circle.checked { color: var(--color-success); }
-
-        .todo-content {
-          flex: 1;
-        }
-
-        .todo-header-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          margin-bottom: 0.5rem;
-        }
-
-        .todo-header-row h4 {
-          font-weight: 600;
-          color: var(--color-text-main);
-          font-size: 1rem;
-        }
-
-        .strikethrough {
-          text-decoration: line-through;
-          color: var(--color-text-muted);
-        }
-
-        .action-buttons {
-          display: flex;
-          gap: 0.5rem;
-          opacity: 0;
-          transition: opacity 0.2s;
-        }
-
-        .todo-card:hover .action-buttons {
-          opacity: 1;
-        }
-
-        .icon-btn {
-          color: var(--color-text-muted);
-          transition: color 0.2s;
-        }
-
-        .icon-btn.delete:hover { color: var(--color-error); }
-        .icon-btn.edit:hover { color: var(--color-primary); }
-
-        .todo-meta {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          flex-wrap: wrap;
-        }
-
-        .meta-item {
-          display: flex;
-          align-items: center;
-          gap: 0.25rem;
-          color: var(--color-text-muted);
-          font-size: 0.8rem;
-        }
-
-        .tag {
-          font-size: 0.8rem;
-          color: var(--color-primary);
-          background: rgba(139, 92, 246, 0.1);
-          padding: 0.1rem 0.5rem;
-          border-radius: var(--radius-sm);
-        }
-        
-        .creator-badge {
-            font-size: 0.75rem;
-            color: var(--color-text-main);
-            background: rgba(0,0,0,0.05);
-            padding: 0.1rem 0.4rem;
-            border-radius: 4px;
-        }
-
-        .completed-badge {
-          font-size: 0.8rem;
-          color: var(--color-success);
-          font-weight: 500;
-        }
-
-        .empty-placeholder {
-          text-align: center;
-          padding: 2rem;
-          color: var(--color-text-muted);
-          font-style: italic;
-        }
-        
-        .full-width { width: 100%; margin-top: 1rem; }
-        
-        .form-grid { display: flex; flexDirection: column; gap: 1rem; }
-        .form-row { display: grid; gridTemplateColumns: 1fr 1fr; gap: 1rem; }
-        .form-group label { 
-          display: block; 
-          margin-bottom: 0.5rem; 
-          font-size: 1rem; 
-          color: var(--color-text-main); 
-          font-weight: 600; 
-        }
-        .form-group input, .form-group select { 
-          width: 100%; 
-          padding: 1.2rem; /* Even more premium height */
-          border-radius: var(--radius-md); 
-          border: 1px solid var(--color-border); 
-          background: var(--color-background); 
-          font-size: 1.1rem; /* Larger input text */
-          transition: all 0.2s;
-          color: var(--color-text-main);
-        }
-
-        .form-group input:focus, .form-group select:focus {
-          border-color: var(--color-primary);
-          background: white;
-          box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
-          outline: none;
-        }
-      `}</style>
         </div>
     )
 }
