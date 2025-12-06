@@ -132,23 +132,34 @@ export default function Todos() {
 
     const resetForm = () => {
         const now = new Date()
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
+        const pad = (n) => n.toString().padStart(2, '0')
+        // Default to next hour or current time local
+        const localNowString = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`
 
         setFormData({
             id: null,
             title: '',
             priority: 'Medium',
-            due_date: now.toISOString().slice(0, 16),
+            due_date: localNowString,
             tags: 'Genel'
         })
     }
 
     const handleEdit = (todo) => {
+        // Date formatting fix: Convert UTC db date to Local 'YYYY-MM-DDTHH:mm' string
+        let localDateString = ''
+        if (todo.due_date) {
+            const d = new Date(todo.due_date)
+            // Manual format: YYYY-MM-DDTHH:mm (local)
+            const pad = (n) => n.toString().padStart(2, '0')
+            localDateString = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+        }
+
         setFormData({
             id: todo.id,
             title: todo.title,
             priority: todo.priority,
-            due_date: todo.due_date ? new Date(todo.due_date).toISOString().slice(0, 16) : '',
+            due_date: localDateString,
             tags: todo.tags && todo.tags.length > 0 ? todo.tags[0] : 'Genel'
         })
         setIsModalOpen(true)

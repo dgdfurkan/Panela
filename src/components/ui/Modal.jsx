@@ -3,9 +3,10 @@ import { X } from 'lucide-react'
 export default function Modal({ title, isOpen, onClose, children }) {
   if (!isOpen) return null
 
+
   return (
-    <div className="modal-container">
-      <div className="modal-content">
+    <div className="modal-container" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h3>{title}</h3>
           <button onClick={onClose} className="close-btn">
@@ -22,10 +23,9 @@ export default function Modal({ title, isOpen, onClose, children }) {
           position: fixed;
           top: 0;
           left: 0;
-          width: 100vw;
-          height: 100vh;
-          background: rgba(0, 0, 0, 0.4); /* Clean dim */
-          /* backdrop-filter: blur(8px); REMOVED as per request */
+          width: 100%;
+          height: 100%;
+          /* background: REMOVED as per request */
           display: flex;
           align-items: center;
           justify-content: center;
