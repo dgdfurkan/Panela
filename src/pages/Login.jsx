@@ -1,35 +1,29 @@
+
 import { useState } from 'react'
-import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
-import { useNavigate } from 'react-router-dom' // Import useNavigate
+import { useNavigate } from 'react-router-dom'
 
 export default function Login() {
     const [loading, setLoading] = useState(false)
-    const [email, setEmail] = useState('')
+    const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState(null)
-    const navigate = useNavigate() // Initialize hook
+    const { login } = useAuth()
+    const navigate = useNavigate()
 
-    const handleAuth = async (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault()
         setLoading(true)
         setError(null)
 
-        try {
-            const result = await supabase.auth.signInWithPassword({
-                email,
-                password,
-            })
+        const result = await login(username, password)
 
-            if (result.error) throw result.error
-            // Navigate to dashboard on success (though AuthContext usually handles redirect protection)
-            if (!result.error) navigate('/')
-
-        } catch (error) {
-            setError(error.message)
-        } finally {
-            setLoading(false)
+        if (result.success) {
+            navigate('/')
+        } else {
+            setError(result.error)
         }
+        setLoading(false)
     }
 
     return (
@@ -56,7 +50,7 @@ export default function Login() {
                     Panela
                 </h1>
                 <p style={{ color: 'var(--color-text-muted)', marginBottom: '2rem' }}>
-                    Tekrar hoşgeldiniz!
+                    Giriş yap ve yönetmeye başla.
                 </p>
 
                 {error && (
@@ -72,12 +66,12 @@ export default function Login() {
                     </div>
                 )}
 
-                <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     <input
-                        type="email"
-                        placeholder="E-posta Adresi"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        type="text"
+                        placeholder="Kullanıcı Adı"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
                         required
                         style={{
                             padding: '0.875rem 1rem',
@@ -118,7 +112,7 @@ export default function Login() {
                             opacity: loading ? 0.7 : 1
                         }}
                     >
-                        {loading ? 'İşleniyor...' : 'Giriş Yap'}
+                        {loading ? 'Kontrol Ediliyor...' : 'Giriş Yap'}
                     </button>
                 </form>
             </div>
