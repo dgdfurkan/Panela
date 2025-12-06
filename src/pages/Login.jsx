@@ -7,7 +7,6 @@ export default function Login() {
     const [loading, setLoading] = useState(false)
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
-    const [isSignUp, setIsSignUp] = useState(false)
     const [error, setError] = useState(null)
     const navigate = useNavigate() // Initialize hook
 
@@ -17,25 +16,14 @@ export default function Login() {
         setError(null)
 
         try {
-            let result
-            if (isSignUp) {
-                result = await supabase.auth.signUp({
-                    email,
-                    password,
-                    options: {
-                        data: { username: email.split('@')[0] } // Default username
-                    }
-                })
-            } else {
-                result = await supabase.auth.signInWithPassword({
-                    email,
-                    password,
-                })
-            }
+            const result = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            })
 
             if (result.error) throw result.error
             // Navigate to dashboard on success (though AuthContext usually handles redirect protection)
-            if (!result.error && !isSignUp) navigate('/')
+            if (!result.error) navigate('/')
 
         } catch (error) {
             setError(error.message)
@@ -68,7 +56,7 @@ export default function Login() {
                     Panela
                 </h1>
                 <p style={{ color: 'var(--color-text-muted)', marginBottom: '2rem' }}>
-                    {isSignUp ? 'Birlikte büyümeye başla.' : 'Tekrar hoşgeldiniz!'}
+                    Tekrar hoşgeldiniz!
                 </p>
 
                 {error && (
@@ -130,24 +118,11 @@ export default function Login() {
                             opacity: loading ? 0.7 : 1
                         }}
                     >
-                        {loading ? 'İşleniyor...' : (isSignUp ? 'Kayıt Ol' : 'Giriş Yap')}
+                        {loading ? 'İşleniyor...' : 'Giriş Yap'}
                     </button>
                 </form>
-
-                <div style={{ marginTop: '1.5rem', fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
-                    {isSignUp ? 'Zaten hesabın var mı?' : 'Hesabın yok mu?'}
-                    <button
-                        onClick={() => setIsSignUp(!isSignUp)}
-                        style={{
-                            color: 'var(--color-primary)',
-                            fontWeight: '600',
-                            marginLeft: '0.5rem'
-                        }}
-                    >
-                        {isSignUp ? 'Giriş Yap' : 'Kayıt Ol'}
-                    </button>
-                </div>
             </div>
         </div>
     )
 }
+```
