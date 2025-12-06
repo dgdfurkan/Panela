@@ -2,7 +2,7 @@
   "name": "panela-core",
   "private": true,
   "version": "0.0.0",
-  "homepage": "https://frkngndz60.github.io/panela",
+  "homepage": "https://dgdfurkan.github.io/Panela",
   "type": "module",
   "scripts": {
     "dev": "vite",
