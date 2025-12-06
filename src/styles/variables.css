@@ -1,0 +1,54 @@
+:root {
+  /* Sweet & Premium Palette */
+  --color-primary: #8B5CF6; /* Violet */
+  --color-primary-light: #A78BFA;
+  --color-primary-dark: #7C3AED;
+  
+  --color-secondary: #14B8A6; /* Teal */
+  --color-secondary-light: #5EEAD4;
+  
+  --color-accent: #F472B6; /* Pink/Rose */
+  
+  --color-background: #F8FAFC; /* Slate 50 */
+  --color-surface: #FFFFFF;
+  --color-surface-glass: rgba(255, 255, 255, 0.7);
+  
+  --color-text-main: #1E293B; /* Slate 800 */
+  --color-text-muted: #64748B; /* Slate 500 */
+  --color-text-inverted: #FFFFFF;
+  
+  --color-border: #E2E8F0;
+  
+  /* Status Colors */
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-info: #3B82F6;
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  
+  /* Spacing & Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-glow: 0 0 20px rgba(139, 92, 246, 0.3); /* Soft purple glow */
+
+  /* Transitions */
+  --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.dark {
+  --color-background: #0F172A; /* Slate 900 */
+  --color-surface: #1E293B;
+  --color-surface-glass: rgba(30, 41, 59, 0.7);
+  --color-text-main: #F1F5F9;
+  --color-text-muted: #94A3B8;
+  --color-border: #334155;
+}
