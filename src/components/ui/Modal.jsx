@@ -24,8 +24,8 @@ export default function Modal({ title, isOpen, onClose, children }) {
           left: 0;
           width: 100vw;
           height: 100vh;
-          background: rgba(0, 0, 0, 0.2); /* Subtle dim */
-          backdrop-filter: blur(8px); /* Premium blur */
+          background: rgba(0, 0, 0, 0.4); /* Clean dim */
+          /* backdrop-filter: blur(8px); REMOVED as per request */
           display: flex;
           align-items: center;
           justify-content: center;

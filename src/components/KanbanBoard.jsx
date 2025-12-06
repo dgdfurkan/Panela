@@ -118,22 +118,49 @@ export default function KanbanBoard({ todos, onStatusChange, onEdit, onDelete, u
                     <h2>Son Hareketler</h2>
                     <ul>
                         {activities && activities.slice(0, 4).map(act => (
-                            <li key={act.id}>
-                                <span className={`task-icon task-icon--${act.action_type === 'CREATE' ? 'attachment' :
-                                    act.action_type === 'UPDATE' ? 'edit' :
-                                        act.action_type === 'DELETE' ? 'comment' : 'comment'
-                                    }`}>
-                                    {act.action_type === 'CREATE' && <Plus size={12} />}
-                                    {act.action_type === 'UPDATE' && <Edit size={12} />}
-                                    {act.action_type === 'DELETE' && <Trash2 size={12} />}
-                                    {act.action_type === 'MOVE' && <MoreHorizontal size={12} />}
+                            <li key={act.id} style={{
+                                padding: '0.8rem 0',
+                                borderBottom: '1px solid #f1f5f9',
+                                display: 'flex',
+                                alignItems: 'start',
+                                gap: '0.8rem'
+                            }}>
+                                <span style={{
+                                    width: '28px',
+                                    height: '28px',
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0,
+                                    background:
+                                        act.action_type === 'CREATE' ? '#dcfce7' :
+                                            act.action_type === 'UPDATE' ? '#dbeafe' :
+                                                act.action_type === 'DELETE' ? '#fee2e2' : '#fef9c3',
+                                    color:
+                                        act.action_type === 'CREATE' ? '#166534' :
+                                            act.action_type === 'UPDATE' ? '#1e40af' :
+                                                act.action_type === 'DELETE' ? '#991b1b' : '#854d0e'
+                                }}>
+                                    {act.action_type === 'CREATE' && <Plus size={14} />}
+                                    {act.action_type === 'UPDATE' && <Edit size={14} />}
+                                    {act.action_type === 'DELETE' && <Trash2 size={14} />}
+                                    {act.action_type === 'MOVE' && <MoreHorizontal size={14} />}
                                 </span>
-                                <b>{act.app_users?.username || 'Kullanıcı'} </b>
-                                {act.action_type === 'CREATE' && 'yeni görev ekledi.'}
-                                {act.action_type === 'UPDATE' && 'görevi güncelledi.'}
-                                {act.action_type === 'DELETE' && `"${act.details}" görevini sildi.`}
-                                {act.action_type === 'MOVE' && `görevi taşıdı: ${act.details}`}
-                                <time>{new Date(act.created_at).toLocaleString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</time>
+                                <div>
+                                    <div style={{ fontSize: '13px', marginBottom: '0.1rem', fontWeight: '500' }}>
+                                        {act.app_users?.username || 'Kullanıcı'}
+                                    </div>
+                                    <p style={{ fontSize: '13px', color: '#64748b', margin: 0, lineHeight: '1.4' }}>
+                                        {act.action_type === 'CREATE' && 'yeni görev ekledi.'}
+                                        {act.action_type === 'UPDATE' && 'görevi güncelledi.'}
+                                        {act.action_type === 'DELETE' && `"${act.details}" görevini sildi.`}
+                                        {act.action_type === 'MOVE' && `görevi taşıdı: ${act.details}`}
+                                    </p>
+                                    <time style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginTop: '0.2rem' }}>
+                                        {new Date(act.created_at).toLocaleString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                                    </time>
+                                </div>
                             </li>
                         ))}
                         {(!activities || activities.length === 0) && (

@@ -220,51 +220,153 @@ export default function Todos() {
             />
 
             <Modal title={formData.id ? "Görevi Düzenle" : "Yeni Görev Ekle"} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-                <form onSubmit={handleSubmit} className="form-grid">
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
                     <div className="form-group">
-                        <label>Görev Adı</label>
+                        <label style={{
+                            display: 'block',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            color: '#64748b',
+                            marginBottom: '0.5rem'
+                        }}>
+                            GÖREV BAŞLIĞI
+                        </label>
                         <input
                             required
                             value={formData.title}
                             onChange={e => setFormData({ ...formData, title: e.target.value })}
-                            placeholder="Örn: Vergi dairesine git"
+                            placeholder="Örn: Muhasebeciyle görüşme ayarla..."
+                            style={{
+                                width: '100%',
+                                padding: '0.8rem 1rem',
+                                borderRadius: 'var(--radius-md)',
+                                border: '1px solid #e2e8f0',
+                                fontSize: '15px',
+                                outline: 'none',
+                                transition: 'border-color 0.2s',
+                                background: '#f8fafc'
+                            }}
+                            onFocus={e => e.target.style.borderColor = 'var(--color-primary)'}
+                            onBlur={e => e.target.style.borderColor = '#e2e8f0'}
                         />
                     </div>
 
-                    <div className="form-row">
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                         <div className="form-group">
-                            <label>Tarih ve Saat</label>
+                            <label style={{
+                                display: 'block',
+                                fontSize: '12px',
+                                fontWeight: '600',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                color: '#64748b',
+                                marginBottom: '0.5rem'
+                            }}>
+                                SON TARİH
+                            </label>
                             <input
                                 type="datetime-local"
                                 required
                                 value={formData.due_date}
                                 onChange={e => setFormData({ ...formData, due_date: e.target.value })}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.8rem 1rem',
+                                    borderRadius: 'var(--radius-md)',
+                                    border: '1px solid #e2e8f0',
+                                    fontSize: '14px',
+                                    outline: 'none',
+                                    background: '#f8fafc'
+                                }}
                             />
                         </div>
 
                         <div className="form-group">
-                            <label>Öncelik</label>
+                            <label style={{
+                                display: 'block',
+                                fontSize: '12px',
+                                fontWeight: '600',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                color: '#64748b',
+                                marginBottom: '0.5rem'
+                            }}>
+                                ÖNCELİK
+                            </label>
                             <select
                                 value={formData.priority}
                                 onChange={e => setFormData({ ...formData, priority: e.target.value })}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.8rem 1rem',
+                                    borderRadius: 'var(--radius-md)',
+                                    border: '1px solid #e2e8f0',
+                                    fontSize: '14px',
+                                    outline: 'none',
+                                    background: '#f8fafc',
+                                    appearance: 'none',
+                                    cursor: 'pointer'
+                                }}
                             >
-                                <option value="Low">Düşük</option>
-                                <option value="Medium">Orta</option>
-                                <option value="High">Yüksek</option>
+                                <option value="Low">🟢 Düşük Öncelik</option>
+                                <option value="Medium">🟡 Orta Öncelik</option>
+                                <option value="High">🔴 Yüksek Öncelik</option>
                             </select>
                         </div>
                     </div>
 
                     <div className="form-group">
-                        <label>Etiketler (Virgülle ayır)</label>
+                        <label style={{
+                            display: 'block',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            color: '#64748b',
+                            marginBottom: '0.5rem'
+                        }}>
+                            ETİKETLER (Opsiyonel)
+                        </label>
                         <input
                             value={formData.tags}
                             onChange={e => setFormData({ ...formData, tags: e.target.value })}
-                            placeholder="Örn: resmi, acil, finans"
+                            placeholder="Tasarım, Backend, Acil (virgülle ayır)"
+                            style={{
+                                width: '100%',
+                                padding: '0.8rem 1rem',
+                                borderRadius: 'var(--radius-md)',
+                                border: '1px solid #e2e8f0',
+                                fontSize: '14px',
+                                outline: 'none',
+                                background: '#f8fafc'
+                            }}
                         />
                     </div>
 
-                    <button type="submit" className="btn-primary full-width">Oluştur</button>
+                    <button
+                        type="submit"
+                        style={{
+                            marginTop: '1rem',
+                            padding: '1rem',
+                            borderRadius: 'var(--radius-md)',
+                            background: 'var(--color-primary)',
+                            color: 'white',
+                            border: 'none',
+                            fontSize: '15px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'transform 0.1s',
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                        }}
+                        className="btn-primary full-width"
+                        onMouseDown={e => e.target.style.transform = 'scale(0.98)'}
+                        onMouseUp={e => e.target.style.transform = 'scale(1)'}
+                    >
+                        {formData.id ? "Değişiklikleri Kaydet" : "Görevi Oluştur"}
+                    </button>
                 </form>
             </Modal>
         </div>
