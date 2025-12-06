@@ -22,33 +22,33 @@ export default function Modal({ title, isOpen, onClose, children }) {
           position: fixed;
           top: 0;
           left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.6);
-          backdrop-filter: blur(8px);
+          width: 100vw;
+          height: 100vh;
+          background: rgba(15, 23, 42, 0.6); /* Slightly darker, premium tint */
+          backdrop-filter: blur(12px); /* Strong blur */
           display: flex;
           align-items: center;
           justify-content: center;
           z-index: 9999;
-          padding: 1.5rem;
           animation: fadeIn 0.3s ease-out;
         }
 
         .modal-content {
-          width: 100%;
-          max-width: 550px;
+          width: 90%;
+          max-width: 500px;
           background: white;
           border-radius: var(--radius-xl);
-          max-height: 90vh;
+          max-height: 85vh; /* Prevent overflow */
           display: flex;
           flex-direction: column;
-          box-shadow: var(--shadow-xl);
-          animation: slideUp 0.3s ease-out;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+          animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          border: 1px solid rgba(255, 255, 255, 0.5);
         }
 
         @keyframes slideUp {
-          from { transform: translateY(20px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
+          from { transform: translateY(40px) scale(0.95); opacity: 0; }
+          to { transform: translateY(0) scale(1); opacity: 1; }
         }
 
         .modal-header {
@@ -57,7 +57,7 @@ export default function Modal({ title, isOpen, onClose, children }) {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          background: rgba(248, 250, 252, 0.5);
+          background: rgba(250, 250, 250, 0.8);
           border-radius: var(--radius-xl) var(--radius-xl) 0 0;
         }
 

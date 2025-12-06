@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { Plus, Calendar, CheckCircle, Circle, Clock, Trash2, Filter, Flag } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
+import { useAuth } from '../context/AuthContext'
 import Modal from '../components/ui/Modal'
 import StatusBadge from '../components/ui/StatusBadge'
 
@@ -38,10 +39,12 @@ export default function Todos() {
         }
     }
 
+    const { user } = useAuth()
+
     const handleSubmit = async (e) => {
         e.preventDefault()
         try {
-            const { data: { user } } = await supabase.auth.getUser()
+            if (!user || !user.id) throw new Error('Oturum kapalı.')
 
             const tagsArray = formData.tags.split(',').map(t => t.trim()).filter(t => t)
 
@@ -439,12 +442,22 @@ export default function Todos() {
         .form-grid { display: flex; flexDirection: column; gap: 1rem; }
         .form-row { display: grid; gridTemplateColumns: 1fr 1fr; gap: 1rem; }
         .form-group label { display: block; marginBottom: 0.4rem; fontSize: 0.9rem; color: var(--color-text-muted); fontWeight: 500; }
-        .form-group input, .form-group select { width: 100%; padding: 0.75rem; borderRadius: var(--radius-md); border: 1px solid var(--color-border); background: var(--color-background); }
+        .form-group input, .form-group select { 
+          width: 100%; 
+          padding: 1.1rem; /* Premium height */
+          border-radius: var(--radius-md); 
+          border: 1px solid var(--color-border); 
+          background: var(--color-background); 
+          font-size: 1rem;
+          transition: all 0.2s;
+          color: var(--color-text-main);
+        }
 
-        @media (max-width: 768px) {
-          .todos-grid {
-            grid-template-columns: 1fr;
-          }
+        .form-group input:focus, .form-group select:focus {
+          border-color: var(--color-primary);
+          background: white;
+          box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
+          outline: none;
         }
       `}</style>
         </div>
