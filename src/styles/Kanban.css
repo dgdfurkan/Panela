@@ -105,11 +105,17 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    height: 40px;
+    /* Fixed height for alignment */
 }
 
 .project-column-heading__title {
     font-size: 20px;
     font-weight: 600;
+    margin: 0;
+    /* Reset margin */
+    display: flex;
+    align-items: center;
 }
 
 .project-column-heading__options {
@@ -118,6 +124,9 @@
     font-size: 18px;
     border: 0;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .task {
@@ -141,6 +150,13 @@
     font-size: 15px;
     margin: 1.2rem 0;
     color: var(--text);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.5;
 }
 
 .task__tags {

@@ -88,11 +88,14 @@ export default function Todos() {
         try {
             if (!user || !user.id) throw new Error('Oturum kapalı.')
 
-            const tagsArray = formData.tags.split(',').map(t => t.trim()).filter(t => t)
+            if (!user || !user.id) throw new Error('Oturum kapalı.')
+
+            // Tag is now a single selection from dropdown, but backend expects array
+            const tagsArray = formData.tags ? [formData.tags] : ['Genel']
 
             const payload = {
                 title: formData.title,
-                priority: formData.priority,
+                priority: 'Medium', // Default priority since we removed the input
                 due_date: formData.due_date,
                 tags: tagsArray,
                 created_by: user.id
@@ -136,7 +139,7 @@ export default function Todos() {
             title: '',
             priority: 'Medium',
             due_date: now.toISOString().slice(0, 16),
-            tags: ''
+            tags: 'Genel'
         })
     }
 
@@ -146,7 +149,7 @@ export default function Todos() {
             title: todo.title,
             priority: todo.priority,
             due_date: todo.due_date ? new Date(todo.due_date).toISOString().slice(0, 16) : '',
-            tags: todo.tags ? todo.tags.join(', ') : ''
+            tags: todo.tags && todo.tags.length > 0 ? todo.tags[0] : 'Genel'
         })
         setIsModalOpen(true)
     }
@@ -294,11 +297,11 @@ export default function Todos() {
                                 color: '#64748b',
                                 marginBottom: '0.5rem'
                             }}>
-                                ÖNCELİK
+                                ETİKET
                             </label>
                             <select
-                                value={formData.priority}
-                                onChange={e => setFormData({ ...formData, priority: e.target.value })}
+                                value={formData.tags}
+                                onChange={e => setFormData({ ...formData, tags: e.target.value })}
                                 style={{
                                     width: '100%',
                                     padding: '0.8rem 1rem',
@@ -311,40 +314,15 @@ export default function Todos() {
                                     cursor: 'pointer'
                                 }}
                             >
-                                <option value="Low">🟢 Düşük Öncelik</option>
-                                <option value="Medium">🟡 Orta Öncelik</option>
-                                <option value="High">🔴 Yüksek Öncelik</option>
+                                <option value="Genel">Genel</option>
+                                <option value="Tasarım">Tasarım</option>
+                                <option value="Yazılım">Yazılım</option>
+                                <option value="Pazarlama">Pazarlama</option>
                             </select>
                         </div>
                     </div>
 
-                    <div className="form-group">
-                        <label style={{
-                            display: 'block',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.05em',
-                            color: '#64748b',
-                            marginBottom: '0.5rem'
-                        }}>
-                            ETİKETLER (Opsiyonel)
-                        </label>
-                        <input
-                            value={formData.tags}
-                            onChange={e => setFormData({ ...formData, tags: e.target.value })}
-                            placeholder="Tasarım, Backend, Acil (virgülle ayır)"
-                            style={{
-                                width: '100%',
-                                padding: '0.8rem 1rem',
-                                borderRadius: 'var(--radius-md)',
-                                border: '1px solid #e2e8f0',
-                                fontSize: '14px',
-                                outline: 'none',
-                                background: '#f8fafc'
-                            }}
-                        />
-                    </div>
+                    {/* Old Tags Input Removed as requested we use the selector above */}
 
                     <button
                         type="submit"
