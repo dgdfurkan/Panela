@@ -43,15 +43,21 @@ export default function Todos() {
     }
 
     const logActivity = async (actionType, details, todoId) => {
-        if (!user?.id) return
+        try {
+            if (!user?.id) return
 
-        await supabase.from('todo_activities').insert([{
-            todo_id: todoId,
-            user_id: user.id,
-            action_type: actionType,
-            details: details
-        }])
-        fetchActivities()
+            const { error } = await supabase.from('todo_activities').insert([{
+                todo_id: todoId,
+                user_id: user.id,
+                action_type: actionType,
+                details: details
+            }])
+
+            if (error) throw error
+            fetchActivities()
+        } catch (error) {
+            console.error('Activity logging failed (safe to ignore if RLS not set):', error)
+        }
     }
 
     const fetchTodos = async () => {
