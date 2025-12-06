@@ -5,86 +5,86 @@ import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabaseClient'
 
 export default function Dashboard() {
-    const { user } = useAuth()
-    const [stats, setStats] = useState({
-        products: 0,
-        todos: 0,
-        completedTodos: 0,
-        roadmapStep: 'Başlangıç'
+  const { user } = useAuth()
+  const [stats, setStats] = useState({
+    products: 0,
+    todos: 0,
+    completedTodos: 0,
+    roadmapStep: 'Başlangıç'
+  })
+
+  // Mocking stats for now if DB is empty or connection fails
+  useEffect(() => {
+    // In a real scenario, we would fetch counts here
+    // const fetchStats = async () => { ... }
+    // fetchStats()
+
+    // Using dummy data for immediate visual feedback
+    setStats({
+      products: 12,
+      todos: 5,
+      completedTodos: 3,
+      roadmapStep: 'Pazar Araştırması'
     })
+  }, [])
 
-    // Mocking stats for now if DB is empty or connection fails
-    useEffect(() => {
-        // In a real scenario, we would fetch counts here
-        // const fetchStats = async () => { ... }
-        // fetchStats()
+  return (
+    <div className="dashboard fade-in">
+      <header className="page-header">
+        <div>
+          <h1 className="welcome-text">Hoşgeldin, <span className="text-gradient font-bold">{user?.username || 'Girişimci'}</span> 👋</h1>
+          <p className="subtitle">Bugün e-ticaret imparatorluğun için neler yapıyoruz?</p>
+        </div>
+        <div className="date-badge">
+          {new Date().toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' })}
+        </div>
+      </header>
 
-        // Using dummy data for immediate visual feedback
-        setStats({
-            products: 12,
-            todos: 5,
-            completedTodos: 3,
-            roadmapStep: 'Pazar Araştırması'
-        })
-    }, [])
+      <div className="stats-grid">
+        {/* Active Roadmap Step Widget */}
+        <div className="widget highlight-widget">
+          <div className="widget-header">
+            <Sparkles className="icon-pulse" />
+            <h3>Aktif Hedef</h3>
+          </div>
+          <p className="widget-value">{stats.roadmapStep}</p>
+          <p className="widget-desc">Bu adımda derinlemesine araştırma yap.</p>
+          <div className="progress-bar">
+            <div className="progress-fill" style={{ width: '35%' }}></div>
+          </div>
+        </div>
 
-    return (
-        <div className="dashboard fade-in">
-            <header className="page-header">
-                <div>
-                    <h1 className="welcome-text">Hoşgeldin, <span className="text-gradient font-bold">{user?.user_metadata?.username || 'Girişimci'}</span> 👋</h1>
-                    <p className="subtitle">Bugün e-ticaret imparatorluğun için neler yapıyoruz?</p>
-                </div>
-                <div className="date-badge">
-                    {new Date().toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' })}
-                </div>
-            </header>
+        {/* Product Stats */}
+        <div className="widget glass-panel">
+          <div className="widget-icon bg-blue">
+            <Package size={24} color="#3B82F6" />
+          </div>
+          <div className="widget-info">
+            <p className="label">Keşfedilen Ürünler</p>
+            <p className="value">{stats.products}</p>
+          </div>
+        </div>
 
-            <div className="stats-grid">
-                {/* Active Roadmap Step Widget */}
-                <div className="widget highlight-widget">
-                    <div className="widget-header">
-                        <Sparkles className="icon-pulse" />
-                        <h3>Aktif Hedef</h3>
-                    </div>
-                    <p className="widget-value">{stats.roadmapStep}</p>
-                    <p className="widget-desc">Bu adımda derinlemesine araştırma yap.</p>
-                    <div className="progress-bar">
-                        <div className="progress-fill" style={{ width: '35%' }}></div>
-                    </div>
-                </div>
+        {/* Todo Stats */}
+        <div className="widget glass-panel">
+          <div className="widget-icon bg-green">
+            <CheckCircle size={24} color="#10B981" />
+          </div>
+          <div className="widget-info">
+            <p className="label">Mevcut Görevler</p>
+            <p className="value">{stats.todos} <span className="sub-value">({stats.completedTodos} tamamlandı)</span></p>
+          </div>
+        </div>
+      </div>
 
-                {/* Product Stats */}
-                <div className="widget glass-panel">
-                    <div className="widget-icon bg-blue">
-                        <Package size={24} color="#3B82F6" />
-                    </div>
-                    <div className="widget-info">
-                        <p className="label">Keşfedilen Ürünler</p>
-                        <p className="value">{stats.products}</p>
-                    </div>
-                </div>
+      <div className="recent-activity-section">
+        <h3 className="section-title"> <TrendingUp size={20} /> Son Hareketler</h3>
+        <div className="glass-panel activity-list">
+          <p className="empty-state">Henüz bir aktivite yok. Bir ürün ekleyerek başla!</p>
+        </div>
+      </div>
 
-                {/* Todo Stats */}
-                <div className="widget glass-panel">
-                    <div className="widget-icon bg-green">
-                        <CheckCircle size={24} color="#10B981" />
-                    </div>
-                    <div className="widget-info">
-                        <p className="label">Mevcut Görevler</p>
-                        <p className="value">{stats.todos} <span className="sub-value">({stats.completedTodos} tamamlandı)</span></p>
-                    </div>
-                </div>
-            </div>
-
-            <div className="recent-activity-section">
-                <h3 className="section-title"> <TrendingUp size={20} /> Son Hareketler</h3>
-                <div className="glass-panel activity-list">
-                    <p className="empty-state">Henüz bir aktivite yok. Bir ürün ekleyerek başla!</p>
-                </div>
-            </div>
-
-            <style>{`
+      <style>{`
         .page-header {
           display: flex;
           justify-content: space-between;
@@ -234,6 +234,6 @@ export default function Dashboard() {
           }
         }
       `}</style>
-        </div>
-    )
+    </div>
+  )
 }
