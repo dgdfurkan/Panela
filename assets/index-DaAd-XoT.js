@@ -382,9 +382,10 @@ ${O}`}class Ke extends Error{constructor({message:a,code:i,cause:s,name:u}){var 
         }
 
         .modal-header h3 {
-          font-size: 1.4rem;
-          font-weight: 700;
+          font-size: 1.8rem;
+          font-weight: 800;
           color: var(--color-text-main);
+          letter-spacing: -0.025em;
         }
 
         .close-btn {
@@ -775,14 +776,20 @@ ${O}`}class Ke extends Error{constructor({message:a,code:i,cause:s,name:u}){var 
         
         .form-grid { display: flex; flexDirection: column; gap: 1rem; }
         .form-row { display: grid; gridTemplateColumns: 1fr 1fr; gap: 1rem; }
-        .form-group label { display: block; marginBottom: 0.4rem; fontSize: 0.9rem; color: var(--color-text-muted); fontWeight: 500; }
+        .form-group label { 
+          display: block; 
+          margin-bottom: 0.5rem; 
+          font-size: 1rem; 
+          color: var(--color-text-main); 
+          font-weight: 600; 
+        }
         .form-group input, .form-group select { 
           width: 100%; 
-          padding: 1.1rem; /* Premium height */
+          padding: 1.2rem; /* Even more premium height */
           border-radius: var(--radius-md); 
           border: 1px solid var(--color-border); 
           background: var(--color-background); 
-          font-size: 1rem;
+          font-size: 1.1rem; /* Larger input text */
           transition: all 0.2s;
           color: var(--color-text-main);
         }
