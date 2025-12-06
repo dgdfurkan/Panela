@@ -1,10 +1,10 @@
+import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 
 export default function Modal({ title, isOpen, onClose, children }) {
   if (!isOpen) return null
 
-
-  return (
+  return createPortal(
     <div className="modal-container" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
@@ -29,7 +29,7 @@ export default function Modal({ title, isOpen, onClose, children }) {
           display: flex;
           align-items: center;
           justify-content: center;
-          z-index: 9999;
+          z-index: 99999; /* Increased z-index */
           animation: fadeIn 0.3s ease-out;
         }
 
@@ -89,6 +89,7 @@ export default function Modal({ title, isOpen, onClose, children }) {
           scrollbar-width: thin;
         }
       `}</style>
-    </div>
+    </div>,
+    document.body
   )
 }

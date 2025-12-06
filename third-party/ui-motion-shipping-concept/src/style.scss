@@ -1,0 +1,25 @@
+body {
+	background:#52C1BC;
+}
+
+#ship-it {
+	position: absolute;
+	top:50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	max-width: 600px;
+	overflow: visible;
+}
+
+.hidden {
+	visibility: hidden;
+}
+
+.wip {
+	opacity:0.5;
+}
+
+.clickable {
+	cursor: pointer;
+	opacity: 0.01;
+}
