@@ -62,9 +62,10 @@ export default function Modal({ title, isOpen, onClose, children }) {
         }
 
         .modal-header h3 {
-          font-size: 1.4rem;
-          font-weight: 700;
+          font-size: 1.8rem;
+          font-weight: 800;
           color: var(--color-text-main);
+          letter-spacing: -0.025em;
         }
 
         .close-btn {
