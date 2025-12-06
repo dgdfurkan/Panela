@@ -32,7 +32,7 @@ export default function Login() {
             minHeight: '100vh',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'linear-gradient(135deg, #F3F0FF 0%, #E0F2FE 100%)'
+            background: '#F3F0FF'
         }}>
             <div className="glass-panel fade-in" style={{
                 padding: '3rem',
@@ -41,11 +41,12 @@ export default function Login() {
                 maxWidth: '420px',
                 textAlign: 'center'
             }}>
-                <h1 className="text-gradient" style={{
-                    fontSize: '2.5rem',
+                <h1 style={{
+                    fontSize: '3rem',
                     fontWeight: '800',
-                    marginBottom: '0.5rem',
-                    letterSpacing: '-1px'
+                    marginBottom: '1rem',
+                    letterSpacing: '-1px',
+                    color: 'var(--color-primary)'
                 }}>
                     Panela
                 </h1>
@@ -103,7 +104,7 @@ export default function Login() {
                             marginTop: '0.5rem',
                             padding: '0.875rem',
                             borderRadius: 'var(--radius-md)',
-                            background: 'linear-gradient(135deg, var(--color-primary), var(--color-primary-dark))',
+                            background: 'var(--color-primary)',
                             color: 'white',
                             fontWeight: '600',
                             fontSize: '1rem',

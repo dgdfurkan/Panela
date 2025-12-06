@@ -1,14 +1,14 @@
 import { useState } from 'react'
-import { MoreHorizontal, Paperclip, MessageSquare, Flag, Edit, Trash2 } from 'lucide-react'
+import { MoreHorizontal, Flag, Edit, Trash2 } from 'lucide-react'
 import '../styles/Kanban.css'
 
 export default function KanbanBoard({ todos, onStatusChange, onEdit, onDelete, users }) {
     // Columns definition
     const columns = [
-        { id: 'Todo', title: 'Task Ready', tagClass: 'tag-1' },
-        { id: 'In Progress', title: 'In Progress', tagClass: 'tag-2' },
-        { id: 'Review', title: 'Needs Review', tagClass: 'tag-3' },
-        { id: 'Done', title: 'Done', tagClass: 'tag-4' }
+        { id: 'Todo', title: 'Yapılacaklar', tagClass: 'tag-1' },
+        { id: 'In Progress', title: 'Devam Edenler', tagClass: 'tag-2' },
+        { id: 'Review', title: 'Kontrol', tagClass: 'tag-3' },
+        { id: 'Done', title: 'Tamamlandı', tagClass: 'tag-4' }
     ]
 
     const handleDragStart = (e, todoId) => {
@@ -39,27 +39,11 @@ export default function KanbanBoard({ todos, onStatusChange, onEdit, onDelete, u
         return todos.filter(t => t.status === status || (status === 'Todo' && !['In Progress', 'Review', 'Done'].includes(t.status)))
     }
 
-    // Helper to get random stats for demo visual parity with reference
-    // In real app, these would come from DB
-    const getRandomStats = (id) => {
-        const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
-        return {
-            comments: hash % 10,
-            attachments: hash % 5
-        }
-    }
-
     return (
         <div className="kanban-app fade-in">
             <main className="project">
                 <div className="project-info">
-                    <h1>Panela Tasks</h1>
-                    <div className="project-participants">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                        <button className="project-participants__add">Add Participant</button>
-                    </div>
+                    <h1>Görevler</h1>
                 </div>
 
                 <div className="project-tasks">
@@ -87,7 +71,7 @@ export default function KanbanBoard({ todos, onStatusChange, onEdit, onDelete, u
                                 >
                                     <div className="task__tags">
                                         <span className={`task__tag task__tag--${todo.tags?.[0] ? 'illustration' : 'copyright'}`}>
-                                            {todo.tags?.[0] || 'General'}
+                                            {todo.tags?.[0] || 'Genel'}
                                         </span>
                                         <div className="task-actions" style={{ display: 'flex', gap: '5px' }}>
                                             <button onClick={() => onEdit(todo)} className="task__options">
@@ -104,15 +88,7 @@ export default function KanbanBoard({ todos, onStatusChange, onEdit, onDelete, u
                                     <div className="task__stats">
                                         <span>
                                             <Flag size={12} />
-                                            <time>{new Date(todo.due_date).toLocaleDateString('tr-TR', { month: 'short', day: 'numeric' })}</time>
-                                        </span>
-                                        <span>
-                                            <MessageSquare size={12} />
-                                            {getRandomStats(todo.id).comments}
-                                        </span>
-                                        <span>
-                                            <Paperclip size={12} />
-                                            {getRandomStats(todo.id).attachments}
+                                            <time>{new Date(todo.due_date).toLocaleDateString('tr-TR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</time>
                                         </span>
                                         <span className="task__owner">
                                             {users[todo.created_by]?.substring(0, 2).toUpperCase() || '??'}
@@ -127,13 +103,13 @@ export default function KanbanBoard({ todos, onStatusChange, onEdit, onDelete, u
 
             <aside className="task-details">
                 <div className="tag-progress">
-                    <h2>Task Progress</h2>
+                    <h2>İlerleme Durumu</h2>
                     <div className="tag-progress">
-                        <p>In Progress Tasks <span>{getColumnTodos('In Progress').length}</span></p>
+                        <p>Devam Edenler <span>{getColumnTodos('In Progress').length}</span></p>
                         <progress className="progress" max={todos.length || 1} value={getColumnTodos('In Progress').length}></progress>
                     </div>
                     <div className="tag-progress">
-                        <p>Done Tasks <span>{getColumnTodos('Done').length}</span></p>
+                        <p>Tamamlananlar <span>{getColumnTodos('Done').length}</span></p>
                         <progress className="progress" max={todos.length || 1} value={getColumnTodos('Done').length}></progress>
                     </div>
                 </div>

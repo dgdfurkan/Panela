@@ -17,7 +17,7 @@ export default function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
-        <h2 className="text-gradient">Panela</h2>
+        <h2>Panela</h2>
       </div>
 
       <nav className="sidebar-nav">

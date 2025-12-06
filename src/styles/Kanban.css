@@ -74,7 +74,30 @@
 }
 
 .project-column {
-    /* Column container */
+    padding: 1rem;
+    border-radius: var(--radius-lg);
+    min-height: 500px;
+    transition: background-color 0.2s;
+}
+
+.project-column:nth-child(1) {
+    background-color: #f3f4f6;
+    /* Soft Grey */
+}
+
+.project-column:nth-child(2) {
+    background-color: #eff6ff;
+    /* Soft Blue */
+}
+
+.project-column:nth-child(3) {
+    background-color: #fff7ed;
+    /* Soft Orange */
+}
+
+.project-column:nth-child(4) {
+    background-color: #f0fdf4;
+    /* Soft Green */
 }
 
 .project-column-heading {

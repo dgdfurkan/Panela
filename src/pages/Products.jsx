@@ -121,7 +121,7 @@ export default function Products() {
         <div className="page-container fade-in">
             <div className="page-header">
                 <div>
-                    <h1 className="text-2xl font-bold text-gradient">Ürün Paneli</h1>
+                    <h1 className="text-2xl font-bold">Ürün Paneli</h1>
                     <p className="text-muted">Fikirlerini ve bulduğun ürünleri buradan yönet.</p>
                 </div>
                 <button

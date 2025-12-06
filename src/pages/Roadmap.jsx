@@ -79,7 +79,7 @@ export default function Roadmap() {
         <div className="page-container fade-in">
             <div className="page-header">
                 <div>
-                    <h1 className="text-2xl font-bold text-gradient">Yol Haritası</h1>
+                    <h1 className="text-2xl font-bold">Yol Haritası</h1>
                     <p className="text-muted">E-ticaret başarısı için adım adım rehber.</p>
                 </div>
             </div>

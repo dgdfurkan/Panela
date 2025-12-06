@@ -65,7 +65,7 @@ export default function Dashboard() {
     <div className="dashboard fade-in">
       <header className="page-header">
         <div>
-          <h1 className="welcome-text">Hoşgeldin, <span className="text-gradient font-bold">{user?.username || 'Girişimci'}</span> 👋</h1>
+          <h1 className="welcome-text">Hoşgeldin, <span className="font-bold">{user?.username || 'Girişimci'}</span> 👋</h1>
           <p className="subtitle">Bugün e-ticaret imparatorluğun için neler yapıyoruz?</p>
         </div>
         <div className="date-badge">
