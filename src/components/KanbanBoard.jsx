@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { MoreHorizontal, Flag, Edit, Trash2, Plus } from 'lucide-react'
 import '../styles/Kanban.css'
 
-export default function KanbanBoard({ todos, onStatusChange, onEdit, onDelete, users, activities }) {
+export default function KanbanBoard({ todos, onStatusChange, onEdit, onDelete, users, activities, onOpenActivityModal }) {
     // Columns definition
     const columns = [
         { id: 'Todo', title: 'Yapılacaklar', tagClass: 'tag-1' },
@@ -117,7 +117,7 @@ export default function KanbanBoard({ todos, onStatusChange, onEdit, onDelete, u
                 <div className="task-activity">
                     <h2>Son Hareketler</h2>
                     <ul>
-                        {activities && activities.map(act => (
+                        {activities && activities.slice(0, 4).map(act => (
                             <li key={act.id}>
                                 <span className={`task-icon task-icon--${act.action_type === 'CREATE' ? 'attachment' :
                                     act.action_type === 'UPDATE' ? 'edit' :
@@ -144,6 +144,26 @@ export default function KanbanBoard({ todos, onStatusChange, onEdit, onDelete, u
                             </li>
                         )}
                     </ul>
+                    {activities && activities.length > 4 && (
+                        <button
+                            onClick={onOpenActivityModal}
+                            style={{
+                                width: '100%',
+                                padding: '0.8rem',
+                                marginTop: '1rem',
+                                background: 'transparent',
+                                border: '1px dashed #cbd5e1',
+                                borderRadius: 'var(--radius-md)',
+                                color: 'var(--color-primary)',
+                                fontSize: '13px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                            className="btn-show-more"
+                        >
+                            Daha Fazla Göster ({activities.length - 4})
+                        </button>
+                    )}
                 </div>
             </aside>
         </div>

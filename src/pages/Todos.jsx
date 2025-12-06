@@ -5,11 +5,13 @@ import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import Modal from '../components/ui/Modal'
 import KanbanBoard from '../components/KanbanBoard'
+import ActivityLogModal from '../components/ActivityLogModal'
 
 export default function Todos() {
     const [todos, setTodos] = useState([])
     const [loading, setLoading] = useState(true)
     const [isModalOpen, setIsModalOpen] = useState(false)
+    const [isActivityModalOpen, setIsActivityModalOpen] = useState(false)
     const [users, setUsers] = useState({}) // id -> username map
     const [activities, setActivities] = useState([])
     const [formData, setFormData] = useState({
@@ -159,7 +161,7 @@ export default function Todos() {
         } else {
             setTodos(todos.filter(t => t.id !== id))
             if (todoToDelete) {
-                logActivity('DELETE', todoToDelete.title, id)
+                logActivity('DELETE', todoToDelete.title, null)
             }
         }
     }
@@ -207,6 +209,13 @@ export default function Todos() {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 users={users}
+                activities={activities}
+                onOpenActivityModal={() => setIsActivityModalOpen(true)}
+            />
+
+            <ActivityLogModal
+                isOpen={isActivityModalOpen}
+                onClose={() => setIsActivityModalOpen(false)}
                 activities={activities}
             />
 
