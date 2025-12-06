@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react'
-import { Plus, Calendar, CheckCircle, Circle, Clock, Trash2, Filter, Flag } from 'lucide-react'
+import { Plus, Calendar, CheckCircle, Circle, Clock, Trash2, Filter, Flag, Edit } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import Modal from '../components/ui/Modal'
@@ -11,10 +11,12 @@ export default function Todos() {
     const [loading, setLoading] = useState(true)
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [filter, setFilter] = useState('all') // all, today, week
+    const [users, setUsers] = useState({}) // id -> username map
     const [formData, setFormData] = useState({
+        id: null,
         title: '',
         priority: 'Medium',
-        due_date: new Date().toISOString().split('T')[0],
+        due_date: '',
         tags: '' // comma separated string for input
     })
 
@@ -39,6 +41,16 @@ export default function Todos() {
         }
     }
 
+    useEffect(() => {
+        const fetchUsers = async () => {
+            const { data } = await supabase.from('app_users').select('id, username')
+            if (data) {
+                const map = data.reduce((acc, u) => ({ ...acc, [u.id]: u.username }), {})
+                setUsers(map)
+            }
+        }
+        fetchUsers()
+    }, [])
     const { user } = useAuth()
 
     const handleSubmit = async (e) => {
@@ -48,27 +60,63 @@ export default function Todos() {
 
             const tagsArray = formData.tags.split(',').map(t => t.trim()).filter(t => t)
 
-            const { error } = await supabase
-                .from('todos')
-                .insert([{
-                    ...formData,
-                    tags: tagsArray,
-                    created_by: user.id
-                }])
+            const payload = {
+                title: formData.title,
+                priority: formData.priority,
+                due_date: formData.due_date,
+                tags: tagsArray,
+                created_by: user.id
+            }
 
-            if (error) throw error
+            if (formData.id) {
+                // Update
+                const { error } = await supabase
+                    .from('todos')
+                    .update({
+                        title: payload.title,
+                        priority: payload.priority,
+                        due_date: payload.due_date,
+                        tags: payload.tags
+                    })
+                    .eq('id', formData.id)
+
+                if (error) throw error
+            } else {
+                // Insert
+                const { error } = await supabase.from('todos').insert([payload])
+                if (error) throw error
+            }
 
             setIsModalOpen(false)
             fetchTodos()
-            setFormData({
-                title: '',
-                priority: 'Medium',
-                due_date: new Date().toISOString().split('T')[0],
-                tags: ''
-            })
+            resetForm()
         } catch (error) {
             alert(error.message)
         }
+    }
+
+    const resetForm = () => {
+        const now = new Date()
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
+
+        setFormData({
+            id: null,
+            title: '',
+            priority: 'Medium',
+            due_date: now.toISOString().slice(0, 16),
+            tags: ''
+        })
+    }
+
+    const handleEdit = (todo) => {
+        setFormData({
+            id: todo.id,
+            title: todo.title,
+            priority: todo.priority,
+            due_date: todo.due_date ? new Date(todo.due_date).toISOString().slice(0, 16) : '',
+            tags: todo.tags ? todo.tags.join(', ') : ''
+        })
+        setIsModalOpen(true)
     }
 
     const toggleStatus = async (todo) => {
@@ -112,10 +160,10 @@ export default function Todos() {
         <div className="page-container fade-in">
             <div className="page-header">
                 <div>
-                    <h1 className="text-2xl font-bold text-gradient">Yapılacaklar Listesi</h1>
+                    <h1 className="text-2xl font-bold">Yapılacaklar Listesi</h1>
                     <p className="text-muted">Günlük hedeflerini takip et ve yönet.</p>
                 </div>
-                <button onClick={() => setIsModalOpen(true)} className="btn-primary">
+                <button onClick={() => { resetForm(); setIsModalOpen(true) }} className="btn-primary">
                     <Plus size={18} />
                     <span>Yeni Görev</span>
                 </button>
@@ -162,12 +210,26 @@ export default function Todos() {
                                 <div className="todo-content">
                                     <div className="todo-header-row">
                                         <h4>{todo.title}</h4>
-                                        <button onClick={() => handleDelete(todo.id)} className="delete-icon">
-                                            <Trash2 size={16} />
-                                        </button>
+                                        <div className="action-buttons">
+                                            <button onClick={() => handleEdit(todo)} className="icon-btn edit">
+                                                <Edit size={16} />
+                                            </button>
+                                            <button onClick={() => handleDelete(todo.id)} className="icon-btn delete">
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
                                     </div>
                                     <div className="todo-meta">
-                                        <span className="meta-item"><Calendar size={14} /> {todo.due_date}</span>
+                                        <span className="meta-item">
+                                            <Calendar size={14} />
+                                            {new Date(todo.due_date).toLocaleString('tr-TR', {
+                                                year: 'numeric', month: '2-digit', day: '2-digit',
+                                                hour: '2-digit', minute: '2-digit'
+                                            })}
+                                        </span>
+                                        <span className="creator-badge">
+                                            {users[todo.created_by] || 'Bilinmeyen'}
+                                        </span>
                                         <StatusBadge value={todo.priority} />
                                         {todo.tags?.map((tag, i) => (
                                             <span key={i} className="tag">#{tag}</span>
@@ -199,12 +261,26 @@ export default function Todos() {
                                 <div className="todo-content">
                                     <div className="todo-header-row">
                                         <h4 className="strikethrough">{todo.title}</h4>
-                                        <button onClick={() => handleDelete(todo.id)} className="delete-icon">
-                                            <Trash2 size={16} />
-                                        </button>
+                                        <div className="action-buttons">
+                                            <button onClick={() => handleEdit(todo)} className="icon-btn edit">
+                                                <Edit size={16} />
+                                            </button>
+                                            <button onClick={() => handleDelete(todo.id)} className="icon-btn delete">
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
                                     </div>
                                     <div className="todo-meta">
-                                        <span className="meta-item"><Calendar size={14} /> {todo.due_date}</span>
+                                        <span className="meta-item">
+                                            <Calendar size={14} />
+                                            {new Date(todo.due_date).toLocaleString('tr-TR', {
+                                                year: 'numeric', month: '2-digit', day: '2-digit',
+                                                hour: '2-digit', minute: '2-digit'
+                                            })}
+                                        </span>
+                                        <span className="creator-badge">
+                                            {users[todo.created_by] || 'Bilinmeyen'}
+                                        </span>
                                         <span className="completed-badge">Tamamlandı</span>
                                     </div>
                                 </div>
@@ -214,7 +290,7 @@ export default function Todos() {
                 </div>
             </div>
 
-            <Modal title="Yeni Görev Ekle" isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+            <Modal title={formData.id ? "Görevi Düzenle" : "Yeni Görev Ekle"} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
                 <form onSubmit={handleSubmit} className="form-grid">
                     <div className="form-group">
                         <label>Görev Adı</label>
@@ -228,9 +304,9 @@ export default function Todos() {
 
                     <div className="form-row">
                         <div className="form-group">
-                            <label>Tarih</label>
+                            <label>Tarih ve Saat</label>
                             <input
-                                type="date"
+                                type="datetime-local"
                                 required
                                 value={formData.due_date}
                                 onChange={e => setFormData({ ...formData, due_date: e.target.value })}
@@ -387,19 +463,24 @@ export default function Todos() {
           color: var(--color-text-muted);
         }
 
-        .delete-icon {
-          color: var(--color-text-muted);
+        .action-buttons {
+          display: flex;
+          gap: 0.5rem;
           opacity: 0;
           transition: opacity 0.2s;
         }
 
-        .todo-card:hover .delete-icon {
+        .todo-card:hover .action-buttons {
           opacity: 1;
         }
 
-        .delete-icon:hover {
-          color: var(--color-error);
+        .icon-btn {
+          color: var(--color-text-muted);
+          transition: color 0.2s;
         }
+
+        .icon-btn.delete:hover { color: var(--color-error); }
+        .icon-btn.edit:hover { color: var(--color-primary); }
 
         .todo-meta {
           display: flex;
@@ -424,6 +505,14 @@ export default function Todos() {
           border-radius: var(--radius-sm);
         }
         
+        .creator-badge {
+            font-size: 0.75rem;
+            color: var(--color-text-main);
+            background: rgba(0,0,0,0.05);
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+        }
+
         .completed-badge {
           font-size: 0.8rem;
           color: var(--color-success);

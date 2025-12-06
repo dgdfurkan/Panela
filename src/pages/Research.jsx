@@ -1,7 +1,7 @@
-
 import { useState } from 'react'
 import { Search, ExternalLink, BarChart2, PlusCircle, ArrowRight } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
+import { useAuth } from '../context/AuthContext'
 
 export default function Research() {
     const [url, setUrl] = useState('https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=TR&media_type=all')
@@ -12,27 +12,38 @@ export default function Research() {
         notes: ''
     })
 
+    const { user } = useAuth()
+
     const openAdLibrary = () => {
         window.open(url, '_blank')
     }
 
-    const handleAddToProducts = async (e) => {
+    const handleAddProduct = async (e) => {
         e.preventDefault()
         try {
-            const { data: { user } } = await supabase.auth.getUser()
+            if (!user || !user.id) throw new Error('Oturum kapalı. Lütfen tekrar giriş yapın.')
 
-            const { error } = await supabase.from('products').insert([{
-                name: researchData.productName,
-                status: 'Researching',
-                thoughts: `Rakip: ${researchData.competitorName}\nReklam Sayısı: ${researchData.adCount}\nNotlar: ${researchData.notes}`,
-                user_id: user.id
-            }])
+            const { error } = await supabase
+                .from('products')
+                .insert([{
+                    name: researchData.productName,
+                    status: 'Researching',
+                    priority: 'High',
+                    thoughts: `Rakip: ${researchData.competitorName}\nReklam Sayısı: ${researchData.adCount}\nNotlar: ${researchData.notes}`,
+                    user_id: user.id
+                }])
 
             if (error) throw error
-            alert('Ürün araştırma verileriyle eklendi!')
-            setResearchData({ productName: '', competitorName: '', adCount: '', notes: '' })
+
+            alert('Ürün fikirlerine eklendi!')
+            setResearchData({
+                productName: '',
+                competitorName: '',
+                adCount: '',
+                notes: ''
+            })
         } catch (error) {
-            alert(error.message)
+            alert('Hata: ' + error.message)
         }
     }
 
@@ -40,7 +51,7 @@ export default function Research() {
         <div className="page-container fade-in">
             <div className="page-header">
                 <div>
-                    <h1 className="text-2xl font-bold text-gradient">Pazar Araştırma Merkezi</h1>
+                    <h1 className="text-2xl font-bold">Pazar Araştırma Merkezi</h1>
                     <p className="text-muted">Rakip analizi ve ürün avı.</p>
                 </div>
             </div>
@@ -86,7 +97,7 @@ export default function Research() {
                         <p className="text-muted text-sm">Bulduğun potansiyel ürünü analiz et ve listene ekle.</p>
                     </div>
 
-                    <form onSubmit={handleAddToProducts} className="research-form">
+                    <form onSubmit={handleAddProduct} className="research-form">
                         <div className="form-group">
                             <label>Bulunan Ürün İsmi</label>
                             <input
@@ -233,6 +244,35 @@ export default function Research() {
           gap: 0.5rem;
           box-shadow: var(--shadow-glow);
         }
+        
+        /* Premium Input Styling Update for Research Form as well */
+        .form-group label {
+            display: block;
+            margin-bottom: 0.4rem;
+            font-size: 0.9rem;
+            color: var(--color-text-muted);
+            font-weight: 500;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%; 
+            padding: 1rem; 
+            border-radius: var(--radius-md); 
+            border: 1px solid var(--color-border); 
+            background: var(--color-background); 
+            font-size: 1rem;
+            transition: all 0.2s;
+            color: var(--color-text-main);
+        }
+
+        .form-group input:focus, .form-group textarea:focus {
+            border-color: var(--color-primary);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+            outline: none;
+        }
+
+        .full-width { width: 100%; margin-top: 0.5rem; }
 
         @media (max-width: 768px) {
           .grid-container {
