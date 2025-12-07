@@ -30,15 +30,14 @@ export default function Settings() {
             if (!user) return
 
             try {
+                // Using maybeSingle to avoid 406/error when no row exists
                 const { data, error } = await supabase
                     .from('user_settings')
                     .select('*')
                     .eq('user_id', user.id)
-                    .single()
+                    .maybeSingle()
 
-                if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
-                    throw error
-                }
+                if (error) throw error
 
                 if (data) {
                     setSettings({
@@ -48,9 +47,17 @@ export default function Settings() {
                     })
                 } else {
                     // Create default settings if not exists
+                    // We must ensure the INSERT includes the user_id explicitly
                     const { error: insertError } = await supabase
                         .from('user_settings')
-                        .insert([{ user_id: user.id }])
+                        .insert([{
+                            user_id: user.id,
+                            product_view_mode: 'latest',
+                            product_count: 3,
+                            animation_duration: 5
+                        }])
+                        .select() // Good practice to select back to confirm
+                        .single()
 
                     if (insertError) throw insertError
                 }

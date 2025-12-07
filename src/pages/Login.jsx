@@ -74,6 +74,7 @@ export default function Login() {
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         required
+                        autoComplete="username"
                         style={{
                             padding: '0.875rem 1rem',
                             borderRadius: 'var(--radius-md)',
@@ -88,6 +89,7 @@ export default function Login() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
+                        autoComplete="current-password"
                         style={{
                             padding: '0.875rem 1rem',
                             borderRadius: 'var(--radius-md)',
