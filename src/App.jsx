@@ -8,6 +8,7 @@ import Products from './pages/Products'
 import Todos from './pages/Todos'
 import Roadmap from './pages/Roadmap'
 import Research from './pages/Research'
+import Settings from './pages/Settings'
 
 const ProtectedRoute = ({ children }) => {
   const { session, loading } = useAuth()
@@ -35,6 +36,7 @@ function App() {
         <Route path="/todos" element={<Todos />} />
         <Route path="/roadmap" element={<Roadmap />} />
         <Route path="/research" element={<Research />} />
+        <Route path="/settings" element={<Settings />} />
       </Route>
     </Routes>
   )
