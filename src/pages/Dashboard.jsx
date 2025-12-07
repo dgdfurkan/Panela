@@ -3,6 +3,7 @@ import { Sparkles, TrendingUp, CheckCircle, Package } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabaseClient'
 import CurrentTasksWidget from '../components/CurrentTasksWidget'
+import DiscoveredProductsWidget from '../components/DiscoveredProductsWidget'
 
 export default function Dashboard() {
   const { user } = useAuth()
@@ -105,8 +106,12 @@ export default function Dashboard() {
       </div>
 
       <div className="dashboard-main-grid">
-        {/* Left Column: Current Tasks */}
+        {/* Left Column: Widgets */}
         <section className="dashboard-section">
+          {/* Discovered Products Widget (New) */}
+          <DiscoveredProductsWidget />
+
+          {/* Current Tasks Widget */}
           <CurrentTasksWidget />
         </section>
 
