@@ -1,8 +1,8 @@
-
 import { useEffect, useState } from 'react'
 import { Sparkles, TrendingUp, CheckCircle, Package } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabaseClient'
+import CurrentTasksWidget from '../components/CurrentTasksWidget'
 
 export default function Dashboard() {
   const { user } = useAuth()
@@ -13,13 +13,7 @@ export default function Dashboard() {
     roadmapStep: 'Başlangıç'
   })
 
-  // Mocking stats for now if DB is empty or connection fails
   useEffect(() => {
-    // In a real scenario, we would fetch counts here
-    // const fetchStats = async () => { ... }
-    // fetchStats()
-
-    // Using dummy data for immediate visual feedback
     const fetchStats = async () => {
       try {
         // Products Count
@@ -110,11 +104,19 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="recent-activity-section">
-        <h3 className="section-title"> <TrendingUp size={20} /> Son Hareketler</h3>
-        <div className="glass-panel activity-list">
-          <p className="empty-state">Henüz bir aktivite yok. Bir ürün ekleyerek başla!</p>
-        </div>
+      <div className="dashboard-main-grid">
+        {/* Left Column: Current Tasks */}
+        <section className="dashboard-section">
+          <CurrentTasksWidget />
+        </section>
+
+        {/* Right Column: Recent Activity (Existing) */}
+        <section className="dashboard-section">
+          <h3 className="section-title"> <TrendingUp size={20} /> Son Hareketler</h3>
+          <div className="glass-panel activity-list">
+            <p className="empty-state">Henüz bir aktivite yok. Bir ürün ekleyerek başla!</p>
+          </div>
+        </section>
       </div>
 
       <style>{`
@@ -151,7 +153,7 @@ export default function Dashboard() {
           display: grid;
           grid-template-columns: 1.5fr 1fr 1fr;
           gap: 1.5rem;
-          margin-bottom: 3rem;
+          margin-bottom: 2rem;
         }
 
         .widget {
@@ -231,8 +233,22 @@ export default function Dashboard() {
           font-weight: 500;
         }
 
+        /* NEW STYLES */
+        .dashboard-main-grid {
+          display: grid;
+          grid-template-columns: 2fr 1fr;
+          gap: 1.5rem;
+          margin-bottom: 2rem;
+        }
+
+        .dashboard-section {
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+        }
+
         .section-title {
-          font-size: 1.25rem;
+          font-size: 1.1rem;
           font-weight: 600;
           margin-bottom: 1rem;
           display: flex;
@@ -242,9 +258,13 @@ export default function Dashboard() {
         }
 
         .activity-list {
-          padding: 2rem;
-          text-align: center;
-          border-radius: var(--radius-lg);
+            padding: 2rem;
+            text-align: center;
+            border-radius: var(--radius-lg);
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .empty-state {
@@ -262,7 +282,7 @@ export default function Dashboard() {
         }
 
         @media (max-width: 1024px) {
-          .stats-grid {
+          .stats-grid, .dashboard-main-grid {
             grid-template-columns: 1fr;
           }
         }
