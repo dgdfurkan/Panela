@@ -12,6 +12,7 @@ export default function Sidebar() {
     { label: 'Yapılacaklar', path: '/todos', icon: CheckSquare },
     { label: 'Yol Haritası', path: '/roadmap', icon: Map },
     { label: 'Araştırma', path: '/research', icon: Search },
+    { label: 'Creative Lab', path: '/creative-lab', icon: LayoutDashboard },
     { label: 'Ayarlar', path: '/settings', icon: Settings },
   ]
 

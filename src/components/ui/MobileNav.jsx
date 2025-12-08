@@ -9,6 +9,7 @@ export default function MobileNav() {
     { label: 'Ürünler', path: '/products', icon: ShoppingBag },
     { label: 'İşler', path: '/todos', icon: CheckSquare },
     { label: 'Araştır', path: '/research', icon: Search },
+    { label: 'Creative', path: '/creative-lab', icon: LayoutDashboard },
     { label: 'Yol', path: '/roadmap', icon: Map },
   ]
 

@@ -141,3 +141,61 @@ insert into public.roadmap_steps (title, description, category, sort_order) valu
 ('Rakip Analizi', 'Benzer ürünleri satan 3-5 rakibin incelenmesi.', 'Research', 3),
 ('Vergi Muafiyetleri', 'Genç girişimci desteği vb. avantajların araştırılması.', 'Legal', 4),
 ('Tedarikçi Bulma', 'Alibaba veya yerel toptancılarla iletişim.', 'Sourcing', 5);
+
+
+-- 5. Marketing Creatives (Creative Lab)
+-- Enums
+create type public.platform_enum as enum ('Meta', 'TikTok', 'Google', 'YouTube', 'Email', 'Influencer');
+create type public.visual_type_enum as enum ('Video', 'Image', 'Carousel');
+create type public.creative_status_enum as enum ('Draft', 'Active', 'Paused', 'Completed');
+
+-- Table
+create table public.marketing_creatives (
+  id uuid default uuid_generate_v4() primary key,
+  product_id uuid references public.products(id),
+  platform public.platform_enum not null,
+  strategy_angle text,
+  target_audience jsonb,
+  ad_copy_primary text,
+  ad_headline text,
+  visual_type public.visual_type_enum,
+  tags text[],
+  status public.creative_status_enum default 'Draft',
+  metrics jsonb default '{}'::jsonb,
+  notes text,
+  created_at timestamp with time zone default timezone('utc'::text, now()),
+  updated_at timestamp with time zone default timezone('utc'::text, now())
+);
+
+-- RLS
+alter table public.marketing_creatives enable row level security;
+
+create policy "Team members can view marketing creatives."
+  on marketing_creatives for select
+  using ( auth.role() = 'authenticated' );
+
+create policy "Team members can insert marketing creatives."
+  on marketing_creatives for insert
+  with check ( auth.role() = 'authenticated' );
+
+create policy "Team members can update marketing creatives."
+  on marketing_creatives for update
+  using ( auth.role() = 'authenticated' );
+
+create policy "Team members can delete marketing creatives."
+  on marketing_creatives for delete
+  using ( auth.role() = 'authenticated' );
+
+-- Trigger: auto-update updated_at
+create or replace function public.marketing_creatives_set_updated_at()
+returns trigger as $$
+begin
+  new.updated_at = timezone('utc'::text, now());
+  return new;
+end;
+$$ language plpgsql;
+
+create trigger set_timestamp
+before update on public.marketing_creatives
+for each row
+execute procedure public.marketing_creatives_set_updated_at();
