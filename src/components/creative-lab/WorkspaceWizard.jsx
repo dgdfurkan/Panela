@@ -65,7 +65,7 @@ export default function WorkspaceWizard({ products = [], onSave, saving }) {
       <header className="wizard-header">
         <div>
           <p className="eyebrow">Adım Adım Sihirbaz</p>
-          <h3>The Workspace</h3>
+          <h3>Çalışma Alanı</h3>
           <p className="muted">Sıkıcı formlar yok. Her adımda küçük ipuçlarıyla ilerle.</p>
         </div>
         <Sparkles className="accent-icon" size={28} />
@@ -143,7 +143,7 @@ export default function WorkspaceWizard({ products = [], onSave, saving }) {
             </div>
             <div>
               <label>Başlık</label>
-              <input value={form.ad_headline} onChange={(e) => updateField('ad_headline', e.target.value)} placeholder="Manşet / Headline" />
+              <input value={form.ad_headline} onChange={(e) => updateField('ad_headline', e.target.value)} placeholder="Manşet / Başlık" />
             </div>
           </div>
           <div>
@@ -151,7 +151,7 @@ export default function WorkspaceWizard({ products = [], onSave, saving }) {
             <textarea value={form.body} onChange={(e) => updateField('body', e.target.value)} placeholder="Kullanıcının sorununa odaklan, çözümü net söyle" rows={3} />
           </div>
           <div>
-            <label>Call To Action</label>
+            <label>Harekete Geçirici Mesaj (CTA)</label>
             <input value={form.cta} onChange={(e) => updateField('cta', e.target.value)} placeholder="Şimdi keşfet, Hemen indir, Sepete ekle" />
           </div>
           <div className="two-col">
@@ -191,7 +191,7 @@ export default function WorkspaceWizard({ products = [], onSave, saving }) {
             <Sparkles size={18} />
             <div>
               <p className="callout-title">Son dokunuş</p>
-              <p className="muted">Kaydettikten sonra Analytics Hub’da kart olarak göreceksin. Yüksek ROAS için kancayı test et.</p>
+              <p className="muted">Kaydettikten sonra Analitik Merkezi'nde kart olarak göreceksin. Yüksek ROAS için kancayı test et.</p>
             </div>
           </div>
         </section>
@@ -205,7 +205,7 @@ export default function WorkspaceWizard({ products = [], onSave, saving }) {
           </button>
         ) : (
           <button onClick={handleSubmit} className="primary" disabled={saving}>
-            {saving ? 'Kaydediliyor...' : 'Creative’i Kaydet'}
+            {saving ? 'Kaydediliyor...' : 'Reklamı Kaydet'}
           </button>
         )}
       </footer>

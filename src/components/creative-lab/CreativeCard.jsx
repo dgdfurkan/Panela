@@ -17,7 +17,7 @@ export default function CreativeCard({ creative, onSelectCompare, selected }) {
       <header className="card-header">
         <div>
           <p className="eyebrow">{creative.platform}</p>
-          <h4>{creative.ad_headline || 'Başlıksız Creative'}</h4>
+          <h4>{creative.ad_headline || 'Başlıksız Reklam'}</h4>
           <p className="muted">{creative.strategy_angle || 'Strateji: N/A'}</p>
         </div>
         <StatusBadge status={creative.status} />
@@ -27,8 +27,8 @@ export default function CreativeCard({ creative, onSelectCompare, selected }) {
 
       <div className="metrics">
         <Metric label="ROAS" value={roasValue} icon={roasValue >= 2 ? TrendingUp : TrendingDown} tone={statusTone} suffix="x" />
-        <Metric label="Spend" value={metrics.spend ?? 0} icon={Flame} prefix="$" />
-        <Metric label="Clicks" value={metrics.clicks ?? 0} icon={Star} />
+        <Metric label="Harcama" value={metrics.spend ?? 0} icon={Flame} prefix="$" />
+        <Metric label="Tıklama" value={metrics.clicks ?? 0} icon={Star} />
         <Metric label="CTR" value={metrics.ctr ?? 0} icon={BadgeCheck} suffix="%" />
       </div>
 

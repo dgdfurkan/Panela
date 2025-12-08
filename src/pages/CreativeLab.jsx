@@ -7,9 +7,9 @@ import AnalyticsHub from '../components/creative-lab/AnalyticsHub'
 import { BookMarked, Workflow, BarChart3, AlertCircle } from 'lucide-react'
 
 const views = [
-  { id: 'guide', label: 'The Guide', icon: BookMarked },
-  { id: 'workspace', label: 'The Workspace', icon: Workflow },
-  { id: 'analytics', label: 'Analytics Hub', icon: BarChart3 }
+  { id: 'guide', label: 'Rehber', icon: BookMarked },
+  { id: 'workspace', label: 'Çalışma Alanı', icon: Workflow },
+  { id: 'analytics', label: 'Analitik Merkezi', icon: BarChart3 }
 ]
 
 export default function CreativeLab() {
@@ -21,7 +21,7 @@ export default function CreativeLab() {
   const [error, setError] = useState('')
   const [compareSelection, setCompareSelection] = useState([])
 
-  const activeTitle = useMemo(() => views.find((v) => v.id === activeView)?.label || 'Creative Lab', [activeView])
+  const activeTitle = useMemo(() => views.find((v) => v.id === activeView)?.label || 'Yaratıcı Laboratuvar', [activeView])
 
   useEffect(() => {
     const bootstrap = async () => {
@@ -62,7 +62,7 @@ export default function CreativeLab() {
       fireConfetti()
     } catch (err) {
       console.error('Creative save error', err)
-      setError('Creative kaydedilirken bir hata oluştu')
+      setError('Reklam kaydedilirken bir hata oluştu')
     } finally {
       setSaving(false)
     }
@@ -90,7 +90,7 @@ export default function CreativeLab() {
     <div className="creative-lab-page fade-in">
       <header className="page-head">
         <div>
-          <p className="eyebrow">Creative Lab</p>
+          <p className="eyebrow">Yaratıcı Laboratuvar</p>
           <h2 className="text-gradient">{activeTitle}</h2>
           <p className="muted">Pazarlama kokpiti: rehber, sihirbaz ve analiz tek ekranda.</p>
         </div>

@@ -13,9 +13,9 @@ export default function AnalyticsHub({ creatives = [], compareSelection = [], on
     <div className="analytics-view fade-in">
       <header className="analytics-header">
         <div>
-          <p className="eyebrow">Analytics Hub</p>
+          <p className="eyebrow">Analitik Merkezi</p>
           <h3>Performans & Karşılaştırma</h3>
-          <p className="muted">Kartlar üzerinde ROAS rozetleri, iki creative arasında VS modu.</p>
+          <p className="muted">Kartlar üzerinde ROAS rozetleri, iki reklam arasında VS modu.</p>
         </div>
         <div className="shield">
           <ShieldCheck size={20} />
@@ -35,7 +35,7 @@ export default function AnalyticsHub({ creatives = [], compareSelection = [], on
         {creatives.length === 0 && (
           <div className="empty glass-panel">
             <LineChart size={20} />
-            Henüz creative yok. Sihirbazdan bir creative ekle.
+            Henüz reklam yok. Sihirbazdan bir reklam ekle.
           </div>
         )}
       </div>

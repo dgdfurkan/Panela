@@ -20,7 +20,7 @@ export default function Guide() {
     <div className="guide-view fade-in">
       <div className="hero glass-panel">
         <div>
-          <p className="eyebrow">Creative Lab · İlham Alanı</p>
+          <p className="eyebrow">Yaratıcı Laboratuvar · İlham Alanı</p>
           <h2 className="title text-gradient">“Ben yeniyim, ne yapmalıyım?”</h2>
           <p className="subtitle">Bu panel sana hazır taktikler, kopya formülleri ve güven öğeleri ile rehberlik eder.</p>
           <div className="chips">

@@ -1,9 +1,9 @@
 import { X } from 'lucide-react'
 
 const metricsKeys = [
-  { key: 'spend', label: 'Spend' },
+  { key: 'spend', label: 'Harcama' },
   { key: 'roas', label: 'ROAS' },
-  { key: 'clicks', label: 'Clicks' }
+  { key: 'clicks', label: 'Tıklama' }
 ]
 
 export default function CompareModal({ open, onClose, left, right }) {
