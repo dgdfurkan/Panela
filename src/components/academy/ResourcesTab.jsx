@@ -245,44 +245,128 @@ export default function ResourcesTab({ weekId }) {
                                             <Instagram size={20} color="#E4405F" />
                                             <span style={{ fontWeight: '600', fontSize: '14px' }}>Instagram</span>
                                         </div>
-                                        <iframe
-                                            src={`https://www.instagram.com/p/${resource.url.split('/p/')[1]?.split('/')[0]}/embed`}
-                                            width="100%"
-                                            height="500"
-                                            frameBorder="0"
-                                            scrolling="no"
-                                            style={{ borderRadius: 'var(--radius-md)' }}
-                                        />
+                                        {resource.url.includes('/p/') ? (
+                                            <iframe
+                                                src={`https://www.instagram.com/p/${resource.url.split('/p/')[1]?.split('/')[0]?.split('?')[0]}/embed`}
+                                                width="100%"
+                                                height="500"
+                                                frameBorder="0"
+                                                scrolling="no"
+                                                style={{ borderRadius: 'var(--radius-md)' }}
+                                                loading="lazy"
+                                            />
+                                        ) : (
+                                            <div style={{
+                                                padding: '1.5rem',
+                                                background: '#f8fafc',
+                                                borderRadius: 'var(--radius-md)',
+                                                border: '1px solid #e2e8f0',
+                                                textAlign: 'center'
+                                            }}>
+                                                <Instagram size={32} color="#E4405F" style={{ marginBottom: '0.5rem' }} />
+                                                <a
+                                                    href={resource.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    style={{
+                                                        color: 'var(--color-primary)',
+                                                        textDecoration: 'none',
+                                                        fontWeight: '600',
+                                                        wordBreak: 'break-all',
+                                                        display: 'block'
+                                                    }}
+                                                >
+                                                    {resource.url}
+                                                </a>
+                                                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '0.5rem' }}>
+                                                    Instagram profil sayfası - Yeni sekmede açmak için tıklayın
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 
-                                {resource.resource_type === 'youtube' && resource.embed_data?.embedUrl && (
+                                {resource.resource_type === 'youtube' && (
                                     <div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
                                             <Youtube size={20} color="#FF0000" />
                                             <span style={{ fontWeight: '600', fontSize: '14px' }}>YouTube</span>
                                         </div>
-                                        <div style={{
-                                            position: 'relative',
-                                            paddingBottom: '56.25%',
-                                            height: 0,
-                                            overflow: 'hidden',
-                                            borderRadius: 'var(--radius-md)'
-                                        }}>
-                                            <iframe
-                                                src={resource.embed_data.embedUrl}
-                                                style={{
-                                                    position: 'absolute',
-                                                    top: 0,
-                                                    left: 0,
-                                                    width: '100%',
-                                                    height: '100%'
-                                                }}
-                                                frameBorder="0"
-                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                                allowFullScreen
-                                            />
-                                        </div>
+                                        {resource.embed_data?.embedUrl ? (
+                                            <div style={{
+                                                position: 'relative',
+                                                paddingBottom: '56.25%',
+                                                height: 0,
+                                                overflow: 'hidden',
+                                                borderRadius: 'var(--radius-md)'
+                                            }}>
+                                                <iframe
+                                                    src={`${resource.embed_data.embedUrl}?rel=0&modestbranding=1`}
+                                                    style={{
+                                                        position: 'absolute',
+                                                        top: 0,
+                                                        left: 0,
+                                                        width: '100%',
+                                                        height: '100%'
+                                                    }}
+                                                    frameBorder="0"
+                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                    allowFullScreen
+                                                    loading="lazy"
+                                                />
+                                            </div>
+                                        ) : resource.url.includes('@') || resource.url.includes('/channel/') || resource.url.includes('/c/') ? (
+                                            <div style={{
+                                                padding: '1.5rem',
+                                                background: '#f8fafc',
+                                                borderRadius: 'var(--radius-md)',
+                                                border: '1px solid #e2e8f0',
+                                                textAlign: 'center'
+                                            }}>
+                                                <Youtube size={32} color="#FF0000" style={{ marginBottom: '0.5rem' }} />
+                                                <a
+                                                    href={resource.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    style={{
+                                                        color: 'var(--color-primary)',
+                                                        textDecoration: 'none',
+                                                        fontWeight: '600',
+                                                        wordBreak: 'break-all',
+                                                        display: 'block'
+                                                    }}
+                                                >
+                                                    {resource.url}
+                                                </a>
+                                                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '0.5rem' }}>
+                                                    YouTube kanalı - Yeni sekmede açmak için tıklayın
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div style={{
+                                                padding: '1.5rem',
+                                                background: '#f8fafc',
+                                                borderRadius: 'var(--radius-md)',
+                                                border: '1px solid #e2e8f0',
+                                                textAlign: 'center'
+                                            }}>
+                                                <Youtube size={32} color="#FF0000" style={{ marginBottom: '0.5rem' }} />
+                                                <a
+                                                    href={resource.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    style={{
+                                                        color: 'var(--color-primary)',
+                                                        textDecoration: 'none',
+                                                        fontWeight: '600',
+                                                        wordBreak: 'break-all',
+                                                        display: 'block'
+                                                    }}
+                                                >
+                                                    {resource.url}
+                                                </a>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 
