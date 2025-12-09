@@ -225,7 +225,7 @@ execute procedure public.marketing_creatives_set_updated_at();
 -- 6. AI Tokens (Gemini)
 create table if not exists public.ai_tokens (
   id uuid default uuid_generate_v4() primary key,
-  user_id uuid references public.profiles(id),
+  user_id uuid,
   label text,
   token text not null,
   priority integer default 1,
