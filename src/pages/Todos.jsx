@@ -12,8 +12,16 @@ export default function Todos() {
     const [loading, setLoading] = useState(true)
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [isActivityModalOpen, setIsActivityModalOpen] = useState(false)
+    const [isDraftsModalOpen, setIsDraftsModalOpen] = useState(false)
     const [users, setUsers] = useState({}) // id -> username map
     const [activities, setActivities] = useState([])
+    const [draftFilters, setDraftFilters] = useState({
+        search: '',
+        createdBy: '',
+        dateFrom: '',
+        dateTo: '',
+        tag: ''
+    })
     const [formData, setFormData] = useState({
         id: null,
         title: '',
@@ -76,7 +84,31 @@ export default function Todos() {
                 .order('due_date', { ascending: true })
 
             if (error) throw error
-            setTodos(data)
+            
+            // Auto-move Done tasks older than 1 day to Draft
+            const now = new Date()
+            const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+            const doneTasksToMove = data.filter(t => 
+                t.status === 'Done' && 
+                t.updated_at && 
+                new Date(t.updated_at) < oneDayAgo
+            )
+            
+            if (doneTasksToMove.length > 0) {
+                const idsToMove = doneTasksToMove.map(t => t.id)
+                await supabase
+                    .from('todos')
+                    .update({ status: 'Draft' })
+                    .in('id', idsToMove)
+                
+                // Update local state
+                const updatedData = data.map(t => 
+                    idsToMove.includes(t.id) ? { ...t, status: 'Draft' } : t
+                )
+                setTodos(updatedData)
+            } else {
+                setTodos(data)
+            }
         } catch (error) {
             console.error('Error fetching todos:', error.message)
         } finally {
@@ -221,16 +253,6 @@ export default function Todos() {
                 The Kanban layout has its own "Add" buttons usually, but we'll reuse the Modal.
             */}
 
-            <div style={{ padding: '0 2rem' }}>
-                <div className="page-header">
-                    <div></div>
-                    <button onClick={() => { resetForm(); setIsModalOpen(true) }} className="btn-primary">
-                        <Plus size={18} />
-                        <span>Yeni Görev</span>
-                    </button>
-                </div>
-            </div>
-
             <KanbanBoard
                 todos={todos}
                 onStatusChange={handleStatusChange}
@@ -239,6 +261,8 @@ export default function Todos() {
                 users={users}
                 activities={activities}
                 onOpenActivityModal={() => setIsActivityModalOpen(true)}
+                onCreate={() => { resetForm(); setIsModalOpen(true) }}
+                onOpenDraftsModal={() => setIsDraftsModalOpen(true)}
             />
 
             <ActivityLogModal
@@ -246,6 +270,154 @@ export default function Todos() {
                 onClose={() => setIsActivityModalOpen(false)}
                 activities={activities}
             />
+
+            {/* Drafts Modal */}
+            <Modal 
+                title="Taslaklar" 
+                isOpen={isDraftsModalOpen} 
+                onClose={() => setIsDraftsModalOpen(false)}
+            >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    {/* Filters */}
+                    <div style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: '2fr 1fr 1fr 1fr', 
+                        gap: '1rem',
+                        padding: '1rem',
+                        background: '#f8fafc',
+                        borderRadius: 'var(--radius-md)'
+                    }}>
+                        <input
+                            type="text"
+                            placeholder="Görev içeriğinde ara..."
+                            value={draftFilters.search}
+                            onChange={e => setDraftFilters({ ...draftFilters, search: e.target.value })}
+                            style={{
+                                padding: '0.6rem',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: 'var(--radius-sm)',
+                                fontSize: '14px'
+                            }}
+                        />
+                        <select
+                            value={draftFilters.createdBy}
+                            onChange={e => setDraftFilters({ ...draftFilters, createdBy: e.target.value })}
+                            style={{
+                                padding: '0.6rem',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: 'var(--radius-sm)',
+                                fontSize: '14px',
+                                background: 'white'
+                            }}
+                        >
+                            <option value="">Tüm Kullanıcılar</option>
+                            {Object.entries(users).map(([id, name]) => (
+                                <option key={id} value={id}>{name}</option>
+                            ))}
+                        </select>
+                        <input
+                            type="date"
+                            placeholder="Başlangıç"
+                            value={draftFilters.dateFrom}
+                            onChange={e => setDraftFilters({ ...draftFilters, dateFrom: e.target.value })}
+                            style={{
+                                padding: '0.6rem',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: 'var(--radius-sm)',
+                                fontSize: '14px'
+                            }}
+                        />
+                        <input
+                            type="date"
+                            placeholder="Bitiş"
+                            value={draftFilters.dateTo}
+                            onChange={e => setDraftFilters({ ...draftFilters, dateTo: e.target.value })}
+                            style={{
+                                padding: '0.6rem',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: 'var(--radius-sm)',
+                                fontSize: '14px'
+                            }}
+                        />
+                    </div>
+                    <select
+                        value={draftFilters.tag}
+                        onChange={e => setDraftFilters({ ...draftFilters, tag: e.target.value })}
+                        style={{
+                            padding: '0.6rem',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: 'var(--radius-sm)',
+                            fontSize: '14px',
+                            background: 'white'
+                        }}
+                    >
+                        <option value="">Tüm Etiketler</option>
+                        <option value="Genel">Genel</option>
+                        <option value="Tasarım">Tasarım</option>
+                        <option value="Yazılım">Yazılım</option>
+                        <option value="Pazarlama">Pazarlama</option>
+                    </select>
+
+                    {/* Drafts List */}
+                    <div style={{ 
+                        maxHeight: '400px', 
+                        overflowY: 'auto',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.75rem'
+                    }}>
+                        {todos
+                            .filter(t => t.status === 'Draft')
+                            .filter(t => {
+                                if (draftFilters.search && !t.title.toLowerCase().includes(draftFilters.search.toLowerCase())) return false
+                                if (draftFilters.createdBy && t.created_by !== draftFilters.createdBy) return false
+                                if (draftFilters.dateFrom && new Date(t.created_at) < new Date(draftFilters.dateFrom)) return false
+                                if (draftFilters.dateTo && new Date(t.created_at) > new Date(draftFilters.dateTo)) return false
+                                if (draftFilters.tag && (!t.tags || !t.tags.includes(draftFilters.tag))) return false
+                                return true
+                            })
+                            .map(draft => (
+                                <div 
+                                    key={draft.id}
+                                    onClick={() => { handleEdit(draft); setIsDraftsModalOpen(false) }}
+                                    style={{
+                                        padding: '1rem',
+                                        background: 'white',
+                                        border: '1px solid #e2e8f0',
+                                        borderRadius: 'var(--radius-md)',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onMouseEnter={e => e.target.style.borderColor = 'var(--color-primary)'}
+                                    onMouseLeave={e => e.target.style.borderColor = '#e2e8f0'}
+                                >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.5rem' }}>
+                                        <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '600' }}>{draft.title}</h3>
+                                        <span style={{
+                                            padding: '0.2rem 0.6rem',
+                                            background: '#f0fdf4',
+                                            color: '#166534',
+                                            borderRadius: '100px',
+                                            fontSize: '11px',
+                                            fontWeight: '600'
+                                        }}>
+                                            {draft.tags?.[0] || 'Genel'}
+                                        </span>
+                                    </div>
+                                    <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', gap: '1rem' }}>
+                                        <span>{users[draft.created_by] || 'Bilinmeyen'}</span>
+                                        <span>{new Date(draft.created_at).toLocaleDateString('tr-TR')}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        {todos.filter(t => t.status === 'Draft').length === 0 && (
+                            <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+                                Henüz taslak görev yok.
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </Modal>
 
             <Modal title={formData.id ? "Görevi Düzenle" : "Yeni Görev Ekle"} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { MoreHorizontal, Flag, Edit, Trash2, Plus } from 'lucide-react'
 import '../styles/Kanban.css'
 
-export default function KanbanBoard({ todos, onStatusChange, onEdit, onDelete, users, activities, onOpenActivityModal, onCreate }) {
+export default function KanbanBoard({ todos, onStatusChange, onEdit, onDelete, users, activities, onOpenActivityModal, onCreate, onOpenDraftsModal }) {
     // Columns definition
     const columns = [
         { id: 'Todo', title: 'Yapılacaklar', tagClass: 'tag-1' },
@@ -59,9 +59,19 @@ export default function KanbanBoard({ todos, onStatusChange, onEdit, onDelete, u
                         >
                             <div className="project-column-heading">
                                 <h2 className="project-column-heading__title">{col.title}</h2>
-                                <button className="project-column-heading__options">
-                                    <MoreHorizontal size={20} />
-                                </button>
+                                {col.id === 'Done' ? (
+                                    <button 
+                                        className="project-column-heading__options"
+                                        onClick={() => onOpenDraftsModal && onOpenDraftsModal()}
+                                        title="Taslakları Göster"
+                                    >
+                                        <MoreHorizontal size={20} />
+                                    </button>
+                                ) : (
+                                    <button className="project-column-heading__options">
+                                        <MoreHorizontal size={20} />
+                                    </button>
+                                )}
                             </div>
 
                             <div className="project-column-body">
