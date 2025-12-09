@@ -192,21 +192,21 @@ drop policy if exists "Team members can insert marketing creatives." on marketin
 drop policy if exists "Team members can update marketing creatives." on marketing_creatives;
 drop policy if exists "Team members can delete marketing creatives." on marketing_creatives;
 
-create policy "auth users view creatives"
+create policy "open view creatives"
   on marketing_creatives for select
-  using ( auth.uid() is not null );
+  using ( true );
 
-create policy "auth users insert creatives"
+create policy "open insert creatives"
   on marketing_creatives for insert
-  with check ( auth.uid() is not null );
+  with check ( true );
 
-create policy "auth users update creatives"
+create policy "open update creatives"
   on marketing_creatives for update
-  using ( auth.uid() is not null );
+  using ( true );
 
-create policy "auth users delete creatives"
+create policy "open delete creatives"
   on marketing_creatives for delete
-  using ( auth.uid() is not null );
+  using ( true );
 
 -- Trigger: auto-update updated_at
 create or replace function public.marketing_creatives_set_updated_at()
@@ -234,18 +234,18 @@ create table if not exists public.ai_tokens (
 
 alter table public.ai_tokens enable row level security;
 
-create policy "auth users can view their ai tokens"
+create policy "open view ai tokens"
   on ai_tokens for select
-  using ( auth.uid() = user_id );
+  using ( true );
 
-create policy "auth users can insert ai tokens"
+create policy "open insert ai tokens"
   on ai_tokens for insert
-  with check ( auth.uid() = user_id );
+  with check ( true );
 
-create policy "auth users can update their ai tokens"
+create policy "open update ai tokens"
   on ai_tokens for update
-  using ( auth.uid() = user_id );
+  using ( true );
 
-create policy "auth users can delete their ai tokens"
+create policy "open delete ai tokens"
   on ai_tokens for delete
-  using ( auth.uid() = user_id );
+  using ( true );
