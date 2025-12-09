@@ -11,6 +11,7 @@ export default function AnalyticsHub({ creatives = [], compareSelection = [], on
   const [error, setError] = useState('')
   const [history, setHistory] = useState([])
   const originalRef = useRef(null)
+  const [saveNotice, setSaveNotice] = useState('')
 
   const left = useMemo(() => creatives.find((c) => c.id === leftId), [creatives, leftId])
   const right = useMemo(() => creatives.find((c) => c.id === rightId), [creatives, rightId])
@@ -46,6 +47,7 @@ export default function AnalyticsHub({ creatives = [], compareSelection = [], on
     if (!detail) return
     setSaving(true)
     setError('')
+    setSaveNotice('')
     try {
       const { id, status, notes, metrics } = detail
       const { error: err } = await supabase
@@ -64,11 +66,13 @@ export default function AnalyticsHub({ creatives = [], compareSelection = [], on
         if (m[k] !== om[k]) changes.push(`${k}: ${om[k] ?? 0} → ${m[k] ?? 0}`)
       })
       setHistory((prev) => [
-        { id, at: new Date().toISOString(), changes: changes.length ? changes : ['Kaydedildi'] },
+        { id, at: new Date().toISOString(), changes: changes.length ? changes : ['Kaydedildi'], kind: detectKind(changes) },
         ...prev
       ])
-      // no refetch here; optimistic update handled by parent data reload externally
-      setDetail(null)
+      // Keep modal open and update baseline for next edits
+      originalRef.current = { status, notes, metrics: { ...metrics } }
+      setDetail((prev) => ({ ...prev, status, notes, metrics }))
+      setSaveNotice('Kaydedildi')
     } catch (e) {
       setError(e.message || 'Kaydedilemedi')
     } finally {
@@ -119,6 +123,7 @@ export default function AnalyticsHub({ creatives = [], compareSelection = [], on
         saving={saving}
         error={error}
         history={history.filter((h) => h.id === detail?.id)}
+        saveNotice={saveNotice}
       />
 
       <style>{`
@@ -175,11 +180,41 @@ export default function AnalyticsHub({ creatives = [], compareSelection = [], on
   )
 }
 
-function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, saving, error, history }) {
+function detectKind(changes = []) {
+  const text = changes.join(' ').toLowerCase()
+  if (text.includes('durum')) return 'status'
+  if (text.includes('not')) return 'notes'
+  if (text.includes('roas')) return 'roas'
+  if (text.includes('harcama') || text.includes('spend')) return 'spend'
+  if (text.includes('tıklama')) return 'clicks'
+  if (text.includes('ctr')) return 'ctr'
+  if (text.includes('conversion')) return 'conversion_rate'
+  return 'other'
+}
+
+function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, saving, error, history, saveNotice }) {
   const noteRef = useRef(null)
   const [filterText, setFilterText] = useState('')
   const [filterStart, setFilterStart] = useState('')
   const [filterEnd, setFilterEnd] = useState('')
+  const [filterKinds, setFilterKinds] = useState({
+    status: true,
+    notes: true,
+    spend: true,
+    roas: true,
+    clicks: true,
+    ctr: true,
+    conversion_rate: true
+  })
+
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [open])
 
   useEffect(() => {
     if (noteRef.current) {
@@ -200,6 +235,9 @@ function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, 
       end.setHours(23, 59, 59, 999)
       if (t > end) return false
     }
+    const activeKinds = Object.entries(filterKinds).filter(([, v]) => v).map(([k]) => k)
+    const kindMatch = activeKinds.length === 0 || (h.kind && activeKinds.includes(h.kind))
+    if (!kindMatch) return false
     if (filterText) {
       const text = filterText.toLowerCase()
       const matchChanges = h.changes?.some((c) => c.toLowerCase().includes(text))
@@ -282,6 +320,29 @@ function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, 
               <div className="filter-item">
                 <label>Bitiş</label>
                 <input type="date" value={filterEnd} onChange={(e) => setFilterEnd(e.target.value)} />
+              </div>
+              <div className="filter-item checkbox-group">
+                <label>Alanlar</label>
+                <div className="checkboxes">
+                  {[
+                    ['status', 'Durum'],
+                    ['notes', 'Notlar'],
+                    ['spend', 'Harcama'],
+                    ['roas', 'ROAS'],
+                    ['clicks', 'Tıklama'],
+                    ['ctr', 'CTR'],
+                    ['conversion_rate', 'CR']
+                  ].map(([k, label]) => (
+                    <label key={k} className="chk">
+                      <input
+                        type="checkbox"
+                        checked={filterKinds[k]}
+                        onChange={(e) => setFilterKinds((prev) => ({ ...prev, [k]: e.target.checked }))}
+                      />
+                      <span>{label}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
             </div>
             {history && history.length ? (
@@ -435,8 +496,8 @@ function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, 
           .history-item ul { margin: 0; padding-left: 1.1rem; color: var(--color-text-main); }
           .history-filters {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 0.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 0.75rem;
             margin-bottom: 0.5rem;
           }
           .filter-item label {
@@ -448,6 +509,19 @@ function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, 
           }
           .filter-item input {
             margin-top: 0.25rem;
+          }
+          .checkbox-group .checkboxes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 0.25rem 0.5rem;
+            margin-top: 0.35rem;
+          }
+          .chk {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-weight: 500;
+            color: var(--color-text-main);
           }
         `}</style>
       </div>
