@@ -253,3 +253,24 @@ create policy "open update ai tokens"
 create policy "open delete ai tokens"
   on ai_tokens for delete
   using ( true );
+
+-- Creative history (kalıcı log)
+create table if not exists public.creative_history (
+  id uuid default uuid_generate_v4() primary key,
+  creative_id uuid not null,
+  changes text[],
+  created_at timestamptz default timezone('utc'::text, now())
+);
+
+alter table public.creative_history enable row level security;
+
+drop policy if exists "open view creative_history" on creative_history;
+drop policy if exists "open insert creative_history" on creative_history;
+
+create policy "open view creative_history"
+  on creative_history for select
+  using ( true );
+
+create policy "open insert creative_history"
+  on creative_history for insert
+  with check ( true );

@@ -4,7 +4,7 @@ import CreativeCard from './CreativeCard'
 import CompareModal from './CompareModal'
 import { supabase } from '../../lib/supabaseClient'
 
-export default function AnalyticsHub({ creatives = [], compareSelection = [], onToggleCompare, onCloseCompare }) {
+export default function AnalyticsHub({ creatives = [], compareSelection = [], onToggleCompare, onCloseCompare, onUpdateCreative }) {
   const [leftId, rightId] = compareSelection
   const [detail, setDetail] = useState(null)
   const [saving, setSaving] = useState(false)
@@ -12,9 +12,20 @@ export default function AnalyticsHub({ creatives = [], compareSelection = [], on
   const [history, setHistory] = useState([])
   const originalRef = useRef(null)
   const [saveNotice, setSaveNotice] = useState('')
+  const [historyModal, setHistoryModal] = useState(false)
 
   const left = useMemo(() => creatives.find((c) => c.id === leftId), [creatives, leftId])
   const right = useMemo(() => creatives.find((c) => c.id === rightId), [creatives, rightId])
+
+  const loadHistory = async (creativeId) => {
+    const { data, error } = await supabase
+      .from('creative_history')
+      .select('*')
+      .eq('creative_id', creativeId)
+      .order('created_at', { ascending: false })
+      .limit(200)
+    if (!error) setHistory(data || [])
+  }
 
   const openDetail = (creative) => {
     setDetail({
@@ -33,6 +44,7 @@ export default function AnalyticsHub({ creatives = [], compareSelection = [], on
       metrics: { ...(creative.metrics || {}) }
     }
     setError('')
+    loadHistory(creative.id)
   }
 
   const handleDetailChange = (key, value) => {
@@ -65,10 +77,13 @@ export default function AnalyticsHub({ creatives = [], compareSelection = [], on
       metricKeys.forEach((k) => {
         if (m[k] !== om[k]) changes.push(`${k}: ${om[k] ?? 0} → ${m[k] ?? 0}`)
       })
+      const historyRow = { creative_id: id, changes: changes.length ? changes : ['Kaydedildi'] }
+      await supabase.from('creative_history').insert(historyRow)
       setHistory((prev) => [
-        { id, at: new Date().toISOString(), changes: changes.length ? changes : ['Kaydedildi'], kind: detectKind(changes) },
+        { ...historyRow, at: new Date().toISOString(), kind: detectKind(changes) },
         ...prev
       ])
+      onUpdateCreative?.(id, { status, notes, metrics })
       // Keep modal open and update baseline for next edits
       originalRef.current = { status, notes, metrics: { ...metrics } }
       setDetail((prev) => ({ ...prev, status, notes, metrics }))
@@ -122,8 +137,14 @@ export default function AnalyticsHub({ creatives = [], compareSelection = [], on
         onSave={saveDetail}
         saving={saving}
         error={error}
-        history={history.filter((h) => h.id === detail?.id)}
+        history={history.filter((h) => h.creative_id === detail?.id)}
         saveNotice={saveNotice}
+        onOpenFullHistory={() => setHistoryModal(true)}
+      />
+      <HistoryModal
+        open={historyModal}
+        onClose={() => setHistoryModal(false)}
+        history={history.filter((h) => h.creative_id === detail?.id)}
       />
 
       <style>{`
@@ -192,7 +213,110 @@ function detectKind(changes = []) {
   return 'other'
 }
 
-function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, saving, error, history, saveNotice }) {
+function HistoryModal({ open, onClose, history }) {
+  const [filterText, setFilterText] = useState('')
+  const [filterStart, setFilterStart] = useState('')
+  const [filterEnd, setFilterEnd] = useState('')
+
+  useEffect(() => {
+    if (open) document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [open])
+
+  if (!open) return null
+
+  const filtered = (history || []).filter((h) => {
+    const t = new Date(h.at || h.created_at)
+    if (filterStart && t < new Date(filterStart)) return false
+    if (filterEnd) {
+      const end = new Date(filterEnd); end.setHours(23,59,59,999)
+      if (t > end) return false
+    }
+    if (filterText) {
+      const text = filterText.toLowerCase()
+      const matchChanges = h.changes?.some((c) => c.toLowerCase().includes(text))
+      const matchTime = t.toLocaleString('tr-TR').toLowerCase().includes(text)
+      return matchChanges || matchTime
+    }
+    return true
+  })
+
+  return (
+    <div className="modal-backdrop-full">
+      <div className="modal-card-full glass-panel">
+        <header className="modal-header">
+          <div>
+            <p className="eyebrow">Tüm Geçmiş</p>
+            <h3>Değişiklik Kayıtları</h3>
+          </div>
+          <button className="close-btn" onClick={onClose}><X size={16} /></button>
+        </header>
+
+        <div className="history-filters full">
+          <div className="filter-item">
+            <label><Filter size={14} /> Metin</label>
+            <input value={filterText} onChange={(e) => setFilterText(e.target.value)} placeholder="Metin veya tarih ara" />
+          </div>
+          <div className="filter-item">
+            <label>Başlangıç</label>
+            <input type="date" value={filterStart} onChange={(e) => setFilterStart(e.target.value)} />
+          </div>
+          <div className="filter-item">
+            <label>Bitiş</label>
+            <input type="date" value={filterEnd} onChange={(e) => setFilterEnd(e.target.value)} />
+          </div>
+        </div>
+
+        <div className="history-list full">
+          {filtered.map((h) => (
+            <div key={(h.at || h.created_at)} className="history-item">
+              <p className="history-time">{new Date(h.at || h.created_at).toLocaleString('tr-TR')}</p>
+              <ul>
+                {h.changes?.map((c, idx) => <li key={idx}>{c}</li>)}
+              </ul>
+            </div>
+          ))}
+          {filtered.length === 0 && <p className="muted">Kayıt yok.</p>}
+        </div>
+      </div>
+
+      <style>{`
+        .modal-backdrop-full {
+          position: fixed;
+          inset: 0;
+          background: rgba(0,0,0,0.35);
+          display: grid;
+          place-items: center;
+          z-index: 210;
+          padding: 1rem;
+        }
+        .modal-card-full {
+          max-width: 900px;
+          width: 100%;
+          max-height: 80vh;
+          overflow: hidden;
+          background: linear-gradient(145deg, rgba(255,255,255,0.98), rgba(248,250,252,0.96));
+          border-radius: 16px;
+          border: 1px solid var(--color-border);
+          padding: 1.1rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+          box-shadow: var(--shadow-lg);
+        }
+        .history-list.full {
+          max-height: 60vh;
+          overflow: auto;
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+          padding-right: 0.35rem;
+        }
+      `}</style>
+    </div>
+  )
+}
+function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, saving, error, history, saveNotice, onOpenFullHistory }) {
   const noteRef = useRef(null)
   const [filterText, setFilterText] = useState('')
   const [filterStart, setFilterStart] = useState('')
@@ -360,6 +484,10 @@ function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, 
             ) : (
               <p className="muted">Henüz değişiklik yok.</p>
             )}
+            <div className="history-footer">
+              <button className="ghost-btn" onClick={onOpenFullHistory}>Tüm Geçmişi Gör</button>
+              {saveNotice && <span className="save-notice">{saveNotice}</span>}
+            </div>
           </div>
         </div>
 

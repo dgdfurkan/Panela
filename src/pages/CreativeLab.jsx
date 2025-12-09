@@ -132,6 +132,9 @@ export default function CreativeLab() {
               compareSelection={compareSelection}
               onToggleCompare={handleToggleCompare}
               onCloseCompare={handleCloseCompare}
+              onUpdateCreative={(id, updates) => {
+                setCreatives((prev) => prev.map((c) => c.id === id ? { ...c, ...updates } : c))
+              }}
             />
           )}
         </>
