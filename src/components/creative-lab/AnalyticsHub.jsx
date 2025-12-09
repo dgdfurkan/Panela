@@ -1,8 +1,9 @@
 import { useMemo, useState, useRef, useEffect } from 'react'
-import { LineChart, ShieldCheck, Save, X, Clock4, Filter } from 'lucide-react'
+import { LineChart, ShieldCheck, Save, X, Clock4, Filter, Layers } from 'lucide-react'
 import CreativeCard from './CreativeCard'
 import CompareModal from './CompareModal'
 import { supabase } from '../../lib/supabaseClient'
+import Modal from '../ui/Modal'
 
 export default function AnalyticsHub({ creatives = [], compareSelection = [], onToggleCompare, onCloseCompare, onUpdateCreative }) {
   const [leftId, rightId] = compareSelection
@@ -217,6 +218,16 @@ function HistoryModal({ open, onClose, history }) {
   const [filterText, setFilterText] = useState('')
   const [filterStart, setFilterStart] = useState('')
   const [filterEnd, setFilterEnd] = useState('')
+  const [filterKinds, setFilterKinds] = useState({
+    status: true,
+    notes: true,
+    spend: true,
+    roas: true,
+    clicks: true,
+    ctr: true,
+    conversion_rate: true,
+    other: true
+  })
 
   useEffect(() => {
     if (open) document.body.style.overflow = 'hidden'
@@ -232,6 +243,8 @@ function HistoryModal({ open, onClose, history }) {
       const end = new Date(filterEnd); end.setHours(23,59,59,999)
       if (t > end) return false
     }
+    const activeKinds = Object.entries(filterKinds).filter(([, v]) => v).map(([k]) => k)
+    if (activeKinds.length && h.kind && !activeKinds.includes(h.kind)) return false
     if (filterText) {
       const text = filterText.toLowerCase()
       const matchChanges = h.changes?.some((c) => c.toLowerCase().includes(text))
@@ -264,6 +277,30 @@ function HistoryModal({ open, onClose, history }) {
           <div className="filter-item">
             <label>Bitiş</label>
             <input type="date" value={filterEnd} onChange={(e) => setFilterEnd(e.target.value)} />
+          </div>
+          <div className="filter-item checkbox-group">
+            <label>Alanlar</label>
+            <div className="checkboxes">
+              {[
+                ['status', 'Durum'],
+                ['notes', 'Notlar'],
+                ['spend', 'Harcama'],
+                ['roas', 'ROAS'],
+                ['clicks', 'Tıklama'],
+                ['ctr', 'CTR'],
+                ['conversion_rate', 'CR'],
+                ['other', 'Diğer']
+              ].map(([k, label]) => (
+                <label key={k} className="chk">
+                  <input
+                    type="checkbox"
+                    checked={filterKinds[k]}
+                    onChange={(e) => setFilterKinds((prev) => ({ ...prev, [k]: e.target.checked }))}
+                  />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -372,15 +409,15 @@ function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, 
   })
 
   return (
-    <div className="modal-backdrop">
-      <div className="modal-card glass-panel">
-        <header className="modal-header">
+    <Modal title="Reklam Detayı" isOpen={open} onClose={onClose}>
+      <div className="modal-card-body">
+        <div className="modal-head-inline">
           <div>
             <p className="eyebrow">Reklam Detayı</p>
             <h3>{detail.ad_headline || 'Başlık yok'}</h3>
           </div>
-          <button className="close-btn" onClick={onClose}><X size={16} /></button>
-        </header>
+          {saveNotice && <span className="save-notice chip">{saveNotice}</span>}
+        </div>
 
         <div className="modal-body">
           <div className="grid">
@@ -499,44 +536,29 @@ function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, 
         </footer>
 
         <style>{`
-          .modal-backdrop {
-            position: fixed;
-            inset: 0;
-            background: transparent;
-            display: grid;
-            place-items: center;
-            z-index: 200;
-            padding: 1rem;
-          }
-          .modal-card {
-            max-width: 780px;
-            width: 100%;
-            background: linear-gradient(145deg, rgba(255,255,255,0.98), rgba(248,250,252,0.96));
-            border-radius: 16px;
-            border: 1px solid var(--color-border);
-            padding: 1.25rem;
+          .modal-card-body {
             display: flex;
             flex-direction: column;
             gap: 1rem;
-            box-shadow: var(--shadow-lg);
+            max-height: 75vh;
           }
-          .modal-header {
+          .modal-head-inline {
             display: flex;
             justify-content: space-between;
             align-items: center;
           }
-          .close-btn {
-            border: 1px solid var(--color-border);
-            padding: 0.35rem;
+          .chip {
+            padding: 0.35rem 0.6rem;
             border-radius: 10px;
-            background: white;
-            cursor: pointer;
+            background: rgba(16,185,129,0.12);
+            color: var(--color-text-main);
+            border: 1px solid rgba(16,185,129,0.25);
+            font-weight: 600;
           }
           .modal-body {
             display: flex;
             flex-direction: column;
             gap: 0.9rem;
-            max-height: 65vh;
             overflow: auto;
             padding-right: 0.35rem;
           }
