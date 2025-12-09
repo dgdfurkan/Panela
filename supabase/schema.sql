@@ -89,6 +89,7 @@ create table public.todos (
   priority text default 'Medium',
   due_date date,
   tags text[], -- Array of strings
+  completed_at timestamptz, -- When status changed to 'Done'
   created_at timestamp with time zone default timezone('utc'::text, now())
 );
 

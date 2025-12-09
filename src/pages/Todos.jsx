@@ -91,8 +91,8 @@ export default function Todos() {
             const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
             const doneTasksToMove = data.filter(t => 
                 t.status === 'Done' && 
-                t.updated_at && 
-                new Date(t.updated_at) < oneDayAgo
+                t.completed_at && 
+                new Date(t.completed_at) < oneDayAgo
             )
             
             if (doneTasksToMove.length > 0) {
@@ -248,9 +248,17 @@ export default function Todos() {
         // Optimistic update
         setTodos(todos.map(t => t.id === id ? { ...t, status: newStatus } : t))
 
+        // Set completed_at when status changes to 'Done', clear it otherwise
+        const updateData = { status: newStatus }
+        if (newStatus === 'Done') {
+            updateData.completed_at = new Date().toISOString()
+        } else {
+            updateData.completed_at = null
+        }
+
         const { error } = await supabase
             .from('todos')
-            .update({ status: newStatus })
+            .update(updateData)
             .eq('id', id)
 
         if (error) {
