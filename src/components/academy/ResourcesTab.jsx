@@ -41,6 +41,28 @@ export default function ResourcesTab({ weekId }) {
         return match && match[2].length === 11 ? match[2] : null
     }
 
+    const getYouTubeThumbnail = (url) => {
+        const videoId = extractYouTubeId(url)
+        if (videoId) {
+            return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
+        }
+        return null
+    }
+
+    const getInstagramUsername = (url) => {
+        const match = url.match(/instagram\.com\/([^\/\?]+)/)
+        return match ? match[1] : null
+    }
+
+    const getWebsiteDomain = (url) => {
+        try {
+            const urlObj = new URL(url)
+            return urlObj.hostname.replace('www.', '')
+        } catch {
+            return url
+        }
+    }
+
     const handleAddResource = async () => {
         if (!newUrl.trim()) return
 
@@ -241,66 +263,73 @@ export default function ResourcesTab({ weekId }) {
                             <div style={{ padding: '1.5rem' }}>
                                 {resource.resource_type === 'instagram' && (
                                     <div>
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                <Instagram size={20} color="#E4405F" />
-                                                <span style={{ fontWeight: '600', fontSize: '14px' }}>Instagram</span>
-                                            </div>
-                                            <a
-                                                href={resource.url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                style={{
-                                                    fontSize: '12px',
-                                                    color: 'var(--color-primary)',
-                                                    textDecoration: 'none',
-                                                    fontWeight: '500'
-                                                }}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                                            <Instagram size={20} color="#E4405F" />
+                                            <span style={{ fontWeight: '600', fontSize: '14px' }}>Instagram</span>
+                                        </div>
+                                        <a
+                                            href={resource.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            style={{
+                                                display: 'block',
+                                                textDecoration: 'none',
+                                                color: 'inherit'
+                                            }}
+                                        >
+                                            <div style={{
+                                                border: '1px solid #e2e8f0',
+                                                borderRadius: 'var(--radius-md)',
+                                                overflow: 'hidden',
+                                                background: 'white',
+                                                transition: 'all 0.2s',
+                                                cursor: 'pointer'
+                                            }}
+                                            onMouseEnter={e => {
+                                                e.currentTarget.style.borderColor = 'var(--color-primary)'
+                                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+                                            }}
+                                            onMouseLeave={e => {
+                                                e.currentTarget.style.borderColor = '#e2e8f0'
+                                                e.currentTarget.style.boxShadow = 'none'
+                                            }}
                                             >
-                                                Yeni Sekmede Aç →
-                                            </a>
-                                        </div>
-                                        <div style={{
-                                            border: '1px solid #e2e8f0',
-                                            borderRadius: 'var(--radius-md)',
-                                            overflow: 'hidden',
-                                            height: '600px',
-                                            background: '#f8fafc'
-                                        }}>
-                                            <iframe
-                                                src={resource.url}
-                                                width="100%"
-                                                height="100%"
-                                                frameBorder="0"
-                                                style={{ border: 'none' }}
-                                                loading="lazy"
-                                                sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-                                                title={`Instagram: ${resource.title || resource.url}`}
-                                            />
-                                        </div>
+                                                <div style={{
+                                                    background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+                                                    padding: '2rem',
+                                                    textAlign: 'center',
+                                                    color: 'white'
+                                                }}>
+                                                    <Instagram size={48} style={{ marginBottom: '0.5rem' }} />
+                                                    <div style={{ fontSize: '18px', fontWeight: '700', marginBottom: '0.25rem' }}>
+                                                        @{getInstagramUsername(resource.url) || 'Instagram'}
+                                                    </div>
+                                                    <div style={{ fontSize: '13px', opacity: 0.9 }}>
+                                                        Instagram profil sayfasını görüntüle
+                                                    </div>
+                                                </div>
+                                                {resource.title && (
+                                                    <div style={{ padding: '1rem', borderTop: '1px solid #e2e8f0' }}>
+                                                        <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', marginBottom: '0.25rem' }}>
+                                                            {resource.title}
+                                                        </div>
+                                                        {resource.description && (
+                                                            <div style={{ fontSize: '13px', color: '#64748b' }}>
+                                                                {resource.description}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </a>
                                     </div>
                                 )}
 
                                 {resource.resource_type === 'youtube' && (
                                     <div>
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                <Youtube size={20} color="#FF0000" />
-                                                <span style={{ fontWeight: '600', fontSize: '14px' }}>YouTube</span>
-                                            </div>
-                                            <a
-                                                href={resource.url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                style={{
-                                                    fontSize: '12px',
-                                                    color: 'var(--color-primary)',
-                                                    textDecoration: 'none',
-                                                    fontWeight: '500'
-                                                }}
-                                            >
-                                                Yeni Sekmede Aç →
-                                            </a>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                                            <Youtube size={20} color="#FF0000" />
+                                            <span style={{ fontWeight: '600', fontSize: '14px' }}>YouTube</span>
                                         </div>
                                         {resource.embed_data?.embedUrl ? (
                                             <div style={{
@@ -328,67 +357,165 @@ export default function ResourcesTab({ weekId }) {
                                                 />
                                             </div>
                                         ) : (
-                                            <div style={{
-                                                border: '1px solid #e2e8f0',
-                                                borderRadius: 'var(--radius-md)',
-                                                overflow: 'hidden',
-                                                height: '600px',
-                                                background: '#f8fafc'
-                                            }}>
-                                                <iframe
-                                                    src={resource.url}
-                                                    width="100%"
-                                                    height="100%"
-                                                    frameBorder="0"
-                                                    style={{ border: 'none' }}
-                                                    loading="lazy"
-                                                    sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-                                                    title={`YouTube: ${resource.title || resource.url}`}
-                                                />
-                                            </div>
+                                            <a
+                                                href={resource.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                style={{
+                                                    display: 'block',
+                                                    textDecoration: 'none',
+                                                    color: 'inherit'
+                                                }}
+                                            >
+                                                <div style={{
+                                                    border: '1px solid #e2e8f0',
+                                                    borderRadius: 'var(--radius-md)',
+                                                    overflow: 'hidden',
+                                                    background: 'white',
+                                                    transition: 'all 0.2s',
+                                                    cursor: 'pointer'
+                                                }}
+                                                onMouseEnter={e => {
+                                                    e.currentTarget.style.borderColor = '#FF0000'
+                                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(255,0,0,0.1)'
+                                                }}
+                                                onMouseLeave={e => {
+                                                    e.currentTarget.style.borderColor = '#e2e8f0'
+                                                    e.currentTarget.style.boxShadow = 'none'
+                                                }}
+                                                >
+                                                    {getYouTubeThumbnail(resource.url) ? (
+                                                        <div style={{
+                                                            position: 'relative',
+                                                            paddingBottom: '56.25%',
+                                                            height: 0,
+                                                            overflow: 'hidden',
+                                                            background: '#000'
+                                                        }}>
+                                                            <img
+                                                                src={getYouTubeThumbnail(resource.url)}
+                                                                alt={resource.title || 'YouTube'}
+                                                                style={{
+                                                                    position: 'absolute',
+                                                                    top: 0,
+                                                                    left: 0,
+                                                                    width: '100%',
+                                                                    height: '100%',
+                                                                    objectFit: 'cover'
+                                                                }}
+                                                            />
+                                                            <div style={{
+                                                                position: 'absolute',
+                                                                top: '50%',
+                                                                left: '50%',
+                                                                transform: 'translate(-50%, -50%)',
+                                                                background: 'rgba(0,0,0,0.8)',
+                                                                borderRadius: '50%',
+                                                                width: '64px',
+                                                                height: '64px',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center'
+                                                            }}>
+                                                                <Youtube size={32} color="#FF0000" fill="#FF0000" />
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div style={{
+                                                            background: '#FF0000',
+                                                            padding: '2rem',
+                                                            textAlign: 'center',
+                                                            color: 'white'
+                                                        }}>
+                                                            <Youtube size={48} style={{ marginBottom: '0.5rem' }} />
+                                                            <div style={{ fontSize: '16px', fontWeight: '600' }}>
+                                                                YouTube Kanalı
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {(resource.title || resource.description) && (
+                                                        <div style={{ padding: '1rem', borderTop: '1px solid #e2e8f0' }}>
+                                                            {resource.title && (
+                                                                <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', marginBottom: '0.25rem' }}>
+                                                                    {resource.title}
+                                                                </div>
+                                                            )}
+                                                            {resource.description && (
+                                                                <div style={{ fontSize: '13px', color: '#64748b' }}>
+                                                                    {resource.description}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </a>
                                         )}
                                     </div>
                                 )}
 
                                 {resource.resource_type === 'website' && (
                                     <div>
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                <Globe size={20} color="var(--color-primary)" />
-                                                <span style={{ fontWeight: '600', fontSize: '14px' }}>Website</span>
-                                            </div>
-                                            <a
-                                                href={resource.url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                style={{
-                                                    fontSize: '12px',
-                                                    color: 'var(--color-primary)',
-                                                    textDecoration: 'none',
-                                                    fontWeight: '500'
-                                                }}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                                            <Globe size={20} color="var(--color-primary)" />
+                                            <span style={{ fontWeight: '600', fontSize: '14px' }}>Website</span>
+                                        </div>
+                                        <a
+                                            href={resource.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            style={{
+                                                display: 'block',
+                                                textDecoration: 'none',
+                                                color: 'inherit'
+                                            }}
+                                        >
+                                            <div style={{
+                                                border: '1px solid #e2e8f0',
+                                                borderRadius: 'var(--radius-md)',
+                                                overflow: 'hidden',
+                                                background: 'white',
+                                                transition: 'all 0.2s',
+                                                cursor: 'pointer'
+                                            }}
+                                            onMouseEnter={e => {
+                                                e.currentTarget.style.borderColor = 'var(--color-primary)'
+                                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+                                            }}
+                                            onMouseLeave={e => {
+                                                e.currentTarget.style.borderColor = '#e2e8f0'
+                                                e.currentTarget.style.boxShadow = 'none'
+                                            }}
                                             >
-                                                Yeni Sekmede Aç →
-                                            </a>
-                                        </div>
-                                        <div style={{
-                                            border: '1px solid #e2e8f0',
-                                            borderRadius: 'var(--radius-md)',
-                                            overflow: 'hidden',
-                                            height: '600px',
-                                            background: '#f8fafc'
-                                        }}>
-                                            <iframe
-                                                src={resource.url}
-                                                width="100%"
-                                                height="100%"
-                                                frameBorder="0"
-                                                style={{ border: 'none' }}
-                                                loading="lazy"
-                                                sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-                                                title={`Website: ${resource.title || resource.url}`}
-                                            />
-                                        </div>
+                                                <div style={{
+                                                    background: 'linear-gradient(135deg, var(--color-primary) 0%, #8b5cf6 100%)',
+                                                    padding: '2rem',
+                                                    textAlign: 'center',
+                                                    color: 'white'
+                                                }}>
+                                                    <Globe size={48} style={{ marginBottom: '0.5rem' }} />
+                                                    <div style={{ fontSize: '18px', fontWeight: '700', marginBottom: '0.25rem' }}>
+                                                        {getWebsiteDomain(resource.url)}
+                                                    </div>
+                                                    <div style={{ fontSize: '13px', opacity: 0.9 }}>
+                                                        Web sitesini görüntüle
+                                                    </div>
+                                                </div>
+                                                {(resource.title || resource.description) && (
+                                                    <div style={{ padding: '1rem', borderTop: '1px solid #e2e8f0' }}>
+                                                        {resource.title && (
+                                                            <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', marginBottom: '0.25rem' }}>
+                                                                {resource.title}
+                                                            </div>
+                                                        )}
+                                                        {resource.description && (
+                                                            <div style={{ fontSize: '13px', color: '#64748b' }}>
+                                                                {resource.description}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </a>
                                     </div>
                                 )}
 
