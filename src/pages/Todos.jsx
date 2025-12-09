@@ -99,12 +99,12 @@ export default function Todos() {
                 const idsToMove = doneTasksToMove.map(t => t.id)
                 await supabase
                     .from('todos')
-                    .update({ status: 'Draft' })
+                    .update({ status: 'Draft', completed_at: null })
                     .in('id', idsToMove)
                 
-                // Update local state
+                // Update local state - remove from main view (Draft tasks don't appear in columns)
                 const updatedData = data.map(t => 
-                    idsToMove.includes(t.id) ? { ...t, status: 'Draft' } : t
+                    idsToMove.includes(t.id) ? { ...t, status: 'Draft', completed_at: null } : t
                 )
                 setTodos(updatedData)
             } else {

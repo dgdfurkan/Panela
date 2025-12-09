@@ -35,8 +35,8 @@ export default function KanbanBoard({ todos, onStatusChange, onEdit, onDelete, u
     }
 
     const getColumnTodos = (status) => {
-        // Map any unknown status to 'Todo' or handle strictly
-        return todos.filter(t => t.status === status || (status === 'Todo' && !['In Progress', 'Review', 'Done'].includes(t.status)))
+        // Exclude Draft tasks from main columns - they only appear in Drafts modal
+        return todos.filter(t => t.status === status && t.status !== 'Draft')
     }
 
     return (
