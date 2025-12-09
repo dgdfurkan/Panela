@@ -274,3 +274,36 @@ create policy "open view creative_history"
 create policy "open insert creative_history"
   on creative_history for insert
   with check ( true );
+
+-- Todo Activities (activity log)
+create table if not exists public.todo_activities (
+  id uuid default uuid_generate_v4() primary key,
+  todo_id uuid,
+  user_id uuid,
+  action_type text not null,
+  details text,
+  created_at timestamptz default timezone('utc'::text, now())
+);
+
+alter table public.todo_activities enable row level security;
+
+drop policy if exists "open view todo_activities" on todo_activities;
+drop policy if exists "open insert todo_activities" on todo_activities;
+drop policy if exists "open update todo_activities" on todo_activities;
+drop policy if exists "open delete todo_activities" on todo_activities;
+
+create policy "open view todo_activities"
+  on todo_activities for select
+  using ( true );
+
+create policy "open insert todo_activities"
+  on todo_activities for insert
+  with check ( true );
+
+create policy "open update todo_activities"
+  on todo_activities for update
+  using ( true );
+
+create policy "open delete todo_activities"
+  on todo_activities for delete
+  using ( true );
