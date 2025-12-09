@@ -446,6 +446,186 @@ export default function Todos() {
                 </div>
             </Modal>
 
+            {/* Draft Preview Modal (Read-only) */}
+            <Modal 
+                title="Görev Önizleme" 
+                isOpen={selectedDraft !== null} 
+                onClose={() => setSelectedDraft(null)}
+            >
+                {selectedDraft && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        <div>
+                            <label style={{
+                                display: 'block',
+                                fontSize: '12px',
+                                fontWeight: '600',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                color: '#64748b',
+                                marginBottom: '0.5rem'
+                            }}>
+                                GÖREV BAŞLIĞI
+                            </label>
+                            <div style={{
+                                width: '100%',
+                                padding: '0.8rem 1rem',
+                                borderRadius: 'var(--radius-md)',
+                                border: '1px solid #e2e8f0',
+                                fontSize: '15px',
+                                background: '#f8fafc',
+                                whiteSpace: 'pre-wrap',
+                                wordWrap: 'break-word',
+                                lineHeight: '1.5'
+                            }}>
+                                {selectedDraft.title}
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                            <div>
+                                <label style={{
+                                    display: 'block',
+                                    fontSize: '12px',
+                                    fontWeight: '600',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em',
+                                    color: '#64748b',
+                                    marginBottom: '0.5rem'
+                                }}>
+                                    SON TARİH
+                                </label>
+                                <div style={{
+                                    width: '100%',
+                                    padding: '0.8rem 1rem',
+                                    borderRadius: 'var(--radius-md)',
+                                    border: '1px solid #e2e8f0',
+                                    fontSize: '14px',
+                                    background: '#f8fafc'
+                                }}>
+                                    {selectedDraft.due_date ? new Date(selectedDraft.due_date).toLocaleString('tr-TR', {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    }) : 'Belirtilmemiş'}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label style={{
+                                    display: 'block',
+                                    fontSize: '12px',
+                                    fontWeight: '600',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em',
+                                    color: '#64748b',
+                                    marginBottom: '0.5rem'
+                                }}>
+                                    ETİKET
+                                </label>
+                                <div style={{
+                                    width: '100%',
+                                    padding: '0.8rem 1rem',
+                                    borderRadius: 'var(--radius-md)',
+                                    border: '1px solid #e2e8f0',
+                                    fontSize: '14px',
+                                    background: '#f8fafc'
+                                }}>
+                                    {selectedDraft.tags?.[0] || 'Genel'}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label style={{
+                                display: 'block',
+                                fontSize: '12px',
+                                fontWeight: '600',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                color: '#64748b',
+                                marginBottom: '0.5rem'
+                            }}>
+                                OLUŞTURULMA TARİHİ
+                            </label>
+                            <div style={{
+                                width: '100%',
+                                padding: '0.8rem 1rem',
+                                borderRadius: 'var(--radius-md)',
+                                border: '1px solid #e2e8f0',
+                                fontSize: '14px',
+                                background: '#f8fafc'
+                            }}>
+                                {new Date(selectedDraft.created_at).toLocaleString('tr-TR', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                })}
+                            </div>
+                        </div>
+
+                        {selectedDraft.completed_at && (
+                            <div>
+                                <label style={{
+                                    display: 'block',
+                                    fontSize: '12px',
+                                    fontWeight: '600',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em',
+                                    color: '#64748b',
+                                    marginBottom: '0.5rem'
+                                }}>
+                                    TAMAMLANMA TARİHİ
+                                </label>
+                                <div style={{
+                                    width: '100%',
+                                    padding: '0.8rem 1rem',
+                                    borderRadius: 'var(--radius-md)',
+                                    border: '1px solid #e2e8f0',
+                                    fontSize: '14px',
+                                    background: '#f8fafc'
+                                }}>
+                                    {new Date(selectedDraft.completed_at).toLocaleString('tr-TR', {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        <div>
+                            <label style={{
+                                display: 'block',
+                                fontSize: '12px',
+                                fontWeight: '600',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                color: '#64748b',
+                                marginBottom: '0.5rem'
+                            }}>
+                                OLUŞTURAN
+                            </label>
+                            <div style={{
+                                width: '100%',
+                                padding: '0.8rem 1rem',
+                                borderRadius: 'var(--radius-md)',
+                                border: '1px solid #e2e8f0',
+                                fontSize: '14px',
+                                background: '#f8fafc'
+                            }}>
+                                {users[selectedDraft.created_by] || 'Bilinmeyen'}
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </Modal>
+
             <Modal title={formData.id ? "Görevi Düzenle" : "Yeni Görev Ekle"} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
