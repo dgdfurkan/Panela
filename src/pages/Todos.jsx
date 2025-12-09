@@ -13,6 +13,7 @@ export default function Todos() {
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [isActivityModalOpen, setIsActivityModalOpen] = useState(false)
     const [isDraftsModalOpen, setIsDraftsModalOpen] = useState(false)
+    const [selectedDraft, setSelectedDraft] = useState(null)
     const [users, setUsers] = useState({}) // id -> username map
     const [activities, setActivities] = useState([])
     const [draftFilters, setDraftFilters] = useState({
@@ -405,7 +406,7 @@ export default function Todos() {
                             .map(draft => (
                                 <div 
                                     key={draft.id}
-                                    onClick={() => { handleEdit(draft); setIsDraftsModalOpen(false) }}
+                                    onClick={() => setSelectedDraft(draft)}
                                     style={{
                                         padding: '1rem',
                                         background: 'white',
