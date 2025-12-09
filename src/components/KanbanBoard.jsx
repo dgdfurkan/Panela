@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { MoreHorizontal, Flag, Edit, Trash2, Plus } from 'lucide-react'
 import '../styles/Kanban.css'
 
-export default function KanbanBoard({ todos, onStatusChange, onEdit, onDelete, users, activities, onOpenActivityModal }) {
+export default function KanbanBoard({ todos, onStatusChange, onEdit, onDelete, users, activities, onOpenActivityModal, onCreate }) {
     // Columns definition
     const columns = [
         { id: 'Todo', title: 'Yapılacaklar', tagClass: 'tag-1' },
@@ -44,9 +44,12 @@ export default function KanbanBoard({ todos, onStatusChange, onEdit, onDelete, u
             <main className="project">
                 <div className="project-info">
                     <h1>Görevler</h1>
+                    <button className="add-task-icon" onClick={() => onCreate && onCreate()}>
+                        <Plus size={16} /> Yeni
+                    </button>
                 </div>
 
-                <div className="project-tasks">
+                <div className="project-tasks fixed-grid">
                     {columns.map(col => (
                         <div
                             key={col.id}
@@ -61,41 +64,45 @@ export default function KanbanBoard({ todos, onStatusChange, onEdit, onDelete, u
                                 </button>
                             </div>
 
-                            {getColumnTodos(col.id).map(todo => (
-                                <div
-                                    key={todo.id}
-                                    className="task"
-                                    draggable="true"
-                                    onDragStart={(e) => handleDragStart(e, todo.id)}
-                                    onDragEnd={handleDragEnd}
-                                >
-                                    <div className="task__tags">
-                                        <span className={`task__tag task__tag--${todo.tags?.[0] ? 'illustration' : 'copyright'}`}>
-                                            {todo.tags?.[0] || 'Genel'}
-                                        </span>
-                                        <div className="task-actions" style={{ display: 'flex', gap: '5px' }}>
-                                            <button onClick={() => onEdit(todo)} className="task__options">
-                                                <Edit size={14} />
-                                            </button>
-                                            <button onClick={() => onDelete(todo.id)} className="task__options">
-                                                <Trash2 size={14} />
-                                            </button>
+                            <div className="project-column-body">
+                                {getColumnTodos(col.id).map(todo => (
+                                    <div
+                                        key={todo.id}
+                                        className="task"
+                                        draggable="true"
+                                        onDragStart={(e) => handleDragStart(e, todo.id)}
+                                        onDragEnd={handleDragEnd}
+                                        onClick={() => onEdit(todo)}
+                                        style={{ userSelect: 'none', cursor: 'pointer' }}
+                                    >
+                                        <div className="task__tags">
+                                            <span className={`task__tag task__tag--${todo.tags?.[0] ? 'illustration' : 'copyright'}`}>
+                                                {todo.tags?.[0] || 'Genel'}
+                                            </span>
+                                            <div className="task-actions" style={{ display: 'flex', gap: '5px' }}>
+                                                <button onClick={(e) => { e.stopPropagation(); onEdit(todo) }} className="task__options">
+                                                    <Edit size={14} />
+                                                </button>
+                                                <button onClick={(e) => { e.stopPropagation(); onDelete(todo.id) }} className="task__options">
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <p>{todo.title}</p>
+
+                                        <div className="task__stats">
+                                            <span>
+                                                <Flag size={12} />
+                                                <time>{new Date(todo.due_date).toLocaleDateString('tr-TR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</time>
+                                            </span>
+                                            <span className="task__owner">
+                                                {users[todo.created_by]?.substring(0, 2).toUpperCase() || '??'}
+                                            </span>
                                         </div>
                                     </div>
-
-                                    <p>{todo.title}</p>
-
-                                    <div className="task__stats">
-                                        <span>
-                                            <Flag size={12} />
-                                            <time>{new Date(todo.due_date).toLocaleDateString('tr-TR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</time>
-                                        </span>
-                                        <span className="task__owner">
-                                            {users[todo.created_by]?.substring(0, 2).toUpperCase() || '??'}
-                                        </span>
-                                    </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
                     ))}
                 </div>
@@ -116,76 +123,43 @@ export default function KanbanBoard({ todos, onStatusChange, onEdit, onDelete, u
 
                 <div className="task-activity">
                     <h2>Son Hareketler</h2>
-                    <ul>
+                    <ul className="activity-list">
                         {activities && activities.slice(0, 4).map(act => (
-                            <li key={act.id} style={{
-                                padding: '0.8rem 0',
-                                borderBottom: '1px solid #f1f5f9',
-                                display: 'flex',
-                                alignItems: 'start',
-                                gap: '0.8rem'
-                            }}>
-                                <span style={{
-                                    width: '28px',
-                                    height: '28px',
-                                    borderRadius: '50%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexShrink: 0,
-                                    background:
-                                        act.action_type === 'CREATE' ? '#dcfce7' :
-                                            act.action_type === 'UPDATE' ? '#dbeafe' :
-                                                act.action_type === 'DELETE' ? '#fee2e2' : '#fef9c3',
-                                    color:
-                                        act.action_type === 'CREATE' ? '#166534' :
-                                            act.action_type === 'UPDATE' ? '#1e40af' :
-                                                act.action_type === 'DELETE' ? '#991b1b' : '#854d0e'
-                                }}>
+                            <li key={act.id} className="activity-row">
+                                <span className="activity-icon" data-type={act.action_type}>
                                     {act.action_type === 'CREATE' && <Plus size={14} />}
                                     {act.action_type === 'UPDATE' && <Edit size={14} />}
                                     {act.action_type === 'DELETE' && <Trash2 size={14} />}
                                     {act.action_type === 'MOVE' && <MoreHorizontal size={14} />}
                                 </span>
-                                <div>
-                                    <div style={{ fontSize: '13px', marginBottom: '0.1rem', fontWeight: '500' }}>
-                                        {act.app_users?.username || 'Kullanıcı'}
-                                    </div>
-                                    <p style={{ fontSize: '13px', color: '#64748b', margin: 0, lineHeight: '1.4' }}>
+                                <div className="activity-text">
+                                    <div className="activity-user">{act.app_users?.username || 'Kullanıcı'}</div>
+                                    <p className="activity-desc">
                                         {act.action_type === 'CREATE' && 'yeni görev ekledi.'}
                                         {act.action_type === 'UPDATE' && 'görevi güncelledi.'}
                                         {act.action_type === 'DELETE' && `"${act.details}" görevini sildi.`}
                                         {act.action_type === 'MOVE' && `görevi taşıdı: ${act.details}`}
                                     </p>
-                                    <time style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginTop: '0.2rem' }}>
-                                        {new Date(act.created_at).toLocaleString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                                    <time className="activity-time">
+                                        {new Date(act.created_at).toLocaleString('tr-TR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                                     </time>
                                 </div>
                             </li>
                         ))}
                         {(!activities || activities.length === 0) && (
-                            <li>
-                                <span className="task-icon task-icon--attachment"><MoreHorizontal size={12} /></span>
-                                <b>Sistem </b> hazır.
-                                <time>Şimdi</time>
+                            <li className="activity-row empty">
+                                <span className="activity-icon" data-type="INFO"><MoreHorizontal size={12} /></span>
+                                <div className="activity-text">
+                                    <div className="activity-user">Sistem</div>
+                                    <p className="activity-desc">Hazır.</p>
+                                    <time className="activity-time">Şimdi</time>
+                                </div>
                             </li>
                         )}
                     </ul>
                     {activities && activities.length > 4 && (
                         <button
                             onClick={onOpenActivityModal}
-                            style={{
-                                width: '100%',
-                                padding: '0.8rem',
-                                marginTop: '1rem',
-                                background: 'transparent',
-                                border: '1px dashed #cbd5e1',
-                                borderRadius: 'var(--radius-md)',
-                                color: 'var(--color-primary)',
-                                fontSize: '13px',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s'
-                            }}
                             className="btn-show-more"
                         >
                             Daha Fazla Göster ({activities.length - 4})
