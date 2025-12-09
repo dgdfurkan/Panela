@@ -186,6 +186,28 @@ create policy "Team members can delete marketing creatives."
   on marketing_creatives for delete
   using ( auth.role() = 'authenticated' );
 
+-- Simplify access: allow any authenticated user to manage creatives (matching other tables)
+drop policy if exists "Team members can view marketing creatives." on marketing_creatives;
+drop policy if exists "Team members can insert marketing creatives." on marketing_creatives;
+drop policy if exists "Team members can update marketing creatives." on marketing_creatives;
+drop policy if exists "Team members can delete marketing creatives." on marketing_creatives;
+
+create policy "auth users view creatives"
+  on marketing_creatives for select
+  using ( auth.uid() is not null );
+
+create policy "auth users insert creatives"
+  on marketing_creatives for insert
+  with check ( auth.uid() is not null );
+
+create policy "auth users update creatives"
+  on marketing_creatives for update
+  using ( auth.uid() is not null );
+
+create policy "auth users delete creatives"
+  on marketing_creatives for delete
+  using ( auth.uid() is not null );
+
 -- Trigger: auto-update updated_at
 create or replace function public.marketing_creatives_set_updated_at()
 returns trigger as $$
@@ -199,3 +221,31 @@ create trigger set_timestamp
 before update on public.marketing_creatives
 for each row
 execute procedure public.marketing_creatives_set_updated_at();
+
+-- 6. AI Tokens (Gemini)
+create table if not exists public.ai_tokens (
+  id uuid default uuid_generate_v4() primary key,
+  user_id uuid references public.profiles(id),
+  label text,
+  token text not null,
+  priority integer default 1,
+  created_at timestamp with time zone default timezone('utc'::text, now())
+);
+
+alter table public.ai_tokens enable row level security;
+
+create policy "auth users can view their ai tokens"
+  on ai_tokens for select
+  using ( auth.uid() = user_id );
+
+create policy "auth users can insert ai tokens"
+  on ai_tokens for insert
+  with check ( auth.uid() = user_id );
+
+create policy "auth users can update their ai tokens"
+  on ai_tokens for update
+  using ( auth.uid() = user_id );
+
+create policy "auth users can delete their ai tokens"
+  on ai_tokens for delete
+  using ( auth.uid() = user_id );

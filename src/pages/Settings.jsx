@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Save, Loader2, Monitor, List, Clock, Zap } from 'lucide-react'
+import { Save, Loader2, Monitor, List, Clock, Zap, Plus, Trash2, ShieldCheck } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
 
@@ -23,6 +23,9 @@ export default function Settings() {
         product_count: 3,
         animation_duration: 5
     })
+    const [tokens, setTokens] = useState([])
+    const [tokenForm, setTokenForm] = useState({ label: '', token: '', priority: 1 })
+    const [tokenSaving, setTokenSaving] = useState(false)
 
     // Fetch initial settings
     useEffect(() => {
@@ -69,6 +72,21 @@ export default function Settings() {
         }
 
         fetchSettings()
+    }, [user])
+
+    useEffect(() => {
+        const fetchTokens = async () => {
+            if (!user) return
+            const { data, error } = await supabase
+                .from('ai_tokens')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('priority', { ascending: true })
+                .order('created_at', { ascending: true })
+
+            if (!error) setTokens(data || [])
+        }
+        fetchTokens()
     }, [user])
 
     // useReference to persist the debounced function across renders
@@ -147,6 +165,32 @@ export default function Settings() {
                 setLastSaved(date)
             }
         )
+    }
+
+    const handleAddToken = async () => {
+        if (!tokenForm.token.trim()) return
+        setTokenSaving(true)
+        try {
+            const payload = {
+                user_id: user.id,
+                label: tokenForm.label || 'Gemini Anahtarı',
+                token: tokenForm.token.trim(),
+                priority: Number(tokenForm.priority) || 1
+            }
+            const { data, error } = await supabase.from('ai_tokens').insert(payload).select().single()
+            if (error) throw error
+            setTokens((prev) => [...prev, data].sort((a, b) => (a.priority || 1) - (b.priority || 1)))
+            setTokenForm({ label: '', token: '', priority: 1 })
+        } catch (error) {
+            console.error('AI token ekleme hatası:', error)
+        } finally {
+            setTokenSaving(false)
+        }
+    }
+
+    const handleDeleteToken = async (id) => {
+        const { error } = await supabase.from('ai_tokens').delete().eq('id', id).eq('user_id', user.id)
+        if (!error) setTokens((prev) => prev.filter((t) => t.id !== id))
     }
 
     if (loading) {
@@ -271,6 +315,64 @@ export default function Settings() {
                                 />
                                 <span className="unit">sn</span>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Gemini Token Yönetimi */}
+                <div className="glass-panel settings-card">
+                    <div className="card-header">
+                        <ShieldCheck className="text-primary" size={24} />
+                        <h3>Gemini Token Yönetimi</h3>
+                    </div>
+                    <div className="card-content form-layout">
+                        <p className="setting-desc">Birden fazla token ekleyip öncelik verebilirsin. Limit aşımında sıradaki token kullanılır.</p>
+                        <div className="form-group">
+                            <label className="input-label">Etiket</label>
+                            <input
+                                className="text-input"
+                                placeholder="Örn: Ana Token"
+                                value={tokenForm.label}
+                                onChange={(e) => setTokenForm({ ...tokenForm, label: e.target.value })}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="input-label">Token</label>
+                            <input
+                                className="text-input"
+                                placeholder="Gemini API anahtarı"
+                                value={tokenForm.token}
+                                onChange={(e) => setTokenForm({ ...tokenForm, token: e.target.value })}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="input-label">Öncelik (1 en yüksek)</label>
+                            <input
+                                type="number"
+                                min="1"
+                                className="text-input"
+                                value={tokenForm.priority}
+                                onChange={(e) => setTokenForm({ ...tokenForm, priority: e.target.value })}
+                            />
+                        </div>
+                        <button className="token-add-btn" onClick={handleAddToken} disabled={tokenSaving}>
+                            <Plus size={16} />
+                            {tokenSaving ? 'Ekleniyor...' : 'Token Ekle'}
+                        </button>
+
+                        <div className="token-list">
+                            {tokens.length === 0 && <p className="muted">Henüz token eklenmedi.</p>}
+                            {tokens.map((t) => (
+                                <div key={t.id} className="token-row">
+                                    <div>
+                                        <p className="token-label">{t.label || 'Adsız'}</p>
+                                        <p className="token-meta">Öncelik: {t.priority || 1}</p>
+                                    </div>
+                                    <button className="token-delete" onClick={() => handleDeleteToken(t.id)}>
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
@@ -471,6 +573,46 @@ export default function Settings() {
                     color: var(--color-text-muted);
                     font-size: 0.9rem;
                     pointer-events: none;
+                }
+
+                .token-add-btn {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.4rem;
+                    padding: 0.65rem 0.9rem;
+                    border-radius: 10px;
+                    border: 1px solid var(--color-border);
+                    background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+                    color: white;
+                    font-weight: 600;
+                    cursor: pointer;
+                }
+
+                .token-list {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.75rem;
+                }
+
+                .token-row {
+                    padding: 0.9rem;
+                    border: 1px solid var(--color-border);
+                    border-radius: 12px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    background: white;
+                }
+
+                .token-label { font-weight: 600; }
+                .token-meta { color: var(--color-text-muted); font-size: 0.9rem; }
+
+                .token-delete {
+                    border: 1px solid var(--color-border);
+                    background: white;
+                    padding: 0.35rem;
+                    border-radius: 10px;
+                    cursor: pointer;
                 }
             `}</style>
         </div>

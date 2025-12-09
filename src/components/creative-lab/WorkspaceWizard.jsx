@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
-import { ChevronRight, Info, Lightbulb, Sparkles } from 'lucide-react'
+import { ChevronRight, Info, Lightbulb, Sparkles, Wand2 } from 'lucide-react'
 import TagInput from './TagInput'
+import AnalysisReviewModal from './AnalysisReviewModal'
+import { analyzeCreativeWithGemini } from '../../lib/aiClient'
 
 const platforms = ['Meta', 'TikTok', 'Google', 'YouTube', 'Email', 'Influencer']
 const visualTypes = ['Video', 'Image', 'Carousel']
@@ -11,7 +13,9 @@ export default function WorkspaceWizard({ products = [], onSave, saving }) {
     product_id: '',
     platform: platforms[0],
     strategy_angle: '',
-    target_age: '',
+    target_age_min: '',
+    target_age_max: '',
+    target_age_notes: '',
     target_interests: '',
     target_location: '',
     hook: '',
@@ -23,6 +27,8 @@ export default function WorkspaceWizard({ products = [], onSave, saving }) {
     ad_headline: '',
     budget_note: ''
   })
+  const [analysisLoading, setAnalysisLoading] = useState(false)
+  const [analysisResult, setAnalysisResult] = useState(null)
 
   const steps = useMemo(() => [
     { id: 1, title: 'Ürün ve Platform', desc: 'Ürünü seç ve çalışacağın platformu belirle' },
@@ -37,7 +43,9 @@ export default function WorkspaceWizard({ products = [], onSave, saving }) {
 
   const handleSubmit = async () => {
     const target_audience = {
-      age: form.target_age || undefined,
+      min: form.target_age_min || undefined,
+      max: form.target_age_max || undefined,
+      notes: form.target_age_notes || undefined,
       interests: form.target_interests ? form.target_interests.split(',').map((i) => i.trim()).filter(Boolean) : [],
       location: form.target_location || undefined
     }
@@ -58,6 +66,58 @@ export default function WorkspaceWizard({ products = [], onSave, saving }) {
     }
 
     await onSave(payload)
+  }
+
+  const handleAnalysis = async () => {
+    setAnalysisLoading(true)
+    try {
+      const target_audience = {
+        min: form.target_age_min,
+        max: form.target_age_max,
+        interests: form.target_interests ? form.target_interests.split(',').map((i) => i.trim()).filter(Boolean) : [],
+        location: form.target_location,
+        notes: form.target_age_notes
+      }
+      const payload = {
+        product_name: products.find((p) => p.id === form.product_id)?.name,
+        platform: form.platform,
+        strategy_angle: form.strategy_angle,
+        target_audience,
+        ad_headline: form.ad_headline,
+        hook: form.hook,
+        body: form.body,
+        cta: form.cta,
+        visual_idea: form.visual_idea,
+        tags: form.tags,
+        budget_note: form.budget_note
+      }
+      const suggestions = await analyzeCreativeWithGemini(payload)
+      setAnalysisResult(suggestions)
+    } catch (error) {
+      console.error('AI analiz hatası:', error)
+      alert(error.message || 'AI analizi başarısız.')
+    } finally {
+      setAnalysisLoading(false)
+    }
+  }
+
+  const applySuggestions = (accepted) => {
+    const updated = { ...form }
+    if (accepted.strategy_angle) updated.strategy_angle = accepted.strategy_angle
+    if (accepted.target_age_min) updated.target_age_min = accepted.target_age_min
+    if (accepted.target_age_max) updated.target_age_max = accepted.target_age_max
+    if (accepted.target_age_notes) updated.target_age_notes = accepted.target_age_notes
+    if (accepted.target_location) updated.target_location = accepted.target_location
+    if (accepted.target_interests) updated.target_interests = accepted.target_interests.join(', ')
+    if (accepted.hook) updated.hook = accepted.hook
+    if (accepted.ad_headline) updated.ad_headline = accepted.ad_headline
+    if (accepted.body) updated.body = accepted.body
+    if (accepted.cta) updated.cta = accepted.cta
+    if (accepted.visual_idea) updated.visual_idea = accepted.visual_idea
+    if (accepted.tags) updated.tags = accepted.tags
+    if (accepted.budget_note) updated.budget_note = accepted.budget_note
+    setForm(updated)
+    setAnalysisResult(null)
   }
 
   return (
@@ -116,8 +176,12 @@ export default function WorkspaceWizard({ products = [], onSave, saving }) {
       {step === 2 && (
         <section className="panel two-col">
           <div>
-            <label>Yaş Aralığı</label>
-            <input value={form.target_age} onChange={(e) => updateField('target_age', e.target.value)} placeholder="18-25" />
+            <label>Yaş Aralığı (min)</label>
+            <input type="number" value={form.target_age_min} onChange={(e) => updateField('target_age_min', e.target.value)} placeholder="18" />
+          </div>
+          <div>
+            <label>Yaş Aralığı (max)</label>
+            <input type="number" value={form.target_age_max} onChange={(e) => updateField('target_age_max', e.target.value)} placeholder="25" />
           </div>
           <div>
             <label>Lokasyon</label>
@@ -126,6 +190,10 @@ export default function WorkspaceWizard({ products = [], onSave, saving }) {
           <div className="full">
             <label>İlgi Alanları (virgülle)</label>
             <textarea value={form.target_interests} onChange={(e) => updateField('target_interests', e.target.value)} placeholder="Doğa, Kamp, Kahve, Yazılım" rows={2} />
+          </div>
+          <div className="full">
+            <label>Yaş Notu / Segment Detayı</label>
+            <textarea value={form.target_age_notes} onChange={(e) => updateField('target_age_notes', e.target.value)} placeholder="Örn: Ağırlık 20-30, öğrenci ve yeni mezunlar" rows={2} />
           </div>
           <div className="tip">
             <Info size={16} />
@@ -198,17 +266,32 @@ export default function WorkspaceWizard({ products = [], onSave, saving }) {
       )}
 
       <footer className="wizard-actions">
-        <button onClick={prev} disabled={step === 1} className="ghost">Geri</button>
-        {step < 4 ? (
-          <button onClick={next} className="primary">
-            İleri <ChevronRight size={18} />
+        <div className="wizard-actions-left">
+          <button onClick={prev} disabled={step === 1} className="ghost">Geri</button>
+        </div>
+        <div className="wizard-actions-right">
+          <button className="secondary" onClick={handleAnalysis} disabled={analysisLoading}>
+            <Wand2 size={16} />
+            {analysisLoading ? 'Analiz ediliyor...' : 'AI ile analiz et'}
           </button>
-        ) : (
-          <button onClick={handleSubmit} className="primary" disabled={saving}>
-            {saving ? 'Kaydediliyor...' : 'Reklamı Kaydet'}
-          </button>
-        )}
+          {step < 4 ? (
+            <button onClick={next} className="primary">
+              İleri <ChevronRight size={18} />
+            </button>
+          ) : (
+            <button onClick={handleSubmit} className="primary" disabled={saving}>
+              {saving ? 'Kaydediliyor...' : 'Reklamı Kaydet'}
+            </button>
+          )}
+        </div>
       </footer>
+
+      <AnalysisReviewModal
+        open={!!analysisResult}
+        suggestions={analysisResult}
+        onClose={() => setAnalysisResult(null)}
+        onApply={applySuggestions}
+      />
 
       <style>{`
         .wizard {
@@ -334,8 +417,17 @@ export default function WorkspaceWizard({ products = [], onSave, saving }) {
           display: flex;
           justify-content: space-between;
           margin-top: 1rem;
+          gap: 0.75rem;
+          flex-wrap: wrap;
         }
-        .ghost, .primary {
+        .wizard-actions-left,
+        .wizard-actions-right {
+          display: flex;
+          gap: 0.6rem;
+          align-items: center;
+          flex-wrap: wrap;
+        }
+        .ghost, .primary, .secondary {
           padding: 0.65rem 1.1rem;
           border-radius: var(--radius-md);
           border: 1px solid var(--color-border);
@@ -352,9 +444,14 @@ export default function WorkspaceWizard({ products = [], onSave, saving }) {
           border: none;
           box-shadow: var(--shadow-sm);
         }
+        .secondary {
+          background: rgba(20,184,166,0.1);
+          color: var(--color-text-main);
+          border-color: rgba(20,184,166,0.3);
+        }
         @media (max-width: 720px) {
           .wizard-actions { flex-direction: column; gap: 0.6rem; }
-          .primary, .ghost { width: 100%; justify-content: center; }
+          .primary, .ghost, .secondary { width: 100%; justify-content: center; }
         }
       `}</style>
     </div>

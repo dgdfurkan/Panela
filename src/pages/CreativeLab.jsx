@@ -62,7 +62,11 @@ export default function CreativeLab() {
       fireConfetti()
     } catch (err) {
       console.error('Creative save error', err)
-      setError('Reklam kaydedilirken bir hata oluştu')
+      if (err?.code === '42501' || (err?.message || '').includes('row-level security')) {
+        setError('Erişim reddedildi. Oturumunun açık olduğundan ve Supabase politikalarının uygulandığından emin ol.')
+      } else {
+        setError('Reklam kaydedilirken bir hata oluştu')
+      }
     } finally {
       setSaving(false)
     }
