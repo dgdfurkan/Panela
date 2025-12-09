@@ -675,7 +675,7 @@ function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, 
           }
         `}</style>
       </div>
-    </div>
+    </Modal>
   )
 }
 
