@@ -241,56 +241,66 @@ export default function ResourcesTab({ weekId }) {
                             <div style={{ padding: '1.5rem' }}>
                                 {resource.resource_type === 'instagram' && (
                                     <div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-                                            <Instagram size={20} color="#E4405F" />
-                                            <span style={{ fontWeight: '600', fontSize: '14px' }}>Instagram</span>
-                                        </div>
-                                        {resource.url.includes('/p/') ? (
-                                            <iframe
-                                                src={`https://www.instagram.com/p/${resource.url.split('/p/')[1]?.split('/')[0]?.split('?')[0]}/embed`}
-                                                width="100%"
-                                                height="500"
-                                                frameBorder="0"
-                                                scrolling="no"
-                                                style={{ borderRadius: 'var(--radius-md)' }}
-                                                loading="lazy"
-                                            />
-                                        ) : (
-                                            <div style={{
-                                                padding: '1.5rem',
-                                                background: '#f8fafc',
-                                                borderRadius: 'var(--radius-md)',
-                                                border: '1px solid #e2e8f0',
-                                                textAlign: 'center'
-                                            }}>
-                                                <Instagram size={32} color="#E4405F" style={{ marginBottom: '0.5rem' }} />
-                                                <a
-                                                    href={resource.url}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    style={{
-                                                        color: 'var(--color-primary)',
-                                                        textDecoration: 'none',
-                                                        fontWeight: '600',
-                                                        wordBreak: 'break-all',
-                                                        display: 'block'
-                                                    }}
-                                                >
-                                                    {resource.url}
-                                                </a>
-                                                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '0.5rem' }}>
-                                                    Instagram profil sayfası - Yeni sekmede açmak için tıklayın
-                                                </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                <Instagram size={20} color="#E4405F" />
+                                                <span style={{ fontWeight: '600', fontSize: '14px' }}>Instagram</span>
                                             </div>
-                                        )}
+                                            <a
+                                                href={resource.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                style={{
+                                                    fontSize: '12px',
+                                                    color: 'var(--color-primary)',
+                                                    textDecoration: 'none',
+                                                    fontWeight: '500'
+                                                }}
+                                            >
+                                                Yeni Sekmede Aç →
+                                            </a>
+                                        </div>
+                                        <div style={{
+                                            border: '1px solid #e2e8f0',
+                                            borderRadius: 'var(--radius-md)',
+                                            overflow: 'hidden',
+                                            height: '600px',
+                                            background: '#f8fafc'
+                                        }}>
+                                            <iframe
+                                                src={resource.url}
+                                                width="100%"
+                                                height="100%"
+                                                frameBorder="0"
+                                                style={{ border: 'none' }}
+                                                loading="lazy"
+                                                sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                                                title={`Instagram: ${resource.title || resource.url}`}
+                                            />
+                                        </div>
                                     </div>
                                 )}
 
                                 {resource.resource_type === 'youtube' && (
                                     <div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-                                            <Youtube size={20} color="#FF0000" />
-                                            <span style={{ fontWeight: '600', fontSize: '14px' }}>YouTube</span>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                <Youtube size={20} color="#FF0000" />
+                                                <span style={{ fontWeight: '600', fontSize: '14px' }}>YouTube</span>
+                                            </div>
+                                            <a
+                                                href={resource.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                style={{
+                                                    fontSize: '12px',
+                                                    color: 'var(--color-primary)',
+                                                    textDecoration: 'none',
+                                                    fontWeight: '500'
+                                                }}
+                                            >
+                                                Yeni Sekmede Aç →
+                                            </a>
                                         </div>
                                         {resource.embed_data?.embedUrl ? (
                                             <div style={{
@@ -298,10 +308,11 @@ export default function ResourcesTab({ weekId }) {
                                                 paddingBottom: '56.25%',
                                                 height: 0,
                                                 overflow: 'hidden',
-                                                borderRadius: 'var(--radius-md)'
+                                                borderRadius: 'var(--radius-md)',
+                                                border: '1px solid #e2e8f0'
                                             }}>
                                                 <iframe
-                                                    src={`${resource.embed_data.embedUrl}?rel=0&modestbranding=1`}
+                                                    src={`${resource.embed_data.embedUrl}?rel=0&modestbranding=1&controls=1`}
                                                     style={{
                                                         position: 'absolute',
                                                         top: 0,
@@ -313,58 +324,27 @@ export default function ResourcesTab({ weekId }) {
                                                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                                     allowFullScreen
                                                     loading="lazy"
+                                                    title={`YouTube: ${resource.title || resource.url}`}
                                                 />
-                                            </div>
-                                        ) : resource.url.includes('@') || resource.url.includes('/channel/') || resource.url.includes('/c/') ? (
-                                            <div style={{
-                                                padding: '1.5rem',
-                                                background: '#f8fafc',
-                                                borderRadius: 'var(--radius-md)',
-                                                border: '1px solid #e2e8f0',
-                                                textAlign: 'center'
-                                            }}>
-                                                <Youtube size={32} color="#FF0000" style={{ marginBottom: '0.5rem' }} />
-                                                <a
-                                                    href={resource.url}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    style={{
-                                                        color: 'var(--color-primary)',
-                                                        textDecoration: 'none',
-                                                        fontWeight: '600',
-                                                        wordBreak: 'break-all',
-                                                        display: 'block'
-                                                    }}
-                                                >
-                                                    {resource.url}
-                                                </a>
-                                                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '0.5rem' }}>
-                                                    YouTube kanalı - Yeni sekmede açmak için tıklayın
-                                                </div>
                                             </div>
                                         ) : (
                                             <div style={{
-                                                padding: '1.5rem',
-                                                background: '#f8fafc',
-                                                borderRadius: 'var(--radius-md)',
                                                 border: '1px solid #e2e8f0',
-                                                textAlign: 'center'
+                                                borderRadius: 'var(--radius-md)',
+                                                overflow: 'hidden',
+                                                height: '600px',
+                                                background: '#f8fafc'
                                             }}>
-                                                <Youtube size={32} color="#FF0000" style={{ marginBottom: '0.5rem' }} />
-                                                <a
-                                                    href={resource.url}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    style={{
-                                                        color: 'var(--color-primary)',
-                                                        textDecoration: 'none',
-                                                        fontWeight: '600',
-                                                        wordBreak: 'break-all',
-                                                        display: 'block'
-                                                    }}
-                                                >
-                                                    {resource.url}
-                                                </a>
+                                                <iframe
+                                                    src={resource.url}
+                                                    width="100%"
+                                                    height="100%"
+                                                    frameBorder="0"
+                                                    style={{ border: 'none' }}
+                                                    loading="lazy"
+                                                    sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                                                    title={`YouTube: ${resource.title || resource.url}`}
+                                                />
                                             </div>
                                         )}
                                     </div>
@@ -372,29 +352,42 @@ export default function ResourcesTab({ weekId }) {
 
                                 {resource.resource_type === 'website' && (
                                     <div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-                                            <Globe size={20} color="var(--color-primary)" />
-                                            <span style={{ fontWeight: '600', fontSize: '14px' }}>Website</span>
-                                        </div>
-                                        <div style={{
-                                            padding: '1.5rem',
-                                            background: '#f8fafc',
-                                            borderRadius: 'var(--radius-md)',
-                                            border: '1px solid #e2e8f0'
-                                        }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                <Globe size={20} color="var(--color-primary)" />
+                                                <span style={{ fontWeight: '600', fontSize: '14px' }}>Website</span>
+                                            </div>
                                             <a
                                                 href={resource.url}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 style={{
+                                                    fontSize: '12px',
                                                     color: 'var(--color-primary)',
                                                     textDecoration: 'none',
-                                                    fontWeight: '600',
-                                                    wordBreak: 'break-all'
+                                                    fontWeight: '500'
                                                 }}
                                             >
-                                                {resource.url}
+                                                Yeni Sekmede Aç →
                                             </a>
+                                        </div>
+                                        <div style={{
+                                            border: '1px solid #e2e8f0',
+                                            borderRadius: 'var(--radius-md)',
+                                            overflow: 'hidden',
+                                            height: '600px',
+                                            background: '#f8fafc'
+                                        }}>
+                                            <iframe
+                                                src={resource.url}
+                                                width="100%"
+                                                height="100%"
+                                                frameBorder="0"
+                                                style={{ border: 'none' }}
+                                                loading="lazy"
+                                                sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                                                title={`Website: ${resource.title || resource.url}`}
+                                            />
                                         </div>
                                     </div>
                                 )}
