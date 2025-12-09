@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react'
-import { Plus, Search, Filter, ExternalLink, Trash2, Edit2, Star } from 'lucide-react'
+import { Plus, Search, Filter, ExternalLink, Trash2, Edit2, Star, Smartphone } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import StatusBadge from '../components/ui/StatusBadge'
@@ -10,6 +10,7 @@ export default function Products() {
     const [products, setProducts] = useState([])
     const [loading, setLoading] = useState(true)
     const [isModalOpen, setIsModalOpen] = useState(false)
+    const [wideView, setWideView] = useState(false)
     const [formData, setFormData] = useState({
         name: '',
         price: '',
@@ -126,70 +127,87 @@ export default function Products() {
                 </div>
                 <button
                     onClick={() => { resetForm(); setIsModalOpen(true) }}
-                    className="btn-primary"
+                    className="btn-cta"
                 >
                     <Plus size={18} />
-                    <span>Yeni Ekle</span>
+                    <span>Yeni Ürün Ekle</span>
                 </button>
             </div>
 
             {/* ... Filters & Table Code ... */}
 
-            <div className="table-container glass-panel">
-                {/* Table Code remains same, just context placeholder */}
+            <div className="table-card glass-panel">
+                <div className="table-topbar">
+                    <div className="table-title">Ürün Listesi</div>
+                    <button className="toggle-wide" onClick={() => setWideView(!wideView)}>
+                        <Smartphone size={16} />
+                        {wideView ? 'Standart Görünüm' : '🔄 Görünümü Çevir'}
+                    </button>
+                </div>
+
                 {loading ? (
-                    <div className="p-8 text-center text-muted">Yükleniyor...</div>
+                    <div className="skeleton-grid">
+                        {[1,2,3].map((i) => (
+                            <div key={i} className="skeleton-row">
+                                <div className="skeleton-cell wide"></div>
+                                <div className="skeleton-cell"></div>
+                                <div className="skeleton-cell"></div>
+                            </div>
+                        ))}
+                    </div>
                 ) : products.length === 0 ? (
                     <div className="p-12 text-center text-muted">Hiç ürün yok. Yukarıdan ekleyebilirsin!</div>
                 ) : (
-                    <table className="data-table">
-                        <thead>
-                            <tr>
-                                <th width="50">Fav</th>
-                                <th>Ürün İsmi</th>
-                                <th>Tahmini Fiyat</th>
-                                <th>Durum</th>
-                                <th>Öncelik</th>
-                                <th>Notlar</th>
-                                <th width="100">İşlemler</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {products.map((product) => (
-                                <tr key={product.id}>
-                                    <td className="text-center">
-                                        <button onClick={() => toggleFavorite(product)} className={`star-btn ${product.is_favorite ? 'active' : ''}`}>
-                                            <Star size={18} fill={product.is_favorite ? "orange" : "none"} color={product.is_favorite ? "orange" : "currentColor"} />
-                                        </button>
-                                    </td>
-                                    <td>
-                                        <div className="product-name">
-                                            {product.name}
-                                            {product.link && (
-                                                <a href={product.link} target="_blank" rel="noopener noreferrer" className="link-icon">
-                                                    <ExternalLink size={14} />
-                                                </a>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td>{product.price}</td>
-                                    <td><StatusBadge value={product.status} /></td>
-                                    <td><StatusBadge value={product.priority} /></td>
-                                    <td className="truncate-cell">{product.thoughts}</td>
-                                    <td>
-                                        <div className="actions-cell">
-                                            <button onClick={() => handleEdit(product)} className="action-btn edit">
-                                                <Edit2 size={16} />
-                                            </button>
-                                            <button onClick={() => handleDelete(product.id)} className="action-btn delete">
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </div>
-                                    </td>
+                    <div className={`table-container ${wideView ? 'wide-mode' : ''}`}>
+                        <table className="data-table">
+                            <thead>
+                                <tr>
+                                    <th width="50">Fav</th>
+                                    <th>Ürün İsmi</th>
+                                    <th>Tahmini Fiyat</th>
+                                    <th>Durum</th>
+                                    <th>Öncelik</th>
+                                    <th>Notlar</th>
+                                    <th width="100">İşlemler</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {products.map((product) => (
+                                    <tr key={product.id}>
+                                        <td className="text-center">
+                                            <button onClick={() => toggleFavorite(product)} className={`star-btn ${product.is_favorite ? 'active' : ''}`}>
+                                                <Star size={18} fill={product.is_favorite ? "orange" : "none"} color={product.is_favorite ? "orange" : "currentColor"} />
+                                            </button>
+                                        </td>
+                                        <td>
+                                            <div className="product-name">
+                                                <span className="truncate-line">{product.name}</span>
+                                                {product.link && (
+                                                    <a href={product.link} target="_blank" rel="noopener noreferrer" className="link-icon">
+                                                        <ExternalLink size={14} />
+                                                    </a>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="truncate-line">{product.price}</td>
+                                        <td><StatusBadge value={product.status} /></td>
+                                        <td><StatusBadge value={product.priority} /></td>
+                                        <td className="truncate-cell">{product.thoughts}</td>
+                                        <td>
+                                            <div className="actions-cell">
+                                                <button onClick={() => handleEdit(product)} className="action-btn edit">
+                                                    <Edit2 size={16} />
+                                                </button>
+                                                <button onClick={() => handleDelete(product.id)} className="action-btn delete">
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </div>
 
@@ -285,20 +303,21 @@ export default function Products() {
           margin-bottom: 2rem;
         }
 
-        .btn-primary {
-          background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+        .btn-cta {
+          background: linear-gradient(135deg, #8B5CF6, #F472B6);
           color: white;
-          padding: 0.75rem 1.25rem;
-          border-radius: var(--radius-md);
-          font-weight: 600;
-          display: flex;
-          gap: 0.5rem;
+          padding: 0.85rem 1.4rem;
+          border-radius: var(--radius-lg);
+          font-weight: 700;
+          display: inline-flex;
+          gap: 0.6rem;
           align-items: center;
-          box-shadow: var(--shadow-glow);
-          transition: transform 0.2s;
+          box-shadow: 0 12px 30px rgba(139,92,246,0.25);
+          transition: transform 0.2s, box-shadow 0.2s;
+          border: none;
         }
-
-        .btn-primary:active { transform: scale(0.98); }
+        .btn-cta:hover { transform: translateY(-1px); box-shadow: 0 16px 40px rgba(139,92,246,0.3); }
+        .btn-cta:active { transform: scale(0.98); }
 
         .filters-bar {
           display: flex;
@@ -334,6 +353,28 @@ export default function Products() {
           font-size: 0.95rem;
         }
 
+        .table-card { padding: 1rem; }
+        .table-topbar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 0.5rem;
+        }
+        .table-title { font-weight: 700; color: var(--color-text-main); }
+        .toggle-wide {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.4rem;
+          padding: 0.5rem 0.75rem;
+          border-radius: var(--radius-md);
+          border: 1px solid var(--color-border);
+          background: white;
+          font-weight: 600;
+          color: var(--color-text-main);
+          cursor: pointer;
+        }
+        .toggle-wide:hover { background: rgba(var(--color-primary-rgb),0.05); }
+
         .table-container {
           overflow-x: auto;
           border-radius: var(--radius-lg);
@@ -345,6 +386,7 @@ export default function Products() {
           border-collapse: collapse;
           min-width: 800px;
         }
+        .wide-mode .data-table { min-width: 1100px; }
 
         .data-table th {
           text-align: left;
@@ -373,6 +415,14 @@ export default function Products() {
           display: flex;
           align-items: center;
           gap: 0.5rem;
+          max-width: 260px;
+        }
+        .truncate-line {
+          display: inline-block;
+          max-width: 220px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
         .link-icon {
@@ -450,6 +500,38 @@ export default function Products() {
         }
 
         .full-width { width: 100%; margin-top: 1rem; }
+
+        .skeleton-grid {
+          display: grid;
+          gap: 0.75rem;
+        }
+        .skeleton-row {
+          display: grid;
+          grid-template-columns: 2fr 1fr 1fr;
+          gap: 0.5rem;
+        }
+        .skeleton-cell {
+          height: 14px;
+          background: linear-gradient(90deg, rgba(226,232,240,0.6), rgba(226,232,240,0.9), rgba(226,232,240,0.6));
+          border-radius: 6px;
+          animation: shimmer 1.2s infinite;
+        }
+        .skeleton-cell.wide { grid-column: span 2; height: 16px; }
+        @keyframes shimmer {
+          0% { background-position: -200px 0; }
+          100% { background-position: 200px 0; }
+        }
+
+        @media (max-width: 768px) {
+          .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.75rem;
+          }
+          .table-card { padding: 0.75rem; }
+          .data-table { min-width: 720px; }
+          .toggle-wide { width: 100%; justify-content: center; }
+        }
       `}</style>
         </div>
     )
