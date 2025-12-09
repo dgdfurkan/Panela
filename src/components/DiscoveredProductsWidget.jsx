@@ -30,27 +30,42 @@ export default function DiscoveredProductsWidget() {
 
                 if (error) {
                     console.error('Widget Settings Fetch Error:', error)
+                    return null
                 }
 
                 if (settingsData) {
                     console.log('Widget Settings Loaded:', settingsData)
                     setSettings(settingsData)
+                    return settingsData
                 } else {
                     console.log('Widget: No settings found, using defaults.')
+                    return null
                 }
             } catch (error) {
                 console.error('Widget Error:', error)
+                return null
             }
         }
 
-        const fetchProducts = async () => {
+        const fetchProducts = async (currentSettings = settings) => {
             try {
-                // 2. Fetch Products
-                const { data: productsData, error: productsError } = await supabase
+                // 2. Fetch Products based on mode
+                let query = supabase
                     .from('products')
                     .select('*')
                     .eq('user_id', user.id)
-                    .order('created_at', { ascending: false })
+
+                // For latest mode, fetch with limit
+                if (currentSettings.product_view_mode === 'latest') {
+                    query = query
+                        .order('created_at', { ascending: false })
+                        .limit(currentSettings.product_count || 3)
+                } else {
+                    // For random and loop, fetch all products
+                    query = query.order('created_at', { ascending: false })
+                }
+
+                const { data: productsData, error: productsError } = await query
 
                 if (productsError) throw productsError
                 setProducts(productsData || [])
@@ -61,8 +76,14 @@ export default function DiscoveredProductsWidget() {
             }
         }
 
-        fetchSettings()
-        fetchProducts()
+        fetchSettings().then((settingsData) => {
+            // Fetch products after settings are loaded, using fetched settings
+            if (settingsData) {
+                fetchProducts(settingsData)
+            } else {
+                fetchProducts() // Use defaults
+            }
+        })
 
         // Real-time Subscription
         const channel = supabase
@@ -75,9 +96,12 @@ export default function DiscoveredProductsWidget() {
                     table: 'user_settings',
                     filter: `user_id=eq.${user.id}`
                 },
-                (payload) => {
+                async (payload) => {
                     console.log('Real-time Settings Update:', payload.new)
-                    setSettings(payload.new)
+                    const newSettings = payload.new
+                    setSettings(newSettings)
+                    // Re-fetch products when settings change
+                    fetchProducts(newSettings)
                 }
             )
             .subscribe()
@@ -89,45 +113,69 @@ export default function DiscoveredProductsWidget() {
     }, [user])
 
     // Re-process products when Settings or Products change
-    // We need a separate state for "displayed/sorted products" to avoid mutating the source or infinite loops
-    // But for simplicity, we can process on the fly or use a memo. 
-    // BUT random needs to be stable until mode changes.
     const [processedProducts, setProcessedProducts] = useState([])
+    const randomSeedRef = useRef(Date.now())
 
     useEffect(() => {
-        if (products.length === 0) return
+        if (products.length === 0) {
+            setProcessedProducts([])
+            return
+        }
 
         let temp = [...products]
 
         if (settings.product_view_mode === 'random') {
-            // Shuffle
-            for (let i = temp.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [temp[i], temp[j]] = [temp[j], temp[i]];
+            // Shuffle with seed to keep stable until mode changes
+            const seed = randomSeedRef.current
+            const seededRandom = (seed) => {
+                let value = seed
+                return () => {
+                    value = (value * 9301 + 49297) % 233280
+                    return value / 233280
+                }
             }
+            const rng = seededRandom(seed)
+            for (let i = temp.length - 1; i > 0; i--) {
+                const j = Math.floor(rng() * (i + 1))
+                ;[temp[i], temp[j]] = [temp[j], temp[i]]
+            }
+            // Slice to product_count for random mode
+            temp = temp.slice(0, settings.product_count || 3)
         } else if (settings.product_view_mode === 'latest') {
-            // Ensure sorted by date (products is already fetched sorted, but just in case)
+            // Already sorted and limited by query, but ensure it's correct
             temp.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+            temp = temp.slice(0, settings.product_count || 3)
         }
-        // 'loop' also uses the list as is (sorted or likely sorted), logic is in render slicer
+        // 'loop' uses all products, slicing happens in render
 
         setProcessedProducts(temp)
-    }, [settings.product_view_mode, products])
+    }, [settings.product_view_mode, settings.product_count, products])
+
+    // Reset random seed when mode changes to random
+    useEffect(() => {
+        if (settings.product_view_mode === 'random') {
+            randomSeedRef.current = Date.now()
+        }
+    }, [settings.product_view_mode])
 
     // Animation / Loop Logic
     useEffect(() => {
-        // Clear interval if not loop or items not enough
-        if (settings.product_view_mode !== 'loop' || processedProducts.length <= settings.product_count) {
+        // Edge case: If total products < display count, disable animation
+        if (settings.product_view_mode !== 'loop' || products.length <= (settings.product_count || 3)) {
             setCurrentIndex(0) // Reset to start
             return
         }
 
         const interval = setInterval(() => {
-            setCurrentIndex((prevIndex) => prevIndex + 1)
-        }, settings.animation_duration * 1000)
+            setCurrentIndex((prevIndex) => {
+                // Use modulo to create infinite loop
+                const totalSlides = Math.ceil(products.length / (settings.product_count || 3))
+                return (prevIndex + 1) % totalSlides
+            })
+        }, (settings.animation_duration || 5) * 1000)
 
         return () => clearInterval(interval)
-    }, [settings.product_view_mode, settings.animation_duration, settings.product_count, processedProducts.length])
+    }, [settings.product_view_mode, settings.animation_duration, settings.product_count, products.length])
 
 
     if (loading) {
@@ -149,24 +197,28 @@ export default function DiscoveredProductsWidget() {
 
     // Determine which products to show
     let displayProducts = []
+    const displayCount = settings.product_count || 3
 
-    // Use processedProducts for the pool
-    const pool = processedProducts
-
-    if (pool.length === 0) {
+    if (products.length === 0) {
         // Should be caught by loading or empty check above, but purely safe
         return null
     }
 
-    if (settings.product_view_mode === 'loop' && pool.length > settings.product_count) {
-        // Sliding Window Logic
-        for (let i = 0; i < settings.product_count; i++) {
-            const index = (currentIndex + i) % pool.length
-            displayProducts.push(pool[index])
+    if (settings.product_view_mode === 'loop') {
+        // Edge case: If total products <= display count, show all without animation
+        if (products.length <= displayCount) {
+            displayProducts = products.slice(0, displayCount)
+        } else {
+            // Carousel mode: Create sliding window with modulo for infinite loop
+            const startIdx = currentIndex * displayCount
+            for (let i = 0; i < displayCount; i++) {
+                const idx = (startIdx + i) % products.length
+                displayProducts.push(products[idx])
+            }
         }
     } else {
-        // Static display (Latest or Random, sliced)
-        displayProducts = pool.slice(0, settings.product_count)
+        // Static display (Latest or Random, already processed and sliced)
+        displayProducts = processedProducts.slice(0, displayCount)
     }
 
     return (
