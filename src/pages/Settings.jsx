@@ -24,7 +24,7 @@ export default function Settings() {
         animation_duration: 5
     })
     const [tokens, setTokens] = useState([])
-    const [tokenForm, setTokenForm] = useState({ label: '', token: '', priority: 1 })
+    const [tokenForm, setTokenForm] = useState({ label: '', token: '' })
     const [tokenSaving, setTokenSaving] = useState(false)
 
     // Fetch initial settings
@@ -171,16 +171,17 @@ export default function Settings() {
         if (!tokenForm.token.trim()) return
         setTokenSaving(true)
         try {
+            const nextPriority = (tokens.reduce((max, t) => Math.max(max, t.priority || 0), 0) || 0) + 1
             const payload = {
                 user_id: user.id,
                 label: tokenForm.label || 'Gemini Anahtarı',
                 token: tokenForm.token.trim(),
-                priority: Number(tokenForm.priority) || 1
+                priority: nextPriority
             }
             const { data, error } = await supabase.from('ai_tokens').insert(payload).select().single()
             if (error) throw error
             setTokens((prev) => [...prev, data].sort((a, b) => (a.priority || 1) - (b.priority || 1)))
-            setTokenForm({ label: '', token: '', priority: 1 })
+            setTokenForm({ label: '', token: '' })
         } catch (error) {
             console.error('AI token ekleme hatası:', error)
         } finally {
@@ -343,16 +344,6 @@ export default function Settings() {
                                 placeholder="Gemini API anahtarı"
                                 value={tokenForm.token}
                                 onChange={(e) => setTokenForm({ ...tokenForm, token: e.target.value })}
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label className="input-label">Öncelik (1 en yüksek)</label>
-                            <input
-                                type="number"
-                                min="1"
-                                className="text-input"
-                                value={tokenForm.priority}
-                                onChange={(e) => setTokenForm({ ...tokenForm, priority: e.target.value })}
                             />
                         </div>
                         <button className="token-add-btn" onClick={handleAddToken} disabled={tokenSaving}>

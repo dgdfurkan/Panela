@@ -232,6 +232,10 @@ create table if not exists public.ai_tokens (
   created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
+-- Clean up any legacy FK to profiles
+alter table public.ai_tokens
+  drop constraint if exists ai_tokens_user_id_fkey;
+
 alter table public.ai_tokens enable row level security;
 
 create policy "open view ai tokens"
