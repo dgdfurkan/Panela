@@ -76,6 +76,7 @@ function buildPrompt(payload) {
 
   return `
 Sen üst düzey e-ticaret pazarlama asistanısın. Reklam kreatifini değerlendir ve geliştir. Yalnızca aşağıdaki JSON şemasını döndür.
+Metinleri satıcı olarak ilk ağızdan (ben/biz), samimi ama güven veren tonda yaz. 3. bir kişi gibi konuşma.
 
 Şema:
 {

@@ -29,6 +29,28 @@ export default function WorkspaceWizard({ products = [], onSave, saving }) {
   })
   const [analysisLoading, setAnalysisLoading] = useState(false)
   const [analysisResult, setAnalysisResult] = useState(null)
+  const textRefs = useRef({})
+
+  const registerRef = (key) => (el) => {
+    if (el) textRefs.current[key] = el
+  }
+
+  const autoSize = (key) => {
+    const el = textRefs.current[key]
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }
+
+  const resetSizes = () => {
+    Object.values(textRefs.current).forEach((el) => {
+      el.style.height = ''
+    })
+  }
+
+  const resizeAll = () => {
+    Object.keys(textRefs.current).forEach(autoSize)
+  }
 
   const steps = useMemo(() => [
     { id: 1, title: 'Ürün ve Platform', desc: 'Ürünü seç ve çalışacağın platformu belirle' },
@@ -66,6 +88,7 @@ export default function WorkspaceWizard({ products = [], onSave, saving }) {
     }
 
     await onSave(payload)
+    resetSizes()
   }
 
   const handleAnalysis = async () => {
@@ -117,6 +140,7 @@ export default function WorkspaceWizard({ products = [], onSave, saving }) {
     if (accepted.tags) updated.tags = accepted.tags
     if (accepted.budget_note) updated.budget_note = accepted.budget_note
     setForm(updated)
+    setTimeout(() => resizeAll(), 0)
     setAnalysisResult(null)
   }
 
@@ -189,11 +213,25 @@ export default function WorkspaceWizard({ products = [], onSave, saving }) {
           </div>
           <div className="full">
             <label>İlgi Alanları (virgülle)</label>
-            <textarea value={form.target_interests} onChange={(e) => updateField('target_interests', e.target.value)} placeholder="Doğa, Kamp, Kahve, Yazılım" rows={2} />
+            <textarea
+              ref={registerRef('target_interests')}
+              value={form.target_interests}
+              onChange={(e) => { updateField('target_interests', e.target.value); autoSize('target_interests') }}
+              onInput={() => autoSize('target_interests')}
+              placeholder="Doğa, Kamp, Kahve, Yazılım"
+              rows={2}
+            />
           </div>
           <div className="full">
             <label>Yaş Notu / Segment Detayı</label>
-            <textarea value={form.target_age_notes} onChange={(e) => updateField('target_age_notes', e.target.value)} placeholder="Örn: Ağırlık 20-30, öğrenci ve yeni mezunlar" rows={2} />
+            <textarea
+              ref={registerRef('target_age_notes')}
+              value={form.target_age_notes}
+              onChange={(e) => { updateField('target_age_notes', e.target.value); autoSize('target_age_notes') }}
+              onInput={() => autoSize('target_age_notes')}
+              placeholder="Örn: Ağırlık 20-30, öğrenci ve yeni mezunlar"
+              rows={2}
+            />
           </div>
           <div className="tip">
             <Info size={16} />
@@ -216,7 +254,14 @@ export default function WorkspaceWizard({ products = [], onSave, saving }) {
           </div>
           <div>
             <label>Gövde Metni</label>
-            <textarea value={form.body} onChange={(e) => updateField('body', e.target.value)} placeholder="Kullanıcının sorununa odaklan, çözümü net söyle" rows={3} />
+            <textarea
+              ref={registerRef('body')}
+              value={form.body}
+              onChange={(e) => { updateField('body', e.target.value); autoSize('body') }}
+              onInput={() => autoSize('body')}
+              placeholder="Kullanıcının sorununa odaklan, çözümü net söyle"
+              rows={3}
+            />
           </div>
           <div>
             <label>Harekete Geçirici Mesaj (CTA)</label>
@@ -225,7 +270,14 @@ export default function WorkspaceWizard({ products = [], onSave, saving }) {
           <div className="two-col">
             <div>
               <label>Görsel/Senaryo Fikri</label>
-              <textarea value={form.visual_idea} onChange={(e) => updateField('visual_idea', e.target.value)} placeholder="Video açılış sahnesi, ürün yakın planı, testimonial" rows={2} />
+              <textarea
+                ref={registerRef('visual_idea')}
+                value={form.visual_idea}
+                onChange={(e) => { updateField('visual_idea', e.target.value); autoSize('visual_idea') }}
+                onInput={() => autoSize('visual_idea')}
+                placeholder="Video açılış sahnesi, ürün yakın planı, testimonial"
+                rows={2}
+              />
             </div>
             <div>
               <label>Görsel Tipi</label>
@@ -253,7 +305,14 @@ export default function WorkspaceWizard({ products = [], onSave, saving }) {
         <section className="panel two-col">
           <div>
             <label>Bütçe Notu</label>
-            <textarea value={form.budget_note} onChange={(e) => updateField('budget_note', e.target.value)} placeholder="Başlangıç bütçesi, beklenen CPA/ROAS" rows={3} />
+            <textarea
+              ref={registerRef('budget_note')}
+              value={form.budget_note}
+              onChange={(e) => { updateField('budget_note', e.target.value); autoSize('budget_note') }}
+              onInput={() => autoSize('budget_note')}
+              placeholder="Başlangıç bütçesi, beklenen CPA/ROAS"
+              rows={3}
+            />
           </div>
           <div className="callout">
             <Sparkles size={18} />
@@ -368,6 +427,10 @@ export default function WorkspaceWizard({ products = [], onSave, saving }) {
           border-radius: var(--radius-md);
           background: white;
           transition: border var(--transition-fast), box-shadow var(--transition-fast);
+        }
+        textarea {
+          resize: none;
+          overflow: hidden;
         }
         input:focus, textarea:focus, select:focus {
           border-color: var(--color-primary);
