@@ -1,5 +1,5 @@
 import { useMemo, useState, useRef, useEffect } from 'react'
-import { LineChart, ShieldCheck, Save, X, Clock4 } from 'lucide-react'
+import { LineChart, ShieldCheck, Save, X, Clock4, Filter } from 'lucide-react'
 import CreativeCard from './CreativeCard'
 import CompareModal from './CompareModal'
 import { supabase } from '../../lib/supabaseClient'
@@ -177,6 +177,10 @@ export default function AnalyticsHub({ creatives = [], compareSelection = [], on
 
 function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, saving, error, history }) {
   const noteRef = useRef(null)
+  const [filterText, setFilterText] = useState('')
+  const [filterStart, setFilterStart] = useState('')
+  const [filterEnd, setFilterEnd] = useState('')
+
   useEffect(() => {
     if (noteRef.current) {
       noteRef.current.style.height = 'auto'
@@ -187,6 +191,23 @@ function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, 
   if (!open || !detail) return null
   const m = detail.metrics || {}
   const num = (v) => Number(v ?? 0)
+
+  const filteredHistory = (history || []).filter((h) => {
+    const t = new Date(h.at)
+    if (filterStart && t < new Date(filterStart)) return false
+    if (filterEnd) {
+      const end = new Date(filterEnd)
+      end.setHours(23, 59, 59, 999)
+      if (t > end) return false
+    }
+    if (filterText) {
+      const text = filterText.toLowerCase()
+      const matchChanges = h.changes?.some((c) => c.toLowerCase().includes(text))
+      const matchTime = t.toLocaleString('tr-TR').toLowerCase().includes(text)
+      return matchChanges || matchTime
+    }
+    return true
+  })
 
   return (
     <div className="modal-backdrop">
@@ -244,9 +265,28 @@ function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, 
               <Clock4 size={16} />
               <span>Değişiklik Geçmişi</span>
             </div>
+            <div className="history-filters">
+              <div className="filter-item">
+                <label><Filter size={14} /> Metin</label>
+                <input
+                  type="text"
+                  placeholder="Durum, metrik, tarih ara"
+                  value={filterText}
+                  onChange={(e) => setFilterText(e.target.value)}
+                />
+              </div>
+              <div className="filter-item">
+                <label>Başlangıç</label>
+                <input type="date" value={filterStart} onChange={(e) => setFilterStart(e.target.value)} />
+              </div>
+              <div className="filter-item">
+                <label>Bitiş</label>
+                <input type="date" value={filterEnd} onChange={(e) => setFilterEnd(e.target.value)} />
+              </div>
+            </div>
             {history && history.length ? (
               <div className="history-list">
-                {history.map((h) => (
+                {filteredHistory.map((h) => (
                   <div key={h.at} className="history-item">
                     <p className="history-time">{new Date(h.at).toLocaleString('tr-TR')}</p>
                     <ul>
@@ -254,6 +294,7 @@ function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, 
                     </ul>
                   </div>
                 ))}
+                {filteredHistory.length === 0 && <p className="muted">Filtreye uygun kayıt yok.</p>}
               </div>
             ) : (
               <p className="muted">Henüz değişiklik yok.</p>
@@ -272,7 +313,7 @@ function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, 
           .modal-backdrop {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.4);
+            background: transparent;
             display: grid;
             place-items: center;
             z-index: 200;
@@ -306,6 +347,9 @@ function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, 
             display: flex;
             flex-direction: column;
             gap: 0.9rem;
+            max-height: 65vh;
+            overflow: auto;
+            padding-right: 0.35rem;
           }
           .grid {
             display: grid;
@@ -377,6 +421,9 @@ function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, 
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
+            max-height: 240px;
+            overflow: auto;
+            padding-right: 0.35rem;
           }
           .history-item {
             padding: 0.5rem 0.6rem;
@@ -386,6 +433,22 @@ function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, 
           }
           .history-time { font-size: 0.9rem; color: var(--color-text-muted); margin-bottom: 0.25rem; }
           .history-item ul { margin: 0; padding-left: 1.1rem; color: var(--color-text-main); }
+          .history-filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+          }
+          .filter-item label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-weight: 600;
+            color: var(--color-text-main);
+          }
+          .filter-item input {
+            margin-top: 0.25rem;
+          }
         `}</style>
       </div>
     </div>
