@@ -7,7 +7,7 @@ const roasColor = (roas) => {
   return 'error'
 }
 
-export default function CreativeCard({ creative, onSelectCompare, selected }) {
+export default function CreativeCard({ creative, onSelectCompare, selected, onOpenDetail }) {
   const metrics = creative.metrics || {}
   const roasValue = Number(metrics.roas ?? 0)
   const statusTone = roasColor(roasValue)
@@ -37,10 +37,15 @@ export default function CreativeCard({ creative, onSelectCompare, selected }) {
           {(creative.tags || []).slice(0, 3).map((t) => <span key={t}>#{t}</span>)}
           {creative.visual_type && <span className="pill">{creative.visual_type}</span>}
         </div>
-        <button className={`compare-btn ${selected ? 'active' : ''}`} onClick={() => onSelectCompare(creative.id)}>
-          {selected ? <Pause size={16} /> : <Play size={16} />}
-          {selected ? 'Seçildi' : 'Karşılaştır'}
-        </button>
+        <div className="actions">
+          <button className="ghost-btn" onClick={() => onOpenDetail?.(creative)}>
+            Detay / Düzenle
+          </button>
+          <button className={`compare-btn ${selected ? 'active' : ''}`} onClick={() => onSelectCompare(creative.id)}>
+            {selected ? <Pause size={16} /> : <Play size={16} />}
+            {selected ? 'Seçildi' : 'Karşılaştır'}
+          </button>
+        </div>
       </footer>
 
       <style>{`
@@ -78,6 +83,11 @@ export default function CreativeCard({ creative, onSelectCompare, selected }) {
           align-items: center;
           gap: 0.5rem;
         }
+        .actions {
+          display: flex;
+          gap: 0.35rem;
+          flex-wrap: wrap;
+        }
         .tags {
           display: flex;
           gap: 0.35rem;
@@ -105,6 +115,13 @@ export default function CreativeCard({ creative, onSelectCompare, selected }) {
           border-color: var(--color-primary);
           background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
           color: white;
+        }
+        .ghost-btn {
+          border: 1px solid var(--color-border);
+          padding: 0.45rem 0.85rem;
+          border-radius: var(--radius-md);
+          background: white;
+          cursor: pointer;
         }
       `}</style>
     </article>

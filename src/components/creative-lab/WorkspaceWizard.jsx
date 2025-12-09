@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useRef } from 'react'
 import { ChevronRight, Info, Lightbulb, Sparkles, Wand2 } from 'lucide-react'
 import TagInput from './TagInput'
 import AnalysisReviewModal from './AnalysisReviewModal'

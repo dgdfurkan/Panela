@@ -1,13 +1,59 @@
-import { useMemo } from 'react'
-import { LineChart, ShieldCheck } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { LineChart, ShieldCheck, Save, X } from 'lucide-react'
 import CreativeCard from './CreativeCard'
 import CompareModal from './CompareModal'
+import { supabase } from '../../lib/supabaseClient'
 
 export default function AnalyticsHub({ creatives = [], compareSelection = [], onToggleCompare, onCloseCompare }) {
   const [leftId, rightId] = compareSelection
+  const [detail, setDetail] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
 
   const left = useMemo(() => creatives.find((c) => c.id === leftId), [creatives, leftId])
   const right = useMemo(() => creatives.find((c) => c.id === rightId), [creatives, rightId])
+
+  const openDetail = (creative) => {
+    setDetail({
+      ...creative,
+      metrics: {
+        spend: creative.metrics?.spend ?? 0,
+        roas: creative.metrics?.roas ?? 0,
+        clicks: creative.metrics?.clicks ?? 0,
+        ctr: creative.metrics?.ctr ?? 0,
+        conversion_rate: creative.metrics?.conversion_rate ?? 0
+      }
+    })
+    setError('')
+  }
+
+  const handleDetailChange = (key, value) => {
+    setDetail((prev) => ({ ...prev, [key]: value }))
+  }
+
+  const handleMetricChange = (key, value) => {
+    setDetail((prev) => ({ ...prev, metrics: { ...prev.metrics, [key]: value } }))
+  }
+
+  const saveDetail = async () => {
+    if (!detail) return
+    setSaving(true)
+    setError('')
+    try {
+      const { id, status, notes, metrics } = detail
+      const { error: err } = await supabase
+        .from('marketing_creatives')
+        .update({ status, notes, metrics })
+        .eq('id', id)
+      if (err) throw err
+      // no refetch here; optimistic update handled by parent data reload externally
+      setDetail(null)
+    } catch (e) {
+      setError(e.message || 'Kaydedilemedi')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <div className="analytics-view fade-in">
@@ -30,6 +76,7 @@ export default function AnalyticsHub({ creatives = [], compareSelection = [], on
             creative={creative}
             onSelectCompare={onToggleCompare}
             selected={compareSelection.includes(creative.id)}
+            onOpenDetail={openDetail}
           />
         ))}
         {creatives.length === 0 && (
@@ -41,6 +88,16 @@ export default function AnalyticsHub({ creatives = [], compareSelection = [], on
       </div>
 
       <CompareModal open={compareSelection.length === 2} onClose={onCloseCompare} left={left} right={right} />
+      <DetailModal
+        open={!!detail}
+        detail={detail}
+        onClose={() => setDetail(null)}
+        onChange={handleDetailChange}
+        onMetricChange={handleMetricChange}
+        onSave={saveDetail}
+        saving={saving}
+        error={error}
+      />
 
       <style>{`
         .analytics-view {
@@ -92,6 +149,164 @@ export default function AnalyticsHub({ creatives = [], compareSelection = [], on
           }
         }
       `}</style>
+    </div>
+  )
+}
+
+function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, saving, error }) {
+  if (!open || !detail) return null
+  const m = detail.metrics || {}
+  const num = (v) => Number(v ?? 0)
+
+  return (
+    <div className="modal-backdrop">
+      <div className="modal-card glass-panel">
+        <header className="modal-header">
+          <div>
+            <p className="eyebrow">Reklam Detayı</p>
+            <h3>{detail.ad_headline || 'Başlık yok'}</h3>
+          </div>
+          <button className="close-btn" onClick={onClose}><X size={16} /></button>
+        </header>
+
+        <div className="modal-body">
+          <div className="grid">
+            <div>
+              <label>Platform</label>
+              <div className="pill">{detail.platform}</div>
+            </div>
+            <div>
+              <label>Durum</label>
+              <select value={detail.status} onChange={(e) => onChange('status', e.target.value)}>
+                {['Draft', 'Active', 'Paused', 'Completed'].map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid metrics">
+            <Field label="Harcama ($)" value={m.spend} onChange={(v) => onMetricChange('spend', num(v))} />
+            <Field label="ROAS" value={m.roas} onChange={(v) => onMetricChange('roas', num(v))} />
+            <Field label="Tıklama" value={m.clicks} onChange={(v) => onMetricChange('clicks', num(v))} />
+            <Field label="CTR (%)" value={m.ctr} onChange={(v) => onMetricChange('ctr', num(v))} />
+            <Field label="Conversion Rate (%)" value={m.conversion_rate} onChange={(v) => onMetricChange('conversion_rate', num(v))} />
+          </div>
+
+          <div>
+            <label>Notlar</label>
+            <textarea value={detail.notes || ''} onChange={(e) => onChange('notes', e.target.value)} rows={3} />
+          </div>
+
+          {error && <div className="error">{error}</div>}
+        </div>
+
+        <footer className="modal-actions">
+          <button className="ghost-btn" onClick={onClose}>Kapat</button>
+          <button className="primary" onClick={onSave} disabled={saving}>
+            <Save size={16} /> {saving ? 'Kaydediliyor...' : 'Kaydet'}
+          </button>
+        </footer>
+
+        <style>{`
+          .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            display: grid;
+            place-items: center;
+            z-index: 200;
+            padding: 1rem;
+          }
+          .modal-card {
+            max-width: 720px;
+            width: 100%;
+            background: white;
+            border-radius: 16px;
+            border: 1px solid var(--color-border);
+            padding: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+          }
+          .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          }
+          .close-btn {
+            border: 1px solid var(--color-border);
+            padding: 0.35rem;
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+          }
+          .modal-body {
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+          }
+          .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 0.75rem;
+          }
+          .grid.metrics {
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+          }
+          label { font-weight: 600; color: var(--color-text-main); }
+          textarea, input, select {
+            width: 100%;
+            padding: 0.65rem 0.75rem;
+            border: 1px solid var(--color-border);
+            border-radius: 10px;
+            background: white;
+          }
+          .pill {
+            display: inline-flex;
+            padding: 0.4rem 0.75rem;
+            border-radius: 999px;
+            background: rgba(139,92,246,0.1);
+            color: var(--color-text-main);
+            border: 1px solid var(--color-border);
+          }
+          .modal-actions {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+          }
+          .ghost-btn, .primary {
+            padding: 0.65rem 1rem;
+            border-radius: 10px;
+            border: 1px solid var(--color-border);
+            background: white;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+          }
+          .primary {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+            color: white;
+            border: none;
+          }
+          .error {
+            background: rgba(239,68,68,0.08);
+            border: 1px solid rgba(239,68,68,0.2);
+            color: var(--color-text-main);
+            padding: 0.6rem 0.75rem;
+            border-radius: 10px;
+          }
+        `}</style>
+      </div>
+    </div>
+  )
+}
+
+function Field({ label, value, onChange }) {
+  return (
+    <div className="field">
+      <label>{label}</label>
+      <input type="number" value={value} onChange={(e) => onChange(e.target.value)} />
     </div>
   )
 }
