@@ -518,17 +518,6 @@ export default function ResourcesTab({ weekId }) {
                                         </a>
                                     </div>
                                 )}
-
-                                {resource.title && (
-                                    <div style={{ marginTop: '1rem', fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
-                                        {resource.title}
-                                    </div>
-                                )}
-                                {resource.description && (
-                                    <div style={{ marginTop: '0.5rem', fontSize: '13px', color: '#64748b' }}>
-                                        {resource.description}
-                                    </div>
-                                )}
                             </div>
                         </div>
                     )
