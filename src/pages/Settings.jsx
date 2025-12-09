@@ -223,16 +223,19 @@ export default function Settings() {
             </header>
 
             <div className="settings-grid">
-                {/* Product View Settings */}
+                {/* Keşfedilen Ürünler - Tek Kart */}
                 <div className="glass-panel settings-card">
-                    <div className="card-header">
-                        <Monitor className="text-primary" size={24} />
-                        <h3>Keşfedilen Ürünler Görünümü</h3>
+                    <div className="card-header compact-header">
+                        <div className="header-left">
+                            <Monitor className="text-primary" size={22} />
+                            <div>
+                                <h3>Keşfedilen Ürünler Görünümü</h3>
+                                <p className="setting-desc">Mode + adet + animasyon süresi aynı yerde.</p>
+                            </div>
+                        </div>
                     </div>
-                    <div className="card-content">
-                        <p className="setting-desc">Ürünler sayfasında kartların nasıl listeleneceğini seç.</p>
-
-                        <div className="radio-group">
+                    <div className="card-content compact-grid">
+                        <div className="radio-group slim">
                             <label className={`radio-option ${settings.product_view_mode === 'latest' ? 'active' : ''}`}>
                                 <input
                                     type="radio"
@@ -266,22 +269,11 @@ export default function Settings() {
                                 <span className="radio-label">🔄 Animasyonlu Döngü</span>
                             </label>
                         </div>
-                    </div>
-                </div>
 
-                {/* List & Animation Settings */}
-                <div className="glass-panel settings-card">
-                    <div className="card-header">
-                        <Zap className="text-orange-500" size={24} />
-                        <h3>Performans ve Liste</h3>
-                    </div>
-
-                    <div className="card-content form-layout">
-                        {/* Product Count */}
-                        <div className="form-group">
+                        <div className="form-group inline">
                             <label className="input-label">
                                 <List size={16} />
-                                Görüntülenecek Ürün Sayısı
+                                Gösterilecek Ürün Sayısı
                             </label>
                             <div className="range-wrapper">
                                 <input
@@ -294,29 +286,27 @@ export default function Settings() {
                                 />
                                 <span className="range-value">{settings.product_count}</span>
                             </div>
-                            <p className="input-help">Sayfa başına gösterilecek kart sayısı.</p>
                         </div>
 
-                        <div className="divider"></div>
-
-                        {/* Animation Duration */}
-                        <div className="form-group">
-                            <label className="input-label">
-                                <Clock size={16} />
-                                Animasyon Süresi (Saniye)
-                            </label>
-                            <div className="input-wrapper">
-                                <input
-                                    type="number"
-                                    min="1"
-                                    max="20"
-                                    value={settings.animation_duration}
-                                    onChange={(e) => handleChange('animation_duration', parseInt(e.target.value))}
-                                    className="text-input"
-                                />
-                                <span className="unit">sn</span>
+                        {settings.product_view_mode === 'loop' && (
+                            <div className="form-group inline">
+                                <label className="input-label">
+                                    <Clock size={16} />
+                                    Animasyon Süresi (sn)
+                                </label>
+                                <div className="input-wrapper">
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max="20"
+                                        value={settings.animation_duration}
+                                        onChange={(e) => handleChange('animation_duration', parseInt(e.target.value))}
+                                        className="text-input"
+                                    />
+                                    <span className="unit">sn</span>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
 
@@ -440,6 +430,26 @@ export default function Settings() {
                 .card-content {
                     padding: 2rem;
                     flex: 1;
+                }
+                .card-header.compact-header {
+                    padding: 1rem 1.5rem;
+                }
+                .header-left {
+                    display: flex;
+                    gap: 0.6rem;
+                    align-items: center;
+                }
+                .compact-grid {
+                    display: grid;
+                    gap: 1rem;
+                }
+                .radio-group.slim {
+                    flex-direction: row;
+                    flex-wrap: wrap;
+                    gap: 0.75rem;
+                }
+                .form-group.inline {
+                    gap: 0.35rem;
                 }
 
                 .setting-desc {
