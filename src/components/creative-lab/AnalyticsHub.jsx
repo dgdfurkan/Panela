@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { LineChart, ShieldCheck, Save, X } from 'lucide-react'
+import { useMemo, useState, useRef, useEffect } from 'react'
+import { LineChart, ShieldCheck, Save, X, Clock4 } from 'lucide-react'
 import CreativeCard from './CreativeCard'
 import CompareModal from './CompareModal'
 import { supabase } from '../../lib/supabaseClient'
@@ -9,6 +9,8 @@ export default function AnalyticsHub({ creatives = [], compareSelection = [], on
   const [detail, setDetail] = useState(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [history, setHistory] = useState([])
+  const originalRef = useRef(null)
 
   const left = useMemo(() => creatives.find((c) => c.id === leftId), [creatives, leftId])
   const right = useMemo(() => creatives.find((c) => c.id === rightId), [creatives, rightId])
@@ -24,6 +26,11 @@ export default function AnalyticsHub({ creatives = [], compareSelection = [], on
         conversion_rate: creative.metrics?.conversion_rate ?? 0
       }
     })
+    originalRef.current = {
+      status: creative.status,
+      notes: creative.notes,
+      metrics: { ...(creative.metrics || {}) }
+    }
     setError('')
   }
 
@@ -46,6 +53,20 @@ export default function AnalyticsHub({ creatives = [], compareSelection = [], on
         .update({ status, notes, metrics })
         .eq('id', id)
       if (err) throw err
+      const orig = originalRef.current || {}
+      const changes = []
+      if (status !== orig.status) changes.push(`Durum: ${orig.status || '-'} → ${status}`)
+      if (notes !== orig.notes) changes.push('Notlar güncellendi')
+      const om = orig.metrics || {}
+      const m = metrics || {}
+      const metricKeys = ['spend', 'roas', 'clicks', 'ctr', 'conversion_rate']
+      metricKeys.forEach((k) => {
+        if (m[k] !== om[k]) changes.push(`${k}: ${om[k] ?? 0} → ${m[k] ?? 0}`)
+      })
+      setHistory((prev) => [
+        { id, at: new Date().toISOString(), changes: changes.length ? changes : ['Kaydedildi'] },
+        ...prev
+      ])
       // no refetch here; optimistic update handled by parent data reload externally
       setDetail(null)
     } catch (e) {
@@ -97,6 +118,7 @@ export default function AnalyticsHub({ creatives = [], compareSelection = [], on
         onSave={saveDetail}
         saving={saving}
         error={error}
+        history={history.filter((h) => h.id === detail?.id)}
       />
 
       <style>{`
@@ -153,7 +175,15 @@ export default function AnalyticsHub({ creatives = [], compareSelection = [], on
   )
 }
 
-function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, saving, error }) {
+function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, saving, error, history }) {
+  const noteRef = useRef(null)
+  useEffect(() => {
+    if (noteRef.current) {
+      noteRef.current.style.height = 'auto'
+      noteRef.current.style.height = `${noteRef.current.scrollHeight}px`
+    }
+  }, [detail?.notes])
+
   if (!open || !detail) return null
   const m = detail.metrics || {}
   const num = (v) => Number(v ?? 0)
@@ -193,10 +223,42 @@ function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, 
 
           <div>
             <label>Notlar</label>
-            <textarea value={detail.notes || ''} onChange={(e) => onChange('notes', e.target.value)} rows={3} />
+            <textarea
+              ref={noteRef}
+              value={detail.notes || ''}
+              onChange={(e) => onChange('notes', e.target.value)}
+              rows={3}
+              onInput={() => {
+                if (noteRef.current) {
+                  noteRef.current.style.height = 'auto'
+                  noteRef.current.style.height = `${noteRef.current.scrollHeight}px`
+                }
+              }}
+            />
           </div>
 
           {error && <div className="error">{error}</div>}
+
+          <div className="history">
+            <div className="history-head">
+              <Clock4 size={16} />
+              <span>Değişiklik Geçmişi</span>
+            </div>
+            {history && history.length ? (
+              <div className="history-list">
+                {history.map((h) => (
+                  <div key={h.at} className="history-item">
+                    <p className="history-time">{new Date(h.at).toLocaleString('tr-TR')}</p>
+                    <ul>
+                      {h.changes.map((c, idx) => <li key={idx}>{c}</li>)}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="muted">Henüz değişiklik yok.</p>
+            )}
+          </div>
         </div>
 
         <footer className="modal-actions">
@@ -217,15 +279,16 @@ function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, 
             padding: 1rem;
           }
           .modal-card {
-            max-width: 720px;
+            max-width: 780px;
             width: 100%;
-            background: white;
+            background: linear-gradient(145deg, rgba(255,255,255,0.98), rgba(248,250,252,0.96));
             border-radius: 16px;
             border: 1px solid var(--color-border);
-            padding: 1.2rem;
+            padding: 1.25rem;
             display: flex;
             flex-direction: column;
             gap: 1rem;
+            box-shadow: var(--shadow-lg);
           }
           .modal-header {
             display: flex;
@@ -260,6 +323,7 @@ function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, 
             border-radius: 10px;
             background: white;
           }
+          textarea { resize: none; overflow: hidden; }
           .pill {
             display: inline-flex;
             padding: 0.4rem 0.75rem;
@@ -296,6 +360,32 @@ function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, 
             padding: 0.6rem 0.75rem;
             border-radius: 10px;
           }
+          .history {
+            border: 1px dashed var(--color-border);
+            border-radius: 12px;
+            padding: 0.75rem;
+            background: white;
+          }
+          .history-head {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+          }
+          .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+          }
+          .history-item {
+            padding: 0.5rem 0.6rem;
+            border: 1px solid var(--color-border);
+            border-radius: 10px;
+            background: rgba(248,250,252,0.8);
+          }
+          .history-time { font-size: 0.9rem; color: var(--color-text-muted); margin-bottom: 0.25rem; }
+          .history-item ul { margin: 0; padding-left: 1.1rem; color: var(--color-text-main); }
         `}</style>
       </div>
     </div>
