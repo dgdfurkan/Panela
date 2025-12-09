@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Plus } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
@@ -22,6 +22,7 @@ export default function Todos() {
         dateTo: '',
         tag: ''
     })
+    const titleTextareaRef = useRef(null)
     const [formData, setFormData] = useState({
         id: null,
         title: '',
@@ -209,6 +210,23 @@ export default function Todos() {
             tags: todo.tags && todo.tags.length > 0 ? todo.tags[0] : 'Genel'
         })
         setIsModalOpen(true)
+        
+        // Auto-resize textarea after modal opens
+        setTimeout(() => {
+            if (titleTextareaRef.current) {
+                titleTextareaRef.current.style.height = 'auto'
+                titleTextareaRef.current.style.height = `${titleTextareaRef.current.scrollHeight}px`
+            }
+        }, 100)
+    }
+    
+    const handleTitleChange = (e) => {
+        setFormData({ ...formData, title: e.target.value })
+        // Auto-resize
+        if (titleTextareaRef.current) {
+            titleTextareaRef.current.style.height = 'auto'
+            titleTextareaRef.current.style.height = `${titleTextareaRef.current.scrollHeight}px`
+        }
     }
 
     const handleDelete = async (id) => {
@@ -434,11 +452,13 @@ export default function Todos() {
                         }}>
                             GÖREV BAŞLIĞI
                         </label>
-                        <input
+                        <textarea
+                            ref={titleTextareaRef}
                             required
                             value={formData.title}
-                            onChange={e => setFormData({ ...formData, title: e.target.value })}
+                            onChange={handleTitleChange}
                             placeholder="Örn: Muhasebeciyle görüşme ayarla..."
+                            rows={1}
                             style={{
                                 width: '100%',
                                 padding: '0.8rem 1rem',
@@ -447,7 +467,12 @@ export default function Todos() {
                                 fontSize: '15px',
                                 outline: 'none',
                                 transition: 'border-color 0.2s',
-                                background: '#f8fafc'
+                                background: '#f8fafc',
+                                resize: 'none',
+                                overflow: 'hidden',
+                                minHeight: '44px',
+                                lineHeight: '1.5',
+                                fontFamily: 'inherit'
                             }}
                             onFocus={e => e.target.style.borderColor = 'var(--color-primary)'}
                             onBlur={e => e.target.style.borderColor = '#e2e8f0'}
