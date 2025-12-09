@@ -255,14 +255,13 @@ function HistoryModal({ open, onClose, history }) {
   })
 
   return (
-    <div className="modal-backdrop-full">
-      <div className="modal-card-full glass-panel">
+    <Modal title="Tüm Geçmiş" isOpen={open} onClose={onClose}>
+      <div className="modal-card-full glass-panel theme-light">
         <header className="modal-header">
           <div>
             <p className="eyebrow">Tüm Geçmiş</p>
             <h3>Değişiklik Kayıtları</h3>
           </div>
-          <button className="close-btn" onClick={onClose}><X size={16} /></button>
         </header>
 
         <div className="history-filters full">
@@ -318,15 +317,6 @@ function HistoryModal({ open, onClose, history }) {
       </div>
 
       <style>{`
-        .modal-backdrop-full {
-          position: fixed;
-          inset: 0;
-          background: rgba(0,0,0,0.35);
-          display: grid;
-          place-items: center;
-          z-index: 210;
-          padding: 1rem;
-        }
         .modal-card-full {
           max-width: 900px;
           width: 100%;
@@ -350,23 +340,12 @@ function HistoryModal({ open, onClose, history }) {
           padding-right: 0.35rem;
         }
       `}</style>
-    </div>
+    </Modal>
   )
 }
 function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, saving, error, history, saveNotice, onOpenFullHistory }) {
   const noteRef = useRef(null)
-  const [filterText, setFilterText] = useState('')
-  const [filterStart, setFilterStart] = useState('')
-  const [filterEnd, setFilterEnd] = useState('')
-  const [filterKinds, setFilterKinds] = useState({
-    status: true,
-    notes: true,
-    spend: true,
-    roas: true,
-    clicks: true,
-    ctr: true,
-    conversion_rate: true
-  })
+  const lastThree = (history || []).slice(0, 3)
 
   useEffect(() => {
     if (open) {
@@ -388,29 +367,9 @@ function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, 
   const m = detail.metrics || {}
   const num = (v) => Number(v ?? 0)
 
-  const filteredHistory = (history || []).filter((h) => {
-    const t = new Date(h.at)
-    if (filterStart && t < new Date(filterStart)) return false
-    if (filterEnd) {
-      const end = new Date(filterEnd)
-      end.setHours(23, 59, 59, 999)
-      if (t > end) return false
-    }
-    const activeKinds = Object.entries(filterKinds).filter(([, v]) => v).map(([k]) => k)
-    const kindMatch = activeKinds.length === 0 || (h.kind && activeKinds.includes(h.kind))
-    if (!kindMatch) return false
-    if (filterText) {
-      const text = filterText.toLowerCase()
-      const matchChanges = h.changes?.some((c) => c.toLowerCase().includes(text))
-      const matchTime = t.toLocaleString('tr-TR').toLowerCase().includes(text)
-      return matchChanges || matchTime
-    }
-    return true
-  })
-
   return (
     <Modal title="Reklam Detayı" isOpen={open} onClose={onClose}>
-      <div className="modal-card-body">
+      <div className="modal-card-body theme-light">
         <div className="modal-head-inline">
           <div>
             <p className="eyebrow">Reklam Detayı</p>
@@ -462,53 +421,11 @@ function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, 
           <div className="history">
             <div className="history-head">
               <Clock4 size={16} />
-              <span>Değişiklik Geçmişi</span>
+              <span>Değişiklik Geçmişi (Son 3)</span>
             </div>
-            <div className="history-filters">
-              <div className="filter-item">
-                <label><Filter size={14} /> Metin</label>
-                <input
-                  type="text"
-                  placeholder="Durum, metrik, tarih ara"
-                  value={filterText}
-                  onChange={(e) => setFilterText(e.target.value)}
-                />
-              </div>
-              <div className="filter-item">
-                <label>Başlangıç</label>
-                <input type="date" value={filterStart} onChange={(e) => setFilterStart(e.target.value)} />
-              </div>
-              <div className="filter-item">
-                <label>Bitiş</label>
-                <input type="date" value={filterEnd} onChange={(e) => setFilterEnd(e.target.value)} />
-              </div>
-              <div className="filter-item checkbox-group">
-                <label>Alanlar</label>
-                <div className="checkboxes">
-                  {[
-                    ['status', 'Durum'],
-                    ['notes', 'Notlar'],
-                    ['spend', 'Harcama'],
-                    ['roas', 'ROAS'],
-                    ['clicks', 'Tıklama'],
-                    ['ctr', 'CTR'],
-                    ['conversion_rate', 'CR']
-                  ].map(([k, label]) => (
-                    <label key={k} className="chk">
-                      <input
-                        type="checkbox"
-                        checked={filterKinds[k]}
-                        onChange={(e) => setFilterKinds((prev) => ({ ...prev, [k]: e.target.checked }))}
-                      />
-                      <span>{label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
-            {history && history.length ? (
+            {lastThree && lastThree.length ? (
               <div className="history-list">
-                {filteredHistory.map((h) => (
+                {lastThree.map((h) => (
                   <div key={h.at} className="history-item">
                     <p className="history-time">{new Date(h.at).toLocaleString('tr-TR')}</p>
                     <ul>
@@ -516,7 +433,6 @@ function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, 
                     </ul>
                   </div>
                 ))}
-                {filteredHistory.length === 0 && <p className="muted">Filtreye uygun kayıt yok.</p>}
               </div>
             ) : (
               <p className="muted">Henüz değişiklik yok.</p>
@@ -541,6 +457,7 @@ function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, 
             flex-direction: column;
             gap: 1rem;
             max-height: 75vh;
+            color: var(--color-text-main);
           }
           .modal-head-inline {
             display: flex;
@@ -644,35 +561,6 @@ function DetailModal({ open, detail, onClose, onChange, onMetricChange, onSave, 
           }
           .history-time { font-size: 0.9rem; color: var(--color-text-muted); margin-bottom: 0.25rem; }
           .history-item ul { margin: 0; padding-left: 1.1rem; color: var(--color-text-main); }
-          .history-filters {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 0.75rem;
-            margin-bottom: 0.5rem;
-          }
-          .filter-item label {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
-            font-weight: 600;
-            color: var(--color-text-main);
-          }
-          .filter-item input {
-            margin-top: 0.25rem;
-          }
-          .checkbox-group .checkboxes {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 0.25rem 0.5rem;
-            margin-top: 0.35rem;
-          }
-          .chk {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
-            font-weight: 500;
-            color: var(--color-text-main);
-          }
         `}</style>
       </div>
     </Modal>
