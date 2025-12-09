@@ -308,3 +308,171 @@ create policy "open update todo_activities"
 create policy "open delete todo_activities"
   on todo_activities for delete
   using ( true );
+
+-- Academy Hub Tables
+-- Weeks
+create table if not exists public.academy_weeks (
+  id uuid default uuid_generate_v4() primary key,
+  week_number integer not null unique,
+  title text not null,
+  description text,
+  created_at timestamptz default timezone('utc'::text, now())
+);
+
+alter table public.academy_weeks enable row level security;
+
+drop policy if exists "open view academy_weeks" on academy_weeks;
+drop policy if exists "open insert academy_weeks" on academy_weeks;
+drop policy if exists "open update academy_weeks" on academy_weeks;
+drop policy if exists "open delete academy_weeks" on academy_weeks;
+
+create policy "open view academy_weeks" on academy_weeks for select using (true);
+create policy "open insert academy_weeks" on academy_weeks for insert with check (true);
+create policy "open update academy_weeks" on academy_weeks for update using (true);
+create policy "open delete academy_weeks" on academy_weeks for delete using (true);
+
+-- Resources (Instagram, YouTube, Website)
+create table if not exists public.academy_resources (
+  id uuid default uuid_generate_v4() primary key,
+  week_id uuid references public.academy_weeks(id) on delete cascade,
+  resource_type text not null check (resource_type in ('instagram', 'youtube', 'website')),
+  url text not null,
+  title text,
+  description text,
+  is_good_example boolean default true,
+  embed_data jsonb,
+  created_at timestamptz default timezone('utc'::text, now())
+);
+
+alter table public.academy_resources enable row level security;
+
+drop policy if exists "open view academy_resources" on academy_resources;
+drop policy if exists "open insert academy_resources" on academy_resources;
+drop policy if exists "open update academy_resources" on academy_resources;
+drop policy if exists "open delete academy_resources" on academy_resources;
+
+create policy "open view academy_resources" on academy_resources for select using (true);
+create policy "open insert academy_resources" on academy_resources for insert with check (true);
+create policy "open update academy_resources" on academy_resources for update using (true);
+create policy "open delete academy_resources" on academy_resources for delete using (true);
+
+-- Videos (Classroom recordings)
+create table if not exists public.academy_videos (
+  id uuid default uuid_generate_v4() primary key,
+  week_id uuid references public.academy_weeks(id) on delete cascade,
+  video_url text not null,
+  video_provider text not null check (video_provider in ('cloudinary', 'youtube', 'vimeo')),
+  video_thumbnail text,
+  video_duration integer, -- in seconds
+  title text not null,
+  description text,
+  created_at timestamptz default timezone('utc'::text, now())
+);
+
+alter table public.academy_videos enable row level security;
+
+drop policy if exists "open view academy_videos" on academy_videos;
+drop policy if exists "open insert academy_videos" on academy_videos;
+drop policy if exists "open update academy_videos" on academy_videos;
+drop policy if exists "open delete academy_videos" on academy_videos;
+
+create policy "open view academy_videos" on academy_videos for select using (true);
+create policy "open insert academy_videos" on academy_videos for insert with check (true);
+create policy "open update academy_videos" on academy_videos for update using (true);
+create policy "open delete academy_videos" on academy_videos for delete using (true);
+
+-- Assignments
+create table if not exists public.academy_assignments (
+  id uuid default uuid_generate_v4() primary key,
+  week_id uuid references public.academy_weeks(id) on delete cascade,
+  title text not null,
+  description text,
+  is_completed boolean default false,
+  submission_url text,
+  submission_file_url text,
+  user_id uuid,
+  created_at timestamptz default timezone('utc'::text, now()),
+  updated_at timestamptz default timezone('utc'::text, now())
+);
+
+alter table public.academy_assignments enable row level security;
+
+drop policy if exists "open view academy_assignments" on academy_assignments;
+drop policy if exists "open insert academy_assignments" on academy_assignments;
+drop policy if exists "open update academy_assignments" on academy_assignments;
+drop policy if exists "open delete academy_assignments" on academy_assignments;
+
+create policy "open view academy_assignments" on academy_assignments for select using (true);
+create policy "open insert academy_assignments" on academy_assignments for insert with check (true);
+create policy "open update academy_assignments" on academy_assignments for update using (true);
+create policy "open delete academy_assignments" on academy_assignments for delete using (true);
+
+-- User Notes (Markdown)
+create table if not exists public.academy_user_notes (
+  id uuid default uuid_generate_v4() primary key,
+  week_id uuid references public.academy_weeks(id) on delete cascade,
+  user_id uuid not null,
+  content text, -- Markdown content
+  created_at timestamptz default timezone('utc'::text, now()),
+  updated_at timestamptz default timezone('utc'::text, now()),
+  unique(week_id, user_id)
+);
+
+alter table public.academy_user_notes enable row level security;
+
+drop policy if exists "open view academy_user_notes" on academy_user_notes;
+drop policy if exists "open insert academy_user_notes" on academy_user_notes;
+drop policy if exists "open update academy_user_notes" on academy_user_notes;
+drop policy if exists "open delete academy_user_notes" on academy_user_notes;
+
+create policy "open view academy_user_notes" on academy_user_notes for select using (true);
+create policy "open insert academy_user_notes" on academy_user_notes for insert with check (true);
+create policy "open update academy_user_notes" on academy_user_notes for update using (true);
+create policy "open delete academy_user_notes" on academy_user_notes for delete using (true);
+
+-- Quiz Questions
+create table if not exists public.academy_quiz_questions (
+  id uuid default uuid_generate_v4() primary key,
+  week_id uuid references public.academy_weeks(id) on delete cascade,
+  question_type text not null check (question_type in ('fill_blank', 'matching', 'multiple_choice')),
+  question_text text not null,
+  options jsonb, -- For multiple choice options, matching pairs, etc.
+  correct_answer text not null,
+  explanation text,
+  ai_generated boolean default false,
+  created_at timestamptz default timezone('utc'::text, now())
+);
+
+alter table public.academy_quiz_questions enable row level security;
+
+drop policy if exists "open view academy_quiz_questions" on academy_quiz_questions;
+drop policy if exists "open insert academy_quiz_questions" on academy_quiz_questions;
+drop policy if exists "open update academy_quiz_questions" on academy_quiz_questions;
+drop policy if exists "open delete academy_quiz_questions" on academy_quiz_questions;
+
+create policy "open view academy_quiz_questions" on academy_quiz_questions for select using (true);
+create policy "open insert academy_quiz_questions" on academy_quiz_questions for insert with check (true);
+create policy "open update academy_quiz_questions" on academy_quiz_questions for update using (true);
+create policy "open delete academy_quiz_questions" on academy_quiz_questions for delete using (true);
+
+-- Quiz Attempts
+create table if not exists public.academy_quiz_attempts (
+  id uuid default uuid_generate_v4() primary key,
+  question_id uuid references public.academy_quiz_questions(id) on delete cascade,
+  user_id uuid not null,
+  user_answer text not null,
+  is_correct boolean not null,
+  attempted_at timestamptz default timezone('utc'::text, now())
+);
+
+alter table public.academy_quiz_attempts enable row level security;
+
+drop policy if exists "open view academy_quiz_attempts" on academy_quiz_attempts;
+drop policy if exists "open insert academy_quiz_attempts" on academy_quiz_attempts;
+drop policy if exists "open update academy_quiz_attempts" on academy_quiz_attempts;
+drop policy if exists "open delete academy_quiz_attempts" on academy_quiz_attempts;
+
+create policy "open view academy_quiz_attempts" on academy_quiz_attempts for select using (true);
+create policy "open insert academy_quiz_attempts" on academy_quiz_attempts for insert with check (true);
+create policy "open update academy_quiz_attempts" on academy_quiz_attempts for update using (true);
+create policy "open delete academy_quiz_attempts" on academy_quiz_attempts for delete using (true);

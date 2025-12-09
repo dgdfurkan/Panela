@@ -1,5 +1,5 @@
 import { useLocation, Link } from 'react-router-dom'
-import { LayoutDashboard, ShoppingBag, CheckSquare, Map, LogOut, Search, Settings } from 'lucide-react'
+import { LayoutDashboard, ShoppingBag, CheckSquare, Map, LogOut, Search, Settings, GraduationCap } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 
 export default function Sidebar() {
@@ -13,6 +13,7 @@ export default function Sidebar() {
     { label: 'Yol Haritası', path: '/roadmap', icon: Map },
     { label: 'Araştırma', path: '/research', icon: Search },
     { label: 'Creative Lab', path: '/creative-lab', icon: LayoutDashboard },
+    { label: 'Academy Hub', path: '/academy', icon: GraduationCap },
     { label: 'Ayarlar', path: '/settings', icon: Settings },
   ]
 

@@ -118,3 +118,46 @@ function safeParseSuggestions(text) {
   }
 }
 
+export async function fetchAiSuggestions(prompt) {
+  const tokens = await getAiTokens()
+  if (!tokens.length) {
+    throw new Error('AI token bulunamadı. Ayarlar > Gemini Token bölümüne ekleyin.')
+  }
+
+  let lastError
+
+  for (const t of tokens) {
+    try {
+      const res = await fetch(GEMINI_URL(t.token), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [{ text: prompt }]
+            }
+          ],
+          generationConfig: {
+            response_mime_type: 'application/json'
+          }
+        })
+      })
+
+      if (!res.ok) {
+        lastError = new Error(`Gemini hata: ${res.status}`)
+        continue
+      }
+
+      const json = await res.json()
+      const text = json?.candidates?.[0]?.content?.parts?.[0]?.text || ''
+      if (text) return text
+      lastError = new Error('Gemini yanıtı okunamadı')
+    } catch (err) {
+      lastError = err
+      continue
+    }
+  }
+
+  throw lastError || new Error('Gemini çağrısı başarısız')
+}
+

@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, ShoppingBag, CheckSquare, Map, Search } from 'lucide-react'
+import { LayoutDashboard, ShoppingBag, CheckSquare, Map, Search, GraduationCap } from 'lucide-react'
 
 export default function MobileNav() {
   const { pathname } = useLocation()
@@ -10,6 +10,7 @@ export default function MobileNav() {
     { label: 'İşler', path: '/todos', icon: CheckSquare },
     { label: 'Araştır', path: '/research', icon: Search },
     { label: 'Creative', path: '/creative-lab', icon: LayoutDashboard },
+    { label: 'Academy', path: '/academy', icon: GraduationCap },
     { label: 'Yol', path: '/roadmap', icon: Map },
   ]
 

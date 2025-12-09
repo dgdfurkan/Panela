@@ -10,6 +10,7 @@ import Roadmap from './pages/Roadmap'
 import Research from './pages/Research'
 import Settings from './pages/Settings'
 import CreativeLab from './pages/CreativeLab'
+import AcademyHub from './pages/AcademyHub'
 
 const ProtectedRoute = ({ children }) => {
   const { session, loading } = useAuth()
@@ -38,6 +39,7 @@ function App() {
         <Route path="/roadmap" element={<Roadmap />} />
         <Route path="/research" element={<Research />} />
         <Route path="/creative-lab" element={<CreativeLab />} />
+        <Route path="/academy" element={<AcademyHub />} />
         <Route path="/settings" element={<Settings />} />
       </Route>
     </Routes>
