@@ -430,6 +430,28 @@ create policy "open insert academy_user_notes" on academy_user_notes for insert 
 create policy "open update academy_user_notes" on academy_user_notes for update using (true);
 create policy "open delete academy_user_notes" on academy_user_notes for delete using (true);
 
+-- Notes Comments (Chat-like comments for each week)
+create table if not exists public.academy_notes_comments (
+  id uuid default uuid_generate_v4() primary key,
+  week_id uuid references public.academy_weeks(id) on delete cascade,
+  user_id uuid not null,
+  username text, -- Store username for display
+  content text not null,
+  created_at timestamptz default timezone('utc'::text, now())
+);
+
+alter table public.academy_notes_comments enable row level security;
+
+drop policy if exists "open view academy_notes_comments" on academy_notes_comments;
+drop policy if exists "open insert academy_notes_comments" on academy_notes_comments;
+drop policy if exists "open update academy_notes_comments" on academy_notes_comments;
+drop policy if exists "open delete academy_notes_comments" on academy_notes_comments;
+
+create policy "open view academy_notes_comments" on academy_notes_comments for select using (true);
+create policy "open insert academy_notes_comments" on academy_notes_comments for insert with check (true);
+create policy "open update academy_notes_comments" on academy_notes_comments for update using (true);
+create policy "open delete academy_notes_comments" on academy_notes_comments for delete using (true);
+
 -- Quiz Questions
 create table if not exists public.academy_quiz_questions (
   id uuid default uuid_generate_v4() primary key,

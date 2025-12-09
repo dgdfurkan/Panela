@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabaseClient'
-import { Plus, Instagram, Youtube, Globe, CheckCircle, XCircle, Loader2, BookOpen } from 'lucide-react'
+import { Plus, Instagram, Youtube, Globe, CheckCircle, XCircle, Loader2, BookOpen, Trash2, Edit2, X } from 'lucide-react'
 
 export default function ResourcesTab({ weekId }) {
     const [resources, setResources] = useState([])
     const [loading, setLoading] = useState(true)
     const [newUrl, setNewUrl] = useState('')
+    const [newDescription, setNewDescription] = useState('')
     const [isAdding, setIsAdding] = useState(false)
+    const [confirmModal, setConfirmModal] = useState(null) // { type: 'delete' | 'toggle', resourceId, currentValue }
 
     useEffect(() => {
         if (weekId) fetchResources()
@@ -87,13 +89,14 @@ export default function ResourcesTab({ weekId }) {
                     resource_type: resourceType,
                     url: newUrl,
                     title: '',
-                    description: '',
+                    description: newDescription.trim(),
                     is_good_example: true,
                     embed_data: embedData
                 }])
 
             if (error) throw error
             setNewUrl('')
+            setNewDescription('')
             fetchResources()
         } catch (error) {
             console.error('Error adding resource:', error)
@@ -112,13 +115,14 @@ export default function ResourcesTab({ weekId }) {
 
             if (error) throw error
             fetchResources()
+            setConfirmModal(null)
         } catch (error) {
             console.error('Error updating resource:', error)
+            alert('Kaynak güncellenirken hata oluştu: ' + error.message)
         }
     }
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Bu kaynağı silmek istediğinize emin misiniz?')) return
         try {
             const { error } = await supabase
                 .from('academy_resources')
@@ -127,9 +131,15 @@ export default function ResourcesTab({ weekId }) {
 
             if (error) throw error
             fetchResources()
+            setConfirmModal(null)
         } catch (error) {
             console.error('Error deleting resource:', error)
+            alert('Kaynak silinirken hata oluştu: ' + error.message)
         }
+    }
+
+    const openConfirmModal = (type, resourceId, currentValue = null) => {
+        setConfirmModal({ type, resourceId, currentValue })
     }
 
     if (loading) {
@@ -150,8 +160,8 @@ export default function ResourcesTab({ weekId }) {
                 marginBottom: '2rem',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
             }}>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
-                    <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div>
                         <label style={{
                             display: 'block',
                             fontSize: '12px',
@@ -176,6 +186,32 @@ export default function ResourcesTab({ weekId }) {
                             }}
                         />
                     </div>
+                    <div>
+                        <label style={{
+                            display: 'block',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            color: '#64748b',
+                            marginBottom: '0.5rem'
+                        }}>
+                            Açıklama (İsteğe bağlı)
+                        </label>
+                        <textarea
+                            value={newDescription}
+                            onChange={e => setNewDescription(e.target.value)}
+                            placeholder="Bu kaynak hakkında kısa bir açıklama yazın..."
+                            rows={2}
+                            style={{
+                                width: '100%',
+                                padding: '0.75rem',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: 'var(--radius-md)',
+                                fontSize: '14px',
+                                fontFamily: 'inherit',
+                                resize: 'vertical'
+                            }}
+                        />
+                    </div>
                     <button
                         onClick={handleAddResource}
                         disabled={isAdding || !newUrl.trim()}
@@ -187,10 +223,25 @@ export default function ResourcesTab({ weekId }) {
                             borderRadius: 'var(--radius-md)',
                             fontWeight: '600',
                             cursor: isAdding || !newUrl.trim() ? 'not-allowed' : 'pointer',
-                            opacity: isAdding || !newUrl.trim() ? 0.6 : 1
+                            opacity: isAdding || !newUrl.trim() ? 0.6 : 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.5rem',
+                            alignSelf: 'flex-start'
                         }}
                     >
-                        {isAdding ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+                        {isAdding ? (
+                            <>
+                                <Loader2 size={16} className="animate-spin" />
+                                <span>Ekleniyor...</span>
+                            </>
+                        ) : (
+                            <>
+                                <Plus size={16} />
+                                <span>Kaynak Ekle</span>
+                            </>
+                        )}
                     </button>
                 </div>
             </div>
@@ -226,7 +277,7 @@ export default function ResourcesTab({ weekId }) {
                                 alignItems: 'center'
                             }}>
                                 <button
-                                    onClick={() => handleToggleExample(resource.id, resource.is_good_example)}
+                                    onClick={() => openConfirmModal('toggle', resource.id, resource.is_good_example)}
                                     style={{
                                         padding: '0.4rem 0.8rem',
                                         background: isGood ? '#10b981' : '#ef4444',
@@ -245,17 +296,20 @@ export default function ResourcesTab({ weekId }) {
                                     {isGood ? 'Doğru Örnek' : 'Yanlış Örnek'}
                                 </button>
                                 <button
-                                    onClick={() => handleDelete(resource.id)}
+                                    onClick={() => openConfirmModal('delete', resource.id)}
                                     style={{
                                         padding: '0.4rem',
                                         background: '#fee2e2',
                                         color: '#991b1b',
                                         border: 'none',
                                         borderRadius: 'var(--radius-sm)',
-                                        cursor: 'pointer'
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
                                     }}
                                 >
-                                    ×
+                                    <Trash2 size={14} />
                                 </button>
                             </div>
 
@@ -308,16 +362,11 @@ export default function ResourcesTab({ weekId }) {
                                                         Instagram profil sayfasını görüntüle
                                                     </div>
                                                 </div>
-                                                {resource.title && (
+                                                {resource.description && (
                                                     <div style={{ padding: '1rem', borderTop: '1px solid #e2e8f0' }}>
-                                                        <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', marginBottom: '0.25rem' }}>
-                                                            {resource.title}
+                                                        <div style={{ fontSize: '13px', color: '#64748b' }}>
+                                                            {resource.description}
                                                         </div>
-                                                        {resource.description && (
-                                                            <div style={{ fontSize: '13px', color: '#64748b' }}>
-                                                                {resource.description}
-                                                            </div>
-                                                        )}
                                                     </div>
                                                 )}
                                             </div>
@@ -433,18 +482,11 @@ export default function ResourcesTab({ weekId }) {
                                                             </div>
                                                         </div>
                                                     )}
-                                                    {(resource.title || resource.description) && (
+                                                    {resource.description && (
                                                         <div style={{ padding: '1rem', borderTop: '1px solid #e2e8f0' }}>
-                                                            {resource.title && (
-                                                                <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', marginBottom: '0.25rem' }}>
-                                                                    {resource.title}
-                                                                </div>
-                                                            )}
-                                                            {resource.description && (
-                                                                <div style={{ fontSize: '13px', color: '#64748b' }}>
-                                                                    {resource.description}
-                                                                </div>
-                                                            )}
+                                                            <div style={{ fontSize: '13px', color: '#64748b' }}>
+                                                                {resource.description}
+                                                            </div>
                                                         </div>
                                                     )}
                                                 </div>
@@ -500,18 +542,11 @@ export default function ResourcesTab({ weekId }) {
                                                         Web sitesini görüntüle
                                                     </div>
                                                 </div>
-                                                {(resource.title || resource.description) && (
+                                                {resource.description && (
                                                     <div style={{ padding: '1rem', borderTop: '1px solid #e2e8f0' }}>
-                                                        {resource.title && (
-                                                            <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', marginBottom: '0.25rem' }}>
-                                                                {resource.title}
-                                                            </div>
-                                                        )}
-                                                        {resource.description && (
-                                                            <div style={{ fontSize: '13px', color: '#64748b' }}>
-                                                                {resource.description}
-                                                            </div>
-                                                        )}
+                                                        <div style={{ fontSize: '13px', color: '#64748b' }}>
+                                                            {resource.description}
+                                                        </div>
                                                     </div>
                                                 )}
                                             </div>
@@ -537,7 +572,85 @@ export default function ResourcesTab({ weekId }) {
                     <div style={{ fontSize: '14px', marginTop: '0.5rem' }}>Yukarıdaki alana URL ekleyerek başlayın</div>
                 </div>
             )}
+
+            {/* Confirmation Modal */}
+            {confirmModal && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0,0,0,0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000
+                }}
+                onClick={() => setConfirmModal(null)}
+                >
+                    <div style={{
+                        background: 'white',
+                        borderRadius: 'var(--radius-lg)',
+                        padding: '2rem',
+                        maxWidth: '400px',
+                        width: '90%',
+                        boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
+                    }}
+                    onClick={e => e.stopPropagation()}
+                    >
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#1e293b', marginBottom: '0.5rem' }}>
+                                {confirmModal.type === 'delete' ? 'Kaynağı Sil' : 'Durumu Değiştir'}
+                            </h3>
+                            <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>
+                                {confirmModal.type === 'delete' 
+                                    ? 'Bu kaynağı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.'
+                                    : `Bu kaynağı ${confirmModal.currentValue ? '"Yanlış Örnek"' : '"Doğru Örnek"'} olarak işaretlemek istediğinize emin misiniz?`
+                                }
+                            </p>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                            <button
+                                onClick={() => setConfirmModal(null)}
+                                style={{
+                                    padding: '0.75rem 1.5rem',
+                                    background: '#f1f5f9',
+                                    color: '#475569',
+                                    border: 'none',
+                                    borderRadius: 'var(--radius-md)',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                    fontSize: '14px'
+                                }}
+                            >
+                                İptal
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (confirmModal.type === 'delete') {
+                                        handleDelete(confirmModal.resourceId)
+                                    } else {
+                                        handleToggleExample(confirmModal.resourceId, confirmModal.currentValue)
+                                    }
+                                }}
+                                style={{
+                                    padding: '0.75rem 1.5rem',
+                                    background: confirmModal.type === 'delete' ? '#ef4444' : 'var(--color-primary)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: 'var(--radius-md)',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                    fontSize: '14px'
+                                }}
+                            >
+                                {confirmModal.type === 'delete' ? 'Sil' : 'Değiştir'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
-
