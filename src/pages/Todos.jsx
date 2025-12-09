@@ -53,7 +53,14 @@ export default function Todos() {
                 details: details
             }])
 
-            if (error) throw error
+            if (error) {
+                // Ignore RLS/unauthorized silently to avoid noise
+                if (error.code === '42501' || error.code === '401') {
+                    console.debug('Activity log skipped (RLS/unauthorized).')
+                    return
+                }
+                throw error
+            }
             fetchActivities()
         } catch (error) {
             console.error('Activity logging failed (safe to ignore if RLS not set):', error)
@@ -117,6 +124,7 @@ export default function Todos() {
                         due_date: payload.due_date,
                         tags: payload.tags
                     })
+                    .eq('id', formData.id)
                 if (error) throw error
                 logActivity('UPDATE', 'görevi güncelledi', formData.id)
             } else {
