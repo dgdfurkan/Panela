@@ -1,285 +1,178 @@
-import { useState } from 'react'
-import { Search, ExternalLink, BarChart2, PlusCircle, ArrowRight } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Target, Trophy, Trash2, AlertCircle } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
+import WinnerHunterWizard from '../components/winner-hunter/WinnerHunterWizard'
 
 export default function Research() {
-    const [url, setUrl] = useState('https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=TR&media_type=all')
-    const [researchData, setResearchData] = useState({
-        productName: '',
-        competitorName: '',
-        adCount: '',
-        notes: ''
-    })
+  const { user } = useAuth()
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
 
-    const { user } = useAuth()
+  const handleSave = async (data) => {
+    setSaving(true)
+    setError('')
+    setSuccess('')
+    
+    try {
+      if (!user || !user.id) {
+        throw new Error('Oturum kapalı. Lütfen tekrar giriş yapın.')
+      }
 
-    const openAdLibrary = () => {
-        window.open(url, '_blank')
+      // Veritabanına kaydet
+      const { error: insertError } = await supabase
+        .from('product_hunting_lab')
+        .insert([{
+          ...data,
+          user_id: user.id,
+          updated_at: new Date().toISOString()
+        }])
+
+      if (insertError) throw insertError
+
+      setSuccess('Ürün analizi başarıyla kaydedildi!')
+      
+      // Eğer WINNER ise products tablosuna da ekle (opsiyonel)
+      if (data.status === 'WINNER') {
+        const { error: productError } = await supabase
+          .from('products')
+          .insert([{
+            name: data.product_name,
+            status: 'Researching',
+            priority: 'High',
+            thoughts: `Winner Score: ${data.winner_score}\nNiş: ${data.niche}\nKâr Marjı: ${data.profit_margin}x\nGolden Ratio: ${data.engagement_ratio}x`,
+            user_id: user.id
+          }])
+        
+        if (productError) {
+          console.error('Products tablosuna ekleme hatası:', productError)
+        }
+      }
+    } catch (err) {
+      console.error('Kaydetme hatası:', err)
+      setError(err.message || 'Ürün analizi kaydedilirken bir hata oluştu')
+    } finally {
+      setSaving(false)
     }
+  }
 
-    const handleAddProduct = async (e) => {
-        e.preventDefault()
-        try {
-            if (!user || !user.id) throw new Error('Oturum kapalı. Lütfen tekrar giriş yapın.')
-
-            const { error } = await supabase
-                .from('products')
-                .insert([{
-                    name: researchData.productName,
-                    status: 'Researching',
-                    priority: 'High',
-                    thoughts: `Rakip: ${researchData.competitorName}\nReklam Sayısı: ${researchData.adCount}\nNotlar: ${researchData.notes}`,
-                    user_id: user.id
-                }])
-
-            if (error) throw error
-
-            alert('Ürün fikirlerine eklendi!')
-            setResearchData({
-                productName: '',
-                competitorName: '',
-                adCount: '',
-                notes: ''
-            })
-        } catch (error) {
-            alert('Hata: ' + error.message)
-        }
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(''), 5000)
+      return () => clearTimeout(timer)
     }
+  }, [success])
 
-    return (
-        <div className="page-container fade-in">
-            <div className="page-header">
-                <div>
-                    <h1 className="text-2xl font-bold">Pazar Araştırma Merkezi</h1>
-                    <p className="text-muted">Rakip analizi ve ürün avı.</p>
-                </div>
+  return (
+    <div className="page-container fade-in" style={{
+      background: '#0F172A',
+      minHeight: '100vh',
+      padding: '2rem'
+    }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        {/* Header */}
+        <div style={{
+          marginBottom: '3rem',
+          textAlign: 'center'
+        }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '1rem',
+            marginBottom: '1rem'
+          }}>
+            <div style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '16px',
+              background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 8px 24px rgba(139, 92, 246, 0.4)'
+            }}>
+              <Target size={32} color="white" />
             </div>
-
-            <div className="grid-container">
-                {/* Left Column: Tools */}
-                <div className="research-sidebar">
-                    <div className="tool-card glass-panel">
-                        <div className="tool-header">
-                            <div className="icon-box bg-blue">
-                                <Search size={24} color="#3B82F6" />
-                            </div>
-                            <h3>Meta Reklam Kütüphanesi</h3>
-                        </div>
-                        <p className="tool-desc">
-                            Rakiplerin hangi reklamları çıktığını canlı izle.
-                        </p>
-                        <button onClick={openAdLibrary} className="btn-tool">
-                            Kütüphaneyi Aç <ExternalLink size={16} />
-                        </button>
-                    </div>
-
-                    <div className="tool-card glass-panel">
-                        <div className="tool-header">
-                            <div className="icon-box bg-purple">
-                                <BarChart2 size={24} color="#8B5CF6" />
-                            </div>
-                            <h3>Google Trends</h3>
-                        </div>
-                        <p className="tool-desc">
-                            Ürün hacimlerini ve sezonluk durumları kontrol et.
-                        </p>
-                        <a href="https://trends.google.com/trends/" target="_blank" rel="noreferrer" className="btn-tool secondary">
-                            Trendlere Bak <ArrowRight size={16} />
-                        </a>
-                    </div>
-                </div>
-
-                {/* Right Column: Record Findings */}
-                <div className="findings-panel glass-panel">
-                    <div className="panel-header">
-                        <h3>📝 Bulgu Kaydet</h3>
-                        <p className="text-muted text-sm">Bulduğun potansiyel ürünü analiz et ve listene ekle.</p>
-                    </div>
-
-                    <form onSubmit={handleAddProduct} className="research-form">
-                        <div className="form-group">
-                            <label>Bulunan Ürün İsmi</label>
-                            <input
-                                required
-                                value={researchData.productName}
-                                onChange={e => setResearchData({ ...researchData, productName: e.target.value })}
-                                placeholder="Örn: Galaxy Projektör"
-                            />
-                        </div>
-
-                        <div className="form-group">
-                            <label>Rakip / Mağaza Adı</label>
-                            <input
-                                value={researchData.competitorName}
-                                onChange={e => setResearchData({ ...researchData, competitorName: e.target.value })}
-                                placeholder="Örn: Trendyol / X Mağazası"
-                            />
-                        </div>
-
-                        <div className="form-group">
-                            <label>Aktif Reklam Sayısı (Tahmini)</label>
-                            <input
-                                type="number"
-                                value={researchData.adCount}
-                                onChange={e => setResearchData({ ...researchData, adCount: e.target.value })}
-                                placeholder="Örn: 15"
-                            />
-                        </div>
-
-                        <div className="form-group">
-                            <label>Analiz Notları</label>
-                            <textarea
-                                rows={4}
-                                value={researchData.notes}
-                                onChange={e => setResearchData({ ...researchData, notes: e.target.value })}
-                                placeholder="Video reklam kullanıyorlar mı? Fiyat avantajımız var mı?"
-                            />
-                        </div>
-
-                        <button type="submit" className="btn-primary full-width">
-                            <PlusCircle size={18} />
-                            <span>Ürünlere Ekle ve Takip Et</span>
-                        </button>
-                    </form>
-                </div>
+            <div style={{ textAlign: 'left' }}>
+              <h1 style={{
+                margin: 0,
+                fontSize: '36px',
+                fontWeight: '800',
+                background: 'linear-gradient(135deg, #8B5CF6, #F59E0B)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text'
+              }}>
+                The Winner Hunter
+              </h1>
+              <p style={{
+                margin: '0.5rem 0 0',
+                color: '#94A3B8',
+                fontSize: '16px',
+                fontWeight: '500'
+              }}>
+                Kazanan Ürün Avcısı - Mark Builds Brands Metodolojisi
+              </p>
             </div>
-
-            <style>{`
-        .grid-container {
-          display: grid;
-          grid-template-columns: 1fr 1.5fr;
-          gap: 2rem;
-        }
-
-        .research-sidebar {
-          display: flex;
-          flex-direction: column;
-          gap: 1.5rem;
-        }
-
-        .tool-card {
-          padding: 1.5rem;
-          border-radius: var(--radius-lg);
-          transition: transform 0.2s;
-        }
-        
-        .tool-card:hover { transform: translateY(-3px); }
-
-        .tool-header {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          margin-bottom: 1rem;
-        }
-
-        .tool-header h3 {
-          font-weight: 700;
-          font-size: 1.1rem;
-        }
-
-        .icon-box {
-          width: 48px;
-          height: 48px;
-          border-radius: 12px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .bg-blue { background: rgba(59, 130, 246, 0.1); }
-        .bg-purple { background: rgba(139, 92, 246, 0.1); }
-
-        .tool-desc {
-          color: var(--color-text-muted);
-          font-size: 0.9rem;
-          margin-bottom: 1.5rem;
-          line-height: 1.5;
-        }
-
-        .btn-tool {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 0.5rem;
-          width: 100%;
-          padding: 0.75rem;
-          border-radius: var(--radius-md);
-          background: var(--color-text-main);
-          color: white;
-          font-weight: 600;
-          transition: opacity 0.2s;
-        }
-
-        .btn-tool.secondary {
-          background: var(--color-background);
-          color: var(--color-text-main);
-          border: 1px solid var(--color-border);
-        }
-        
-        .btn-tool:hover { opacity: 0.9; }
-
-        .findings-panel {
-          padding: 2rem;
-          border-radius: var(--radius-lg);
-        }
-
-        .panel-header { margin-bottom: 1.5rem; }
-
-        .research-form {
-          display: flex;
-          flex-direction: column;
-          gap: 1.25rem;
-        }
-
-        .btn-primary {
-          background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
-          color: white;
-          padding: 0.875rem;
-          border-radius: var(--radius-md);
-          font-weight: 600;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 0.5rem;
-          box-shadow: var(--shadow-glow);
-        }
-        
-        /* Premium Input Styling Update for Research Form as well */
-        .form-group label {
-            display: block;
-            margin-bottom: 0.4rem;
-            font-size: 0.9rem;
-            color: var(--color-text-muted);
-            font-weight: 500;
-        }
-
-        .form-group input, .form-group textarea {
-            width: 100%; 
-            padding: 1rem; 
-            border-radius: var(--radius-md); 
-            border: 1px solid var(--color-border); 
-            background: var(--color-background); 
-            font-size: 1rem;
-            transition: all 0.2s;
-            color: var(--color-text-main);
-        }
-
-        .form-group input:focus, .form-group textarea:focus {
-            border-color: var(--color-primary);
-            background: white;
-            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
-            outline: none;
-        }
-
-        .full-width { width: 100%; margin-top: 0.5rem; }
-
-        @media (max-width: 768px) {
-          .grid-container {
-            grid-template-columns: 1fr;
-          }
-        }
-      `}</style>
+          </div>
+          <p style={{
+            color: '#64748B',
+            fontSize: '15px',
+            maxWidth: '700px',
+            margin: '1.5rem auto 0',
+            lineHeight: '1.6'
+          }}>
+            Duygusal kararlar verme. <strong style={{ color: '#F1F5F9' }}>VERİ, MATEMATİK ve PSİKOLOJİ</strong> ile ürünlerini analiz et.
+            Mark'ın öğretilerine göre kazanan ürünleri bul.
+          </p>
         </div>
-    )
+
+        {/* Success/Error Messages */}
+        {success && (
+          <div style={{
+            marginBottom: '2rem',
+            padding: '1rem 1.5rem',
+            background: 'rgba(16, 185, 129, 0.1)',
+            border: '1px solid rgba(16, 185, 129, 0.3)',
+            borderRadius: 'var(--radius-md)',
+            color: '#6EE7B7',
+            fontSize: '15px',
+            fontWeight: '600',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem'
+          }}>
+            <Trophy size={20} />
+            {success}
+          </div>
+        )}
+
+        {error && (
+          <div style={{
+            marginBottom: '2rem',
+            padding: '1rem 1.5rem',
+            background: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            borderRadius: 'var(--radius-md)',
+            color: '#FCA5A5',
+            fontSize: '15px',
+            fontWeight: '600',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem'
+          }}>
+            <AlertCircle size={20} />
+            {error}
+          </div>
+        )}
+
+        {/* Winner Hunter Wizard */}
+        <WinnerHunterWizard
+          onSave={handleSave}
+          userId={user?.id}
+        />
+      </div>
+    </div>
+  )
 }
