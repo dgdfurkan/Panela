@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabaseClient'
-import { Video, Play, Loader2, Maximize2 } from 'lucide-react'
+import { Video, Play, Loader2, Maximize2, Folder } from 'lucide-react'
 
 export default function ClassroomTab({ weekId }) {
     const [videos, setVideos] = useState([])
@@ -53,7 +53,15 @@ export default function ClassroomTab({ weekId }) {
         if (video.video_provider === 'cloudinary') {
             return video.video_url
         }
+        if (video.video_provider === 'googledrive') {
+            return null // Google Drive klasörleri embed edilemez
+        }
         return null
+    }
+
+    const isGoogleDrive = (video) => {
+        return video.video_provider === 'googledrive' || 
+               video.video_url?.includes('drive.google.com')
     }
 
     if (loading) {
@@ -91,7 +99,64 @@ export default function ClassroomTab({ weekId }) {
                     overflow: 'hidden',
                     boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
                 }}>
-                    {selectedVideo && playerUrl ? (
+                    {selectedVideo && isGoogleDrive(selectedVideo) ? (
+                        <div>
+                            <a
+                                href={selectedVideo.video_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                    display: 'block',
+                                    textDecoration: 'none',
+                                    color: 'inherit'
+                                }}
+                            >
+                                <div style={{
+                                    border: '1px solid #e2e8f0',
+                                    borderRadius: 'var(--radius-md)',
+                                    overflow: 'hidden',
+                                    background: 'white',
+                                    transition: 'all 0.2s',
+                                    cursor: 'pointer',
+                                    margin: '1.5rem'
+                                }}
+                                onMouseEnter={e => {
+                                    e.currentTarget.style.borderColor = '#4285F4'
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(66, 133, 244, 0.2)'
+                                }}
+                                onMouseLeave={e => {
+                                    e.currentTarget.style.borderColor = '#e2e8f0'
+                                    e.currentTarget.style.boxShadow = 'none'
+                                }}
+                                >
+                                    <div style={{
+                                        background: 'linear-gradient(135deg, #4285F4 0%, #34A853 50%, #FBBC04 100%)',
+                                        padding: '3rem 2rem',
+                                        textAlign: 'center',
+                                        color: 'white'
+                                    }}>
+                                        <Folder size={64} style={{ marginBottom: '1rem' }} />
+                                        <div style={{ fontSize: '20px', fontWeight: '700', marginBottom: '0.5rem' }}>
+                                            Google Drive Klasörü
+                                        </div>
+                                        <div style={{ fontSize: '14px', opacity: 0.9 }}>
+                                            Ders kaydını görüntüle
+                                        </div>
+                                    </div>
+                                    <div style={{ padding: '1.5rem', borderTop: '1px solid #e2e8f0' }}>
+                                        <div style={{ fontSize: '16px', fontWeight: '600', color: '#1e293b', marginBottom: '0.5rem' }}>
+                                            {selectedVideo.title || 'Ders Videosu'}
+                                        </div>
+                                        {selectedVideo.description && (
+                                            <div style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.6' }}>
+                                                {selectedVideo.description}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    ) : selectedVideo && playerUrl ? (
                         <div style={{ position: 'relative' }}>
                             <div style={{
                                 position: 'relative',
@@ -197,7 +262,11 @@ export default function ClassroomTab({ weekId }) {
                                                 gap: '0.75rem',
                                                 marginBottom: '0.5rem'
                                             }}>
-                                                <Video size={18} color={isSelected ? 'var(--color-primary)' : '#64748b'} />
+                                                {isGoogleDrive(video) ? (
+                                                    <Folder size={18} color={isSelected ? '#4285F4' : '#64748b'} />
+                                                ) : (
+                                                    <Video size={18} color={isSelected ? 'var(--color-primary)' : '#64748b'} />
+                                                )}
                                                 <div style={{
                                                     fontSize: '14px',
                                                     fontWeight: isSelected ? '600' : '500',

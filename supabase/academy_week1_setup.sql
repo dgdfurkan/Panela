@@ -135,3 +135,13 @@ SELECT
   jsonb_build_object('channel', '@StoryBoxvideos') as embed_data
 FROM public.academy_weeks WHERE week_number = 1;
 
+-- Ders Kaydı (Google Drive)
+INSERT INTO public.academy_videos (week_id, video_url, video_provider, title, description)
+SELECT 
+  id as week_id,
+  'https://drive.google.com/drive/u/1/folders/1xyXP4jz_OTPDxQouF5KthTXxQ4EU3TVh' as video_url,
+  'googledrive' as video_provider,
+  'Ders Videosu' as title,
+  'İlk haftanın ders kaydı' as description
+FROM public.academy_weeks WHERE week_number = 1;
+

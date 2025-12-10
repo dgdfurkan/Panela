@@ -361,7 +361,7 @@ create table if not exists public.academy_videos (
   id uuid default uuid_generate_v4() primary key,
   week_id uuid references public.academy_weeks(id) on delete cascade,
   video_url text not null,
-  video_provider text not null check (video_provider in ('cloudinary', 'youtube', 'vimeo')),
+  video_provider text not null check (video_provider in ('cloudinary', 'youtube', 'vimeo', 'googledrive')),
   video_thumbnail text,
   video_duration integer, -- in seconds
   title text not null,
