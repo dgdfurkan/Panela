@@ -17,8 +17,11 @@ export default function SummaryTab({ weekId, userId }) {
 
     useEffect(() => {
         if (textareaRef.current) {
+            const maxHeight = 15 * 22 // approx line-height 22px → 15 satır sınırı
             textareaRef.current.style.height = 'auto'
-            textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
+            const nextHeight = Math.min(textareaRef.current.scrollHeight, maxHeight)
+            textareaRef.current.style.height = `${nextHeight}px`
+            textareaRef.current.style.overflowY = textareaRef.current.scrollHeight > maxHeight ? 'auto' : 'hidden'
         }
     }, [content])
 
@@ -149,7 +152,8 @@ export default function SummaryTab({ weekId, userId }) {
                     rows={8}
                     style={{
                         width: '100%',
-                        minHeight: '260px',
+                        minHeight: '220px',
+                        maxHeight: '330px', // ~15 satır sınırı
                         padding: '1rem',
                         border: '1px solid #e2e8f0',
                         borderRadius: 'var(--radius-md)',
@@ -157,6 +161,7 @@ export default function SummaryTab({ weekId, userId }) {
                         lineHeight: '1.6',
                         fontFamily: 'inherit',
                         resize: 'none',
+                        overflowY: 'auto',
                         outline: 'none',
                         transition: 'border-color 0.2s'
                     }}
