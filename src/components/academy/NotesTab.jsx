@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../context/AuthContext'
-import { PenTool, Send, Loader2, Save } from 'lucide-react'
+import { PenTool, Send, Loader2 } from 'lucide-react'
 
 export default function NotesTab({ weekId, userId }) {
     const { user } = useAuth()
@@ -11,16 +11,10 @@ export default function NotesTab({ weekId, userId }) {
     const [newComment, setNewComment] = useState('')
     const textareaRef = useRef(null)
     const commentsEndRef = useRef(null)
-    const [summaryContent, setSummaryContent] = useState('')
-    const [summaryLoading, setSummaryLoading] = useState(true)
-    const [summarySaving, setSummarySaving] = useState(false)
-    const [summaryLastSaved, setSummaryLastSaved] = useState(null)
-    const summaryRef = useRef(null)
 
     useEffect(() => {
         if (weekId) {
             fetchComments()
-            fetchSummary()
             // Real-time subscription for comments
             const subscription = supabase
                 .channel(`academy_notes_${weekId}`)
@@ -55,14 +49,6 @@ export default function NotesTab({ weekId, userId }) {
         }
     }, [newComment])
 
-    useEffect(() => {
-        // Auto-resize summary textarea
-        if (summaryRef.current) {
-            summaryRef.current.style.height = 'auto'
-            summaryRef.current.style.height = `${summaryRef.current.scrollHeight}px`
-        }
-    }, [summaryContent])
-
     const fetchComments = async () => {
         try {
             const { data, error } = await supabase
@@ -77,28 +63,6 @@ export default function NotesTab({ weekId, userId }) {
             console.error('Error fetching comments:', error)
         } finally {
             setLoading(false)
-        }
-    }
-
-    const fetchSummary = async () => {
-        try {
-            const { data, error } = await supabase
-                .from('academy_notes_summary')
-                .select('*')
-                .eq('week_id', weekId)
-                .single()
-
-            if (error && error.code !== 'PGRST116') throw error
-            if (data) {
-                setSummaryContent(data.content || '')
-                setSummaryLastSaved(data.updated_at)
-            } else {
-                setSummaryContent('')
-            }
-        } catch (error) {
-            console.error('Error fetching summary:', error)
-        } finally {
-            setSummaryLoading(false)
         }
     }
 
@@ -126,30 +90,6 @@ export default function NotesTab({ weekId, userId }) {
             alert('Yorum eklenirken hata oluştu: ' + error.message)
         } finally {
             setSaving(false)
-        }
-    }
-
-    const handleSaveSummary = async () => {
-        if (!weekId) return
-        setSummarySaving(true)
-        try {
-            const { error } = await supabase
-                .from('academy_notes_summary')
-                .upsert({
-                    week_id: weekId,
-                    content: summaryContent,
-                    updated_at: new Date().toISOString(),
-                    updated_by_id: userId || null,
-                    updated_by_username: user?.username || 'Kullanıcı'
-                }, { onConflict: 'week_id' })
-
-            if (error) throw error
-            setSummaryLastSaved(new Date().toISOString())
-        } catch (error) {
-            console.error('Error saving summary:', error)
-            alert('Genel özet kaydedilirken hata oluştu: ' + error.message)
-        } finally {
-            setSummarySaving(false)
         }
     }
 
@@ -184,97 +124,7 @@ export default function NotesTab({ weekId, userId }) {
     }
 
     return (
-        <div style={{ maxWidth: '1000px', margin: '0 auto', height: '100%', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {/* Summary Card */}
-            <div style={{
-                background: 'white',
-                padding: '1.5rem',
-                borderRadius: 'var(--radius-lg)',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '1rem'
-            }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <PenTool size={20} color="var(--color-primary)" />
-                        <div>
-                            <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#1e293b' }}>
-                                Genel Özet / Word Alanı
-                            </h2>
-                            <div style={{ fontSize: '12px', color: '#64748b' }}>
-                                Uzun özetler, altyazılar, ders metinleri; AI için hazır tut.
-                            </div>
-                        </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        {summaryLastSaved && (
-                            <span style={{ fontSize: '12px', color: '#64748b' }}>
-                                Son kayıt: {new Date(summaryLastSaved).toLocaleString('tr-TR', {
-                                    day: '2-digit',
-                                    month: 'short',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                })}
-                            </span>
-                        )}
-                        <button
-                            onClick={handleSaveSummary}
-                            disabled={summarySaving}
-                            style={{
-                                padding: '0.65rem 1.2rem',
-                                background: summarySaving ? '#cbd5e1' : 'var(--color-primary)',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: 'var(--radius-md)',
-                                fontWeight: '600',
-                                fontSize: '13px',
-                                cursor: summarySaving ? 'not-allowed' : 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.4rem'
-                            }}
-                        >
-                            {summarySaving ? (
-                                <>
-                                    <Loader2 size={14} className="animate-spin" />
-                                    <span>Kaydediliyor...</span>
-                                </>
-                            ) : (
-                                <>
-                                    <Save size={14} />
-                                    <span>Kaydet</span>
-                                </>
-                            )}
-                        </button>
-                    </div>
-                </div>
-                <textarea
-                    ref={summaryRef}
-                    value={summaryContent}
-                    onChange={e => setSummaryContent(e.target.value)}
-                    placeholder="Genel özet, altyazılar, uzun metinler... (Shift+Enter yeni satır)"
-                    rows={6}
-                    disabled={summaryLoading}
-                    style={{
-                        width: '100%',
-                        minHeight: '220px',
-                        padding: '1rem',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: 'var(--radius-md)',
-                        fontSize: '14px',
-                        lineHeight: '1.6',
-                        fontFamily: 'inherit',
-                        resize: 'none',
-                        outline: 'none',
-                        transition: 'border-color 0.2s',
-                        background: summaryLoading ? '#f8fafc' : 'white'
-                    }}
-                    onFocus={e => e.target.style.borderColor = 'var(--color-primary)'}
-                    onBlur={e => e.target.style.borderColor = '#e2e8f0'}
-                />
-            </div>
-
+        <div style={{ maxWidth: '1000px', margin: '0 auto', height: '100%', display: 'flex', flexDirection: 'column' }}>
             {/* Comments Area (Chat) */}
             <div style={{
                 flex: 1,

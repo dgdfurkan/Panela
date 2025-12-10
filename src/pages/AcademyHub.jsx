@@ -6,8 +6,9 @@ import ResourcesTab from '../components/academy/ResourcesTab'
 import ClassroomTab from '../components/academy/ClassroomTab'
 import AssignmentsTab from '../components/academy/AssignmentsTab'
 import NotesTab from '../components/academy/NotesTab'
+import SummaryTab from '../components/academy/SummaryTab'
 import QuizTab from '../components/academy/QuizTab'
-import { BookOpen, Video, FileText, CheckSquare, PenTool, Brain } from 'lucide-react'
+import { BookOpen, Video, FileText, CheckSquare, PenTool, BookMarked, Brain } from 'lucide-react'
 
 export default function AcademyHub() {
     const [weeks, setWeeks] = useState([])
@@ -44,6 +45,7 @@ export default function AcademyHub() {
         { id: 'classroom', label: 'Ders Kaydı', icon: Video },
         { id: 'assignments', label: 'Ödevler', icon: CheckSquare },
         { id: 'notes', label: 'Dijital Defter', icon: PenTool },
+        { id: 'summary', label: 'Genel Özet', icon: BookMarked },
         { id: 'quiz', label: 'AI Pratik Lab', icon: Brain }
     ]
 
@@ -154,6 +156,7 @@ export default function AcademyHub() {
                                 {activeTab === 'classroom' && <ClassroomTab weekId={selectedWeek.id} />}
                                 {activeTab === 'assignments' && <AssignmentsTab weekId={selectedWeek.id} userId={user?.id} />}
                                 {activeTab === 'notes' && <NotesTab weekId={selectedWeek.id} userId={user?.id} />}
+                                {activeTab === 'summary' && <SummaryTab weekId={selectedWeek.id} userId={user?.id} />}
                                 {activeTab === 'quiz' && <QuizTab weekId={selectedWeek.id} userId={user?.id} />}
                             </div>
                         </>
