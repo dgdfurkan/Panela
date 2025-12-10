@@ -52,18 +52,13 @@ export default function CriteriaFilterStep({ onComplete, initialData = {} }) {
 
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-      <div style={{
-        background: 'rgba(30, 41, 59, 0.5)',
-        borderRadius: 'var(--radius-lg)',
-        padding: '2rem',
-        border: '1px solid rgba(139, 92, 246, 0.2)'
-      }}>
+      <div className="glass-panel">
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
           <div style={{
             width: '48px',
             height: '48px',
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+            borderRadius: 'var(--radius-md)',
+            background: 'linear-gradient(135deg, var(--color-primary), var(--color-accent))',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -74,10 +69,10 @@ export default function CriteriaFilterStep({ onComplete, initialData = {} }) {
             2
           </div>
           <div style={{ flex: 1 }}>
-            <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#F1F5F9', marginBottom: '0.5rem' }}>
-              The 6 Criteria Filter
+            <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '700', marginBottom: '0.5rem' }}>
+              6 Kriter Filtresi
             </h2>
-            <p style={{ margin: 0, color: '#94A3B8', fontSize: '14px' }}>
+            <p style={{ margin: 0, color: 'var(--color-text-muted)', fontSize: '14px' }}>
               Ürün Değerlendirme - Yargıç Modu
             </p>
           </div>
@@ -87,7 +82,7 @@ export default function CriteriaFilterStep({ onComplete, initialData = {} }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           {/* Product Name */}
           <div>
-            <label style={{ display: 'block', color: '#F1F5F9', fontWeight: '600', marginBottom: '0.5rem', fontSize: '15px' }}>
+            <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.5rem', fontSize: '15px' }}>
               Ürün Adı
             </label>
             <input
@@ -95,21 +90,14 @@ export default function CriteriaFilterStep({ onComplete, initialData = {} }) {
               value={formData.product_name}
               onChange={e => updateField('product_name', e.target.value)}
               placeholder="Örn: Ağrı Kesici Yama"
-              style={{
-                width: '100%',
-                padding: '0.875rem',
-                background: 'rgba(30, 41, 59, 0.5)',
-                border: '1px solid rgba(139, 92, 246, 0.3)',
-                borderRadius: 'var(--radius-md)',
-                color: '#F1F5F9',
-                fontSize: '15px'
-              }}
+              className="input"
+              style={{ width: '100%' }}
             />
           </div>
 
           {/* Niche Selection */}
           <div>
-            <label style={{ display: 'block', color: '#F1F5F9', fontWeight: '600', marginBottom: '0.5rem', fontSize: '15px' }}>
+            <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.5rem', fontSize: '15px' }}>
               Niş Seçimi
             </label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
@@ -118,18 +106,10 @@ export default function CriteriaFilterStep({ onComplete, initialData = {} }) {
                   key={niche}
                   type="button"
                   onClick={() => updateField('niche', niche)}
+                  className={formData.niche === niche ? 'primary-btn' : 'ghost-btn'}
                   style={{
                     padding: '0.75rem 1.25rem',
-                    background: formData.niche === niche
-                      ? 'linear-gradient(135deg, #8B5CF6, #7C3AED)'
-                      : 'rgba(30, 41, 59, 0.5)',
-                    border: `2px solid ${formData.niche === niche ? '#8B5CF6' : 'rgba(139, 92, 246, 0.3)'}`,
-                    borderRadius: 'var(--radius-md)',
-                    color: '#F1F5F9',
-                    fontWeight: '600',
-                    fontSize: '14px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
+                    fontSize: '14px'
                   }}
                 >
                   {niche}
@@ -140,23 +120,18 @@ export default function CriteriaFilterStep({ onComplete, initialData = {} }) {
 
           {/* Question 1: Problem Solving */}
           <div>
-            <label style={{ display: 'block', color: '#F1F5F9', fontWeight: '600', marginBottom: '0.75rem', fontSize: '15px' }}>
+            <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.75rem', fontSize: '15px' }}>
               Soru 1: Ürün ne işe yarıyor?
             </label>
             <div style={{ display: 'flex', gap: '1rem' }}>
               <button
                 type="button"
                 onClick={() => updateField('is_problem_solving', true)}
+                className="glass-panel"
                 style={{
                   flex: 1,
                   padding: '1rem',
-                  background: formData.is_problem_solving === true
-                    ? 'rgba(16, 185, 129, 0.2)'
-                    : 'rgba(30, 41, 59, 0.5)',
-                  border: `2px solid ${formData.is_problem_solving === true ? '#10B981' : 'rgba(139, 92, 246, 0.3)'}`,
-                  borderRadius: 'var(--radius-md)',
-                  color: '#F1F5F9',
-                  fontWeight: '600',
+                  border: `2px solid ${formData.is_problem_solving === true ? 'var(--color-success)' : 'var(--color-border)'}`,
                   cursor: 'pointer',
                   transition: 'all 0.2s'
                 }}
@@ -166,16 +141,11 @@ export default function CriteriaFilterStep({ onComplete, initialData = {} }) {
               <button
                 type="button"
                 onClick={() => updateField('is_problem_solving', false)}
+                className="glass-panel"
                 style={{
                   flex: 1,
                   padding: '1rem',
-                  background: formData.is_problem_solving === false
-                    ? 'rgba(239, 68, 68, 0.2)'
-                    : 'rgba(30, 41, 59, 0.5)',
-                  border: `2px solid ${formData.is_problem_solving === false ? '#EF4444' : 'rgba(139, 92, 246, 0.3)'}`,
-                  borderRadius: 'var(--radius-md)',
-                  color: '#F1F5F9',
-                  fontWeight: '600',
+                  border: `2px solid ${formData.is_problem_solving === false ? 'var(--color-error)' : 'var(--color-border)'}`,
                   cursor: 'pointer',
                   transition: 'all 0.2s'
                 }}
@@ -184,18 +154,9 @@ export default function CriteriaFilterStep({ onComplete, initialData = {} }) {
               </button>
             </div>
             {showGadgetWarning && (
-              <div style={{
-                marginTop: '0.75rem',
-                padding: '1rem',
-                background: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
-                borderRadius: 'var(--radius-md)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem'
-              }}>
-                <AlertCircle size={20} color="#EF4444" />
-                <span style={{ color: '#FCA5A5', fontSize: '14px', fontWeight: '600' }}>
+              <div className="toast error" style={{ marginTop: '0.75rem' }}>
+                <AlertCircle size={18} />
+                <span style={{ fontWeight: '600' }}>
                   HATA: Rastgele gadget satma! Gerçek problemler milyar dolarlık pazardır.
                 </span>
               </div>
@@ -204,22 +165,16 @@ export default function CriteriaFilterStep({ onComplete, initialData = {} }) {
 
           {/* Question 2: Physical Properties */}
           <div>
-            <label style={{ display: 'block', color: '#F1F5F9', fontWeight: '600', marginBottom: '0.75rem', fontSize: '15px' }}>
+            <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.75rem', fontSize: '15px' }}>
               Soru 2: Fiziksel Özellikler
             </label>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <label style={{
+              <label className="glass-panel" style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.75rem',
                 padding: '1rem',
-                background: formData.is_lightweight === true
-                  ? 'rgba(16, 185, 129, 0.1)'
-                  : formData.is_lightweight === false
-                  ? 'rgba(239, 68, 68, 0.1)'
-                  : 'rgba(30, 41, 59, 0.3)',
-                border: `2px solid ${formData.is_lightweight === true ? '#10B981' : formData.is_lightweight === false ? '#EF4444' : 'rgba(139, 92, 246, 0.3)'}`,
-                borderRadius: 'var(--radius-md)',
+                border: `2px solid ${formData.is_lightweight === true ? 'var(--color-success)' : formData.is_lightweight === false ? 'var(--color-error)' : 'var(--color-border)'}`,
                 cursor: 'pointer'
               }}>
                 <input
@@ -228,20 +183,14 @@ export default function CriteriaFilterStep({ onComplete, initialData = {} }) {
                   onChange={e => updateField('is_lightweight', e.target.checked)}
                   style={{ width: '20px', height: '20px', cursor: 'pointer' }}
                 />
-                <span style={{ color: '#F1F5F9', fontWeight: '500' }}>Ayakkabı kutusuna sığar mı?</span>
+                <span style={{ fontWeight: '500' }}>Ayakkabı kutusuna sığar mı?</span>
               </label>
-              <label style={{
+              <label className="glass-panel" style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.75rem',
                 padding: '1rem',
-                background: formData.is_evergreen === false
-                  ? 'rgba(239, 68, 68, 0.1)'
-                  : formData.is_evergreen === true
-                  ? 'rgba(16, 185, 129, 0.1)'
-                  : 'rgba(30, 41, 59, 0.3)',
-                border: `2px solid ${formData.is_evergreen === false ? '#EF4444' : formData.is_evergreen === true ? '#10B981' : 'rgba(139, 92, 246, 0.3)'}`,
-                borderRadius: 'var(--radius-md)',
+                border: `2px solid ${formData.is_evergreen === false ? 'var(--color-error)' : formData.is_evergreen === true ? 'var(--color-success)' : 'var(--color-border)'}`,
                 cursor: 'pointer'
               }}>
                 <input
@@ -250,36 +199,29 @@ export default function CriteriaFilterStep({ onComplete, initialData = {} }) {
                   onChange={e => updateField('is_evergreen', !e.target.checked)}
                   style={{ width: '20px', height: '20px', cursor: 'pointer' }}
                 />
-                <span style={{ color: '#F1F5F9', fontWeight: '500' }}>Mevsimsel mi? (Evet seçilirse riskli)</span>
+                <span style={{ fontWeight: '500' }}>Mevsimsel mi? (Evet seçilirse riskli)</span>
               </label>
             </div>
             {formData.is_evergreen === false && (
-              <div style={{
+              <div className="toast" style={{
                 marginTop: '0.75rem',
-                padding: '1rem',
-                background: 'rgba(245, 158, 11, 0.1)',
-                border: '1px solid rgba(245, 158, 11, 0.3)',
-                borderRadius: 'var(--radius-md)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem'
+                background: 'rgba(245, 158, 11, 0.08)',
+                borderColor: 'rgba(245, 158, 11, 0.25)'
               }}>
-                <AlertCircle size={20} color="#F59E0B" />
-                <span style={{ color: '#FCD34D', fontSize: '14px' }}>
-                  Dikkat! Kışın elinde patlayabilir (Plaj ürünü riski).
-                </span>
+                <AlertCircle size={18} />
+                <span>Dikkat! Kışın elinde patlayabilir (Plaj ürünü riski).</span>
               </div>
             )}
           </div>
 
           {/* Question 3: Profitability Calculator */}
           <div>
-            <label style={{ display: 'block', color: '#F1F5F9', fontWeight: '600', marginBottom: '0.75rem', fontSize: '15px' }}>
+            <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.75rem', fontSize: '15px' }}>
               Soru 3: Kârlılık Hesaplayıcı
             </label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
               <div>
-                <label style={{ display: 'block', color: '#94A3B8', fontSize: '13px', marginBottom: '0.5rem' }}>
+                <label style={{ display: 'block', color: 'var(--color-text-muted)', fontSize: '13px', marginBottom: '0.5rem' }}>
                   Ürün Maliyeti ($)
                 </label>
                 <input
@@ -288,19 +230,12 @@ export default function CriteriaFilterStep({ onComplete, initialData = {} }) {
                   onChange={e => updateField('cost', e.target.value)}
                   placeholder="10"
                   step="0.01"
-                  style={{
-                    width: '100%',
-                    padding: '0.875rem',
-                    background: 'rgba(30, 41, 59, 0.5)',
-                    border: '1px solid rgba(139, 92, 246, 0.3)',
-                    borderRadius: 'var(--radius-md)',
-                    color: '#F1F5F9',
-                    fontSize: '15px'
-                  }}
+                  className="input"
+                  style={{ width: '100%' }}
                 />
               </div>
               <div>
-                <label style={{ display: 'block', color: '#94A3B8', fontSize: '13px', marginBottom: '0.5rem' }}>
+                <label style={{ display: 'block', color: 'var(--color-text-muted)', fontSize: '13px', marginBottom: '0.5rem' }}>
                   Hedef Satış Fiyatı ($)
                 </label>
                 <input
@@ -309,46 +244,36 @@ export default function CriteriaFilterStep({ onComplete, initialData = {} }) {
                   onChange={e => updateField('sale_price', e.target.value)}
                   placeholder="30"
                   step="0.01"
-                  style={{
-                    width: '100%',
-                    padding: '0.875rem',
-                    background: 'rgba(30, 41, 59, 0.5)',
-                    border: '1px solid rgba(139, 92, 246, 0.3)',
-                    borderRadius: 'var(--radius-md)',
-                    color: '#F1F5F9',
-                    fontSize: '15px'
-                  }}
+                  className="input"
+                  style={{ width: '100%' }}
                 />
               </div>
             </div>
             {profitMargin && (
-              <div style={{
+              <div className={isLowMargin ? 'toast error' : 'toast'} style={{
                 padding: '1rem',
-                background: isLowMargin
-                  ? 'rgba(239, 68, 68, 0.1)'
-                  : 'rgba(16, 185, 129, 0.1)',
-                border: `2px solid ${isLowMargin ? '#EF4444' : '#10B981'}`,
-                borderRadius: 'var(--radius-md)',
+                background: isLowMargin ? undefined : 'rgba(16, 185, 129, 0.08)',
+                borderColor: isLowMargin ? undefined : 'rgba(16, 185, 129, 0.25)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   {isLowMargin ? (
-                    <AlertCircle size={20} color="#EF4444" />
+                    <AlertCircle size={18} />
                   ) : (
-                    <CheckCircle size={20} color="#10B981" />
+                    <CheckCircle size={18} color="var(--color-success)" />
                   )}
                   <div>
-                    <div style={{ color: '#F1F5F9', fontWeight: '600', fontSize: '15px' }}>
+                    <div style={{ fontWeight: '600', fontSize: '15px' }}>
                       Kâr Marjı: {profitMargin}x
                     </div>
                     {isLowMargin ? (
-                      <div style={{ color: '#FCA5A5', fontSize: '13px', marginTop: '0.25rem' }}>
+                      <div style={{ fontSize: '13px', marginTop: '0.25rem' }}>
                         Matematik yalan söylemez. Bu ürünle reklam maliyetini kurtaramazsın.
                       </div>
                     ) : (
-                      <div style={{ color: '#6EE7B7', fontSize: '13px', marginTop: '0.25rem' }}>
+                      <div style={{ color: 'var(--color-success)', fontSize: '13px', marginTop: '0.25rem' }}>
                         Hedef marjı geçtin! ✅
                       </div>
                     )}
@@ -358,8 +283,7 @@ export default function CriteriaFilterStep({ onComplete, initialData = {} }) {
                   <div style={{
                     fontSize: '24px',
                     fontWeight: '700',
-                    color: '#10B981',
-                    textShadow: '0 0 10px rgba(16, 185, 129, 0.5)'
+                    color: 'var(--color-success)'
                   }}>
                     {profitMargin}x
                   </div>
@@ -370,7 +294,7 @@ export default function CriteriaFilterStep({ onComplete, initialData = {} }) {
 
           {/* Upsell Potential */}
           <div>
-            <label style={{ display: 'block', color: '#F1F5F9', fontWeight: '600', marginBottom: '0.5rem', fontSize: '15px' }}>
+            <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.5rem', fontSize: '15px' }}>
               Upsell Potansiyeli
             </label>
             <textarea
@@ -378,16 +302,8 @@ export default function CriteriaFilterStep({ onComplete, initialData = {} }) {
               onChange={e => updateField('upsell_potential', e.target.value)}
               placeholder="Yanına ne satılabilir? Örn: Gözlük -> Kılıf"
               rows={3}
-              style={{
-                width: '100%',
-                padding: '0.875rem',
-                background: 'rgba(30, 41, 59, 0.5)',
-                border: '1px solid rgba(139, 92, 246, 0.3)',
-                borderRadius: 'var(--radius-md)',
-                color: '#F1F5F9',
-                fontSize: '15px',
-                resize: 'vertical'
-              }}
+              className="input"
+              style={{ width: '100%', resize: 'vertical' }}
             />
           </div>
         </div>
@@ -395,22 +311,8 @@ export default function CriteriaFilterStep({ onComplete, initialData = {} }) {
         <button
           onClick={handleNext}
           disabled={!canProceed}
-          style={{
-            width: '100%',
-            marginTop: '2rem',
-            padding: '1rem',
-            background: canProceed
-              ? 'linear-gradient(135deg, #8B5CF6, #7C3AED)'
-              : 'rgba(100, 116, 139, 0.3)',
-            color: canProceed ? 'white' : '#64748B',
-            border: 'none',
-            borderRadius: 'var(--radius-md)',
-            fontWeight: '700',
-            fontSize: '16px',
-            cursor: canProceed ? 'pointer' : 'not-allowed',
-            transition: 'all 0.2s',
-            boxShadow: canProceed ? '0 4px 12px rgba(139, 92, 246, 0.4)' : 'none'
-          }}
+          className={canProceed ? 'primary-btn' : 'ghost-btn'}
+          style={{ width: '100%', marginTop: '2rem' }}
         >
           Devam Et →
         </button>

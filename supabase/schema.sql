@@ -520,3 +520,41 @@ create policy "open view academy_quiz_attempts" on academy_quiz_attempts for sel
 create policy "open insert academy_quiz_attempts" on academy_quiz_attempts for insert with check (true);
 create policy "open update academy_quiz_attempts" on academy_quiz_attempts for update using (true);
 create policy "open delete academy_quiz_attempts" on academy_quiz_attempts for delete using (true);
+
+-- Product Hunting Lab (The Winner Hunter)
+create table if not exists public.product_hunting_lab (
+  id uuid default uuid_generate_v4() primary key,
+  user_id uuid not null,
+  product_name text not null,
+  niche text check (niche in ('Health & Beauty', 'Pain Relief', 'Pet', 'Gadget - RISKLI', 'Other')),
+  status text default 'Burner Phase' check (status in ('Burner Phase', 'Analysis', 'Validation', 'WINNER', 'Trash')),
+  -- The 6 Pillars
+  is_problem_solving boolean,
+  profit_margin decimal(10, 2),
+  is_lightweight boolean,
+  is_evergreen boolean,
+  upsell_potential text,
+  -- Viral Math
+  likes_count integer default 0,
+  shares_count integer default 0,
+  engagement_ratio decimal(10, 2),
+  -- Validation Metrics
+  search_volume integer,
+  site_traffic integer,
+  trend_status text check (trend_status in ('Stable', 'Exploding', 'Dying')),
+  winner_score integer default 0 check (winner_score >= 0 and winner_score <= 100),
+  created_at timestamptz default timezone('utc'::text, now()),
+  updated_at timestamptz default timezone('utc'::text, now())
+);
+
+alter table public.product_hunting_lab enable row level security;
+
+drop policy if exists "open view product_hunting_lab" on product_hunting_lab;
+drop policy if exists "open insert product_hunting_lab" on product_hunting_lab;
+drop policy if exists "open update product_hunting_lab" on product_hunting_lab;
+drop policy if exists "open delete product_hunting_lab" on product_hunting_lab;
+
+create policy "open view product_hunting_lab" on product_hunting_lab for select using (true);
+create policy "open insert product_hunting_lab" on product_hunting_lab for insert with check (true);
+create policy "open update product_hunting_lab" on product_hunting_lab for update using (true);
+create policy "open delete product_hunting_lab" on product_hunting_lab for delete using (true);

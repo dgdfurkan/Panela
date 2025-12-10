@@ -7,10 +7,10 @@ import ValidationDeskStep from './ValidationDeskStep'
 import VerdictScreen from './VerdictScreen'
 
 const steps = [
-  { id: 1, title: 'Burner Protocol', component: BurnerProtocolStep },
-  { id: 2, title: '6 Criteria Filter', component: CriteriaFilterStep },
-  { id: 3, title: 'Golden Ratio', component: GoldenRatioStep },
-  { id: 4, title: 'Validation Desk', component: ValidationDeskStep }
+  { id: 1, title: 'Hazırlık Protokolü', component: BurnerProtocolStep },
+  { id: 2, title: '6 Kriter Filtresi', component: CriteriaFilterStep },
+  { id: 3, title: 'Altın Oran', component: GoldenRatioStep },
+  { id: 4, title: 'Doğrulama Masası', component: ValidationDeskStep }
 ]
 
 export default function WinnerHunterWizard({ onSave, userId }) {
@@ -50,12 +50,7 @@ export default function WinnerHunterWizard({ onSave, userId }) {
     <div>
       {/* Progress Bar */}
       {currentStep <= 4 && (
-        <div style={{
-          marginBottom: '2rem',
-          background: 'rgba(30, 41, 59, 0.3)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '1.5rem'
-        }}>
+        <div className="glass-panel" style={{ marginBottom: '2rem', padding: '1.5rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             {steps.map((step, idx) => (
               <div key={step.id} style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
@@ -64,15 +59,16 @@ export default function WinnerHunterWizard({ onSave, userId }) {
                   height: '40px',
                   borderRadius: '50%',
                   background: currentStep >= step.id
-                    ? 'linear-gradient(135deg, #8B5CF6, #7C3AED)'
-                    : 'rgba(100, 116, 139, 0.3)',
-                  color: 'white',
+                    ? 'linear-gradient(135deg, var(--color-primary), var(--color-accent))'
+                    : 'rgba(0,0,0,0.05)',
+                  color: currentStep >= step.id ? 'white' : 'var(--color-text-muted)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontWeight: '700',
                   fontSize: '16px',
-                  marginRight: '0.5rem'
+                  marginRight: '0.5rem',
+                  border: currentStep >= step.id ? 'none' : '2px solid var(--color-border)'
                 }}>
                   {currentStep > step.id ? '✓' : step.id}
                 </div>
@@ -81,15 +77,15 @@ export default function WinnerHunterWizard({ onSave, userId }) {
                     flex: 1,
                     height: '2px',
                     background: currentStep > step.id
-                      ? 'linear-gradient(90deg, #8B5CF6, rgba(139, 92, 246, 0.3))'
-                      : 'rgba(100, 116, 139, 0.3)',
+                      ? 'linear-gradient(90deg, var(--color-primary), rgba(0,0,0,0.1))'
+                      : 'var(--color-border)',
                     margin: '0 0.5rem'
                   }} />
                 )}
               </div>
             ))}
           </div>
-          <div style={{ textAlign: 'center', color: '#94A3B8', fontSize: '14px' }}>
+          <div style={{ textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '14px' }}>
             Adım {currentStep} / {steps.length}
           </div>
         </div>
@@ -114,24 +110,16 @@ export default function WinnerHunterWizard({ onSave, userId }) {
         <div style={{
           marginTop: '2rem',
           display: 'flex',
-          justifyContent: 'space-between',
+          justifyContent: 'flex-start',
           gap: '1rem'
         }}>
           <button
             onClick={handleBack}
+            className="ghost-btn"
             style={{
-              padding: '0.875rem 1.5rem',
-              background: 'rgba(30, 41, 59, 0.5)',
-              border: '1px solid rgba(139, 92, 246, 0.3)',
-              borderRadius: 'var(--radius-md)',
-              color: '#F1F5F9',
-              fontWeight: '600',
-              fontSize: '15px',
-              cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem',
-              transition: 'all 0.2s'
+              gap: '0.5rem'
             }}
           >
             <ChevronLeft size={18} />

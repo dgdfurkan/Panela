@@ -65,104 +65,48 @@ export default function Research() {
   }, [success])
 
   return (
-    <div className="page-container fade-in" style={{
-      background: '#0F172A',
-      minHeight: '100vh',
-      padding: '2rem'
-    }}>
+    <div className="page-container fade-in">
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         {/* Header */}
-        <div style={{
-          marginBottom: '3rem',
-          textAlign: 'center'
-        }}>
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '1rem',
-            marginBottom: '1rem'
-          }}>
-            <div style={{
-              width: '64px',
-              height: '64px',
-              borderRadius: '16px',
-              background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 8px 24px rgba(139, 92, 246, 0.4)'
-            }}>
-              <Target size={32} color="white" />
-            </div>
-            <div style={{ textAlign: 'left' }}>
-              <h1 style={{
-                margin: 0,
-                fontSize: '36px',
-                fontWeight: '800',
-                background: 'linear-gradient(135deg, #8B5CF6, #F59E0B)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text'
-              }}>
-                The Winner Hunter
-              </h1>
-              <p style={{
-                margin: '0.5rem 0 0',
-                color: '#94A3B8',
-                fontSize: '16px',
-                fontWeight: '500'
-              }}>
-                Kazanan Ürün Avcısı - Mark Builds Brands Metodolojisi
-              </p>
-            </div>
+        <div className="page-head" style={{ marginBottom: '2rem' }}>
+          <div>
+            <div className="eyebrow">Kazanan Ürün Avcısı</div>
+            <h1 style={{ margin: '0.5rem 0', fontSize: '2rem', fontWeight: '700' }}>
+              The Winner Hunter
+            </h1>
+            <p style={{ margin: '0.5rem 0 0', color: 'var(--color-text-muted)', fontSize: '0.95rem' }}>
+              Mark Builds Brands Metodolojisi - Duygusal kararlar verme. <strong>VERİ, MATEMATİK ve PSİKOLOJİ</strong> ile ürünlerini analiz et.
+            </p>
           </div>
-          <p style={{
-            color: '#64748B',
-            fontSize: '15px',
-            maxWidth: '700px',
-            margin: '1.5rem auto 0',
-            lineHeight: '1.6'
+          <div style={{
+            width: '64px',
+            height: '64px',
+            borderRadius: 'var(--radius-lg)',
+            background: 'linear-gradient(135deg, var(--color-primary), var(--color-accent))',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: 'var(--shadow-md)'
           }}>
-            Duygusal kararlar verme. <strong style={{ color: '#F1F5F9' }}>VERİ, MATEMATİK ve PSİKOLOJİ</strong> ile ürünlerini analiz et.
-            Mark'ın öğretilerine göre kazanan ürünleri bul.
-          </p>
+            <Target size={32} color="white" />
+          </div>
         </div>
 
         {/* Success/Error Messages */}
         {success && (
-          <div style={{
-            marginBottom: '2rem',
-            padding: '1rem 1.5rem',
-            background: 'rgba(16, 185, 129, 0.1)',
-            border: '1px solid rgba(16, 185, 129, 0.3)',
-            borderRadius: 'var(--radius-md)',
-            color: '#6EE7B7',
-            fontSize: '15px',
-            fontWeight: '600',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem'
+          <div className="toast" style={{
+            background: 'rgba(16, 185, 129, 0.08)',
+            borderColor: 'rgba(16, 185, 129, 0.25)',
+            marginBottom: '1.5rem'
           }}>
-            <Trophy size={20} />
+            <Trophy size={18} />
             {success}
           </div>
         )}
 
         {error && (
-          <div style={{
-            marginBottom: '2rem',
-            padding: '1rem 1.5rem',
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            borderRadius: 'var(--radius-md)',
-            color: '#FCA5A5',
-            fontSize: '15px',
-            fontWeight: '600',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem'
-          }}>
-            <AlertCircle size={20} />
+          <div className="toast error" style={{ marginBottom: '1.5rem' }}>
+            <AlertCircle size={18} />
             {error}
           </div>
         )}

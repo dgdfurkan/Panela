@@ -45,18 +45,13 @@ export default function BurnerProtocolStep({ onComplete, initialData = {} }) {
 
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-      <div style={{
-        background: 'rgba(30, 41, 59, 0.5)',
-        borderRadius: 'var(--radius-lg)',
-        padding: '2rem',
-        border: '1px solid rgba(139, 92, 246, 0.2)'
-      }}>
+      <div className="glass-panel">
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
           <div style={{
             width: '48px',
             height: '48px',
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+            borderRadius: 'var(--radius-md)',
+            background: 'linear-gradient(135deg, var(--color-primary), var(--color-accent))',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -67,10 +62,10 @@ export default function BurnerProtocolStep({ onComplete, initialData = {} }) {
             1
           </div>
           <div style={{ flex: 1 }}>
-            <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#F1F5F9', marginBottom: '0.5rem' }}>
-              Burner Protocol
+            <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '700', marginBottom: '0.5rem' }}>
+              Hazırlık Protokolü
             </h2>
-            <p style={{ margin: 0, color: '#94A3B8', fontSize: '14px' }}>
+            <p style={{ margin: 0, color: 'var(--color-text-muted)', fontSize: '14px' }}>
               Hazırlık ve Algoritma Eğitimi
             </p>
           </div>
@@ -78,7 +73,7 @@ export default function BurnerProtocolStep({ onComplete, initialData = {} }) {
         </div>
 
         <div style={{ marginBottom: '2rem' }}>
-          <p style={{ color: '#94A3B8', fontSize: '15px', lineHeight: '1.6', marginBottom: '1.5rem' }}>
+          <p style={{ color: 'var(--color-text-muted)', fontSize: '15px', lineHeight: '1.6', marginBottom: '1.5rem' }}>
             Ürün aramaya başlamadan önce bu adımları tamamladığından emin ol. Her madde kritik!
           </p>
 
@@ -89,39 +84,28 @@ export default function BurnerProtocolStep({ onComplete, initialData = {} }) {
                 <div
                   key={item.id}
                   onClick={() => handleToggle(item.id)}
+                  className="glass-panel"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '1rem',
                     padding: '1rem',
-                    background: isChecked ? 'rgba(16, 185, 129, 0.1)' : 'rgba(30, 41, 59, 0.3)',
-                    border: `2px solid ${isChecked ? '#10B981' : 'rgba(139, 92, 246, 0.2)'}`,
-                    borderRadius: 'var(--radius-md)',
+                    border: `2px solid ${isChecked ? 'var(--color-success)' : 'var(--color-border)'}`,
                     cursor: 'pointer',
                     transition: 'all 0.2s'
                   }}
-                  onMouseEnter={e => {
-                    if (!isChecked) {
-                      e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.5)'
-                    }
-                  }}
-                  onMouseLeave={e => {
-                    if (!isChecked) {
-                      e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.2)'
-                    }
-                  }}
                 >
                   {isChecked ? (
-                    <CheckCircle size={24} color="#10B981" />
+                    <CheckCircle size={24} color="var(--color-success)" />
                   ) : (
-                    <Circle size={24} color="#64748B" />
+                    <Circle size={24} color="var(--color-text-muted)" />
                   )}
                   <div style={{ flex: 1 }}>
-                    <div style={{ color: '#F1F5F9', fontWeight: '500', fontSize: '15px' }}>
+                    <div style={{ fontWeight: '500', fontSize: '15px' }}>
                       {item.label}
                     </div>
                     {item.tooltip && (
-                      <div style={{ color: '#94A3B8', fontSize: '13px', marginTop: '4px' }}>
+                      <div style={{ color: 'var(--color-text-muted)', fontSize: '13px', marginTop: '4px' }}>
                         {item.tooltip}
                       </div>
                     )}
@@ -133,41 +117,17 @@ export default function BurnerProtocolStep({ onComplete, initialData = {} }) {
         </div>
 
         {!allChecked && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem',
-            padding: '1rem',
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            borderRadius: 'var(--radius-md)',
-            marginBottom: '1.5rem'
-          }}>
-            <AlertCircle size={20} color="#EF4444" />
-            <span style={{ color: '#FCA5A5', fontSize: '14px' }}>
-              Tüm maddeleri tamamlamadan ava başlayamazsın!
-            </span>
+          <div className="toast error" style={{ marginBottom: '1.5rem' }}>
+            <AlertCircle size={18} />
+            <span>Tüm maddeleri tamamlamadan ava başlayamazsın!</span>
           </div>
         )}
 
         <button
           onClick={handleStartHunt}
           disabled={!allChecked}
-          style={{
-            width: '100%',
-            padding: '1rem',
-            background: allChecked
-              ? 'linear-gradient(135deg, #8B5CF6, #7C3AED)'
-              : 'rgba(100, 116, 139, 0.3)',
-            color: allChecked ? 'white' : '#64748B',
-            border: 'none',
-            borderRadius: 'var(--radius-md)',
-            fontWeight: '700',
-            fontSize: '16px',
-            cursor: allChecked ? 'pointer' : 'not-allowed',
-            transition: 'all 0.2s',
-            boxShadow: allChecked ? '0 4px 12px rgba(139, 92, 246, 0.4)' : 'none'
-          }}
+          className={allChecked ? 'primary-btn' : 'ghost-btn'}
+          style={{ width: '100%' }}
         >
           {allChecked ? '🎯 Ava Başla' : 'Tüm Maddeleri Tamamla'}
         </button>

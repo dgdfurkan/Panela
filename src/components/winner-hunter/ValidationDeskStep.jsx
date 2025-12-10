@@ -30,18 +30,13 @@ export default function ValidationDeskStep({ onComplete, initialData = {} }) {
 
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-      <div style={{
-        background: 'rgba(30, 41, 59, 0.5)',
-        borderRadius: 'var(--radius-lg)',
-        padding: '2rem',
-        border: '1px solid rgba(139, 92, 246, 0.2)'
-      }}>
+      <div className="glass-panel">
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
           <div style={{
             width: '48px',
             height: '48px',
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
+            borderRadius: 'var(--radius-md)',
+            background: 'linear-gradient(135deg, var(--color-primary), var(--color-accent))',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -52,11 +47,11 @@ export default function ValidationDeskStep({ onComplete, initialData = {} }) {
             4
           </div>
           <div style={{ flex: 1 }}>
-            <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#F1F5F9', marginBottom: '0.5rem' }}>
-              Validation Desk
+            <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '700', marginBottom: '0.5rem' }}>
+              Doğrulama Masası
             </h2>
-            <p style={{ margin: 0, color: '#94A3B8', fontSize: '14px' }}>
-              Doğrulama Masası - Son Karar Noktası
+            <p style={{ margin: 0, color: 'var(--color-text-muted)', fontSize: '14px' }}>
+              Son Karar Noktası
             </p>
           </div>
           <MarkQuoteTooltip quoteKey="searchVolume" />
@@ -65,7 +60,7 @@ export default function ValidationDeskStep({ onComplete, initialData = {} }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           {/* Search Volume */}
           <div>
-            <label style={{ display: 'block', color: '#F1F5F9', fontWeight: '600', marginBottom: '0.5rem', fontSize: '15px' }}>
+            <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.5rem', fontSize: '15px' }}>
               Aranma Hacmi (Keywords Everywhere)
             </label>
             <input
@@ -73,38 +68,23 @@ export default function ValidationDeskStep({ onComplete, initialData = {} }) {
               value={searchVolume}
               onChange={e => setSearchVolume(e.target.value)}
               placeholder="30000"
+              className="input"
               style={{
                 width: '100%',
-                padding: '0.875rem',
-                background: 'rgba(30, 41, 59, 0.5)',
-                border: `1px solid ${isLowSearchVolume ? 'rgba(239, 68, 68, 0.5)' : 'rgba(139, 92, 246, 0.3)'}`,
-                borderRadius: 'var(--radius-md)',
-                color: '#F1F5F9',
-                fontSize: '15px'
+                borderColor: isLowSearchVolume ? 'var(--color-error)' : undefined
               }}
             />
             {isLowSearchVolume && (
-              <div style={{
-                marginTop: '0.75rem',
-                padding: '1rem',
-                background: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
-                borderRadius: 'var(--radius-md)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem'
-              }}>
-                <AlertCircle size={20} color="#EF4444" />
-                <span style={{ color: '#FCA5A5', fontSize: '14px' }}>
-                  Hacim çok düşük. Yeterli talep yoksa ürün satmaz.
-                </span>
+              <div className="toast error" style={{ marginTop: '0.75rem' }}>
+                <AlertCircle size={18} />
+                <span>Hacim çok düşük. Yeterli talep yoksa ürün satmaz.</span>
               </div>
             )}
           </div>
 
           {/* Site Traffic */}
           <div>
-            <label style={{ display: 'block', color: '#F1F5F9', fontWeight: '600', marginBottom: '0.5rem', fontSize: '15px' }}>
+            <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.5rem', fontSize: '15px' }}>
               Rakip Trafiği (SimilarWeb)
             </label>
             <input
@@ -112,38 +92,23 @@ export default function ValidationDeskStep({ onComplete, initialData = {} }) {
               value={siteTraffic}
               onChange={e => setSiteTraffic(e.target.value)}
               placeholder="300000"
+              className="input"
               style={{
                 width: '100%',
-                padding: '0.875rem',
-                background: 'rgba(30, 41, 59, 0.5)',
-                border: `1px solid ${isLowTraffic ? 'rgba(239, 68, 68, 0.5)' : 'rgba(139, 92, 246, 0.3)'}`,
-                borderRadius: 'var(--radius-md)',
-                color: '#F1F5F9',
-                fontSize: '15px'
+                borderColor: isLowTraffic ? 'var(--color-error)' : undefined
               }}
             />
             {isLowTraffic && (
-              <div style={{
-                marginTop: '0.75rem',
-                padding: '1rem',
-                background: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
-                borderRadius: 'var(--radius-md)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem'
-              }}>
-                <AlertCircle size={20} color="#EF4444" />
-                <span style={{ color: '#FCA5A5', fontSize: '14px' }}>
-                  Yeterli talep yok. Tekerleği yeniden icat etme. Dönen tekerleğe bin.
-                </span>
+              <div className="toast error" style={{ marginTop: '0.75rem' }}>
+                <AlertCircle size={18} />
+                <span>Yeterli talep yok. Tekerleği yeniden icat etme. Dönen tekerleğe bin.</span>
               </div>
             )}
           </div>
 
           {/* Trend Status */}
           <div>
-            <label style={{ display: 'block', color: '#F1F5F9', fontWeight: '600', marginBottom: '0.75rem', fontSize: '15px' }}>
+            <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.75rem', fontSize: '15px' }}>
               Trend Analizi
             </label>
             <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -155,16 +120,11 @@ export default function ValidationDeskStep({ onComplete, initialData = {} }) {
                     key={option.value}
                     type="button"
                     onClick={() => setTrendStatus(option.value)}
+                    className="glass-panel"
                     style={{
                       flex: 1,
                       padding: '1rem',
-                      background: isSelected
-                        ? 'rgba(59, 130, 246, 0.2)'
-                        : 'rgba(30, 41, 59, 0.5)',
-                      border: `2px solid ${isSelected ? '#3B82F6' : 'rgba(139, 92, 246, 0.3)'}`,
-                      borderRadius: 'var(--radius-md)',
-                      color: '#F1F5F9',
-                      fontWeight: '600',
+                      border: `2px solid ${isSelected ? 'var(--color-primary)' : 'var(--color-border)'}`,
                       cursor: 'pointer',
                       transition: 'all 0.2s',
                       display: 'flex',
@@ -173,21 +133,19 @@ export default function ValidationDeskStep({ onComplete, initialData = {} }) {
                       gap: '0.5rem'
                     }}
                   >
-                    <Icon size={24} color={isSelected ? '#3B82F6' : '#64748B'} />
+                    <Icon size={24} color={isSelected ? 'var(--color-primary)' : 'var(--color-text-muted)'} />
                     <span>{option.label}</span>
                   </button>
                 )
               })}
             </div>
             {trendStatus && (
-              <div style={{
+              <div className="toast" style={{
                 marginTop: '0.75rem',
-                padding: '1rem',
-                background: 'rgba(59, 130, 246, 0.1)',
-                border: '1px solid rgba(59, 130, 246, 0.3)',
-                borderRadius: 'var(--radius-md)'
+                background: 'rgba(59, 130, 246, 0.08)',
+                borderColor: 'rgba(59, 130, 246, 0.25)'
               }}>
-                <div style={{ color: '#93C5FD', fontSize: '14px' }}>
+                <div style={{ fontSize: '14px' }}>
                   {trendStatus === 'Stable' && 'Stabil trendler güvenilirdir. Tekerleği yeniden icat etme.'}
                   {trendStatus === 'Exploding' && 'Yükselen trend! İyi bir zamanlama olabilir ama dikkatli ol.'}
                   {trendStatus === 'Dying' && 'Sönme trendi risklidir. Bu ürün için dikkatli ol.'}
@@ -200,22 +158,8 @@ export default function ValidationDeskStep({ onComplete, initialData = {} }) {
         <button
           onClick={handleNext}
           disabled={!canProceed}
-          style={{
-            width: '100%',
-            marginTop: '2rem',
-            padding: '1rem',
-            background: canProceed
-              ? 'linear-gradient(135deg, #3B82F6, #2563EB)'
-              : 'rgba(100, 116, 139, 0.3)',
-            color: canProceed ? 'white' : '#64748B',
-            border: 'none',
-            borderRadius: 'var(--radius-md)',
-            fontWeight: '700',
-            fontSize: '16px',
-            cursor: canProceed ? 'pointer' : 'not-allowed',
-            transition: 'all 0.2s',
-            boxShadow: canProceed ? '0 4px 12px rgba(59, 130, 246, 0.4)' : 'none'
-          }}
+          className={canProceed ? 'primary-btn' : 'ghost-btn'}
+          style={{ width: '100%', marginTop: '2rem' }}
         >
           Sonuçları Gör →
         </button>

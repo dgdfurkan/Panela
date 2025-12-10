@@ -47,9 +47,7 @@ export default function VerdictScreen({ data, onSave, onReset }) {
 
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-      <div style={{
-        background: 'rgba(30, 41, 59, 0.5)',
-        borderRadius: 'var(--radius-lg)',
+      <div className="glass-panel" style={{
         padding: '3rem',
         border: `2px solid ${color}`,
         textAlign: 'center'
@@ -72,9 +70,9 @@ export default function VerdictScreen({ data, onSave, onReset }) {
             color: color,
             marginBottom: '0.5rem'
           }}>
-            {isWinner && '🏆 WINNER!'}
-            {isTrash && '🗑️ TRASH'}
-            {status === 'Validation' && '✅ VALIDATION'}
+            {isWinner && '🏆 KAZANAN!'}
+            {isTrash && '🗑️ ÇÖP'}
+            {status === 'Validation' && '✅ DOĞRULAMA'}
           </div>
         </div>
 
@@ -129,71 +127,69 @@ export default function VerdictScreen({ data, onSave, onReset }) {
         <div style={{ marginBottom: '2rem' }}>
           {isWinner && (
             <div>
-              <div style={{ fontSize: '20px', fontWeight: '700', color: '#F1F5F9', marginBottom: '1rem' }}>
-                🎉 TEBRİKLER! Bu ürün WINNER listesine eklendi!
+              <div style={{ fontSize: '20px', fontWeight: '700', marginBottom: '1rem' }}>
+                🎉 TEBRİKLER! Bu ürün Kazanan listesine eklendi!
               </div>
-              <div style={{ color: '#94A3B8', fontSize: '15px', lineHeight: '1.6' }}>
+              <div style={{ color: 'var(--color-text-muted)', fontSize: '15px', lineHeight: '1.6' }}>
                 Tüm kriterleri geçtin. Bu ürünle ilerlemeye değer.
               </div>
             </div>
           )}
           {isTrash && (
             <div>
-              <div style={{ fontSize: '20px', fontWeight: '700', color: '#F1F5F9', marginBottom: '1rem' }}>
+              <div style={{ fontSize: '20px', fontWeight: '700', marginBottom: '1rem' }}>
                 Bu ürünü çöpe at ve sıradakine geç.
               </div>
-              <div style={{ color: '#94A3B8', fontSize: '15px', lineHeight: '1.6' }}>
+              <div style={{ color: 'var(--color-text-muted)', fontSize: '15px', lineHeight: '1.6' }}>
                 Skor çok düşük. Zamanını daha iyi ürünlere harca.
               </div>
             </div>
           )}
           {status === 'Validation' && (
             <div>
-              <div style={{ fontSize: '20px', fontWeight: '700', color: '#F1F5F9', marginBottom: '1rem' }}>
+              <div style={{ fontSize: '20px', fontWeight: '700', marginBottom: '1rem' }}>
                 Daha fazla analiz gerekiyor.
               </div>
-              <div style={{ color: '#94A3B8', fontSize: '15px', lineHeight: '1.6' }}>
-                Bu ürün Validation aşamasında. Daha fazla test et.
+              <div style={{ color: 'var(--color-text-muted)', fontSize: '15px', lineHeight: '1.6' }}>
+                Bu ürün Doğrulama aşamasında. Daha fazla test et.
               </div>
             </div>
           )}
         </div>
 
         {/* Product Summary */}
-        <div style={{
-          background: 'rgba(30, 41, 59, 0.3)',
-          borderRadius: 'var(--radius-md)',
+        <div className="glass-panel" style={{
           padding: '1.5rem',
           marginBottom: '2rem',
           textAlign: 'left'
         }}>
-          <div style={{ color: '#F1F5F9', fontWeight: '600', marginBottom: '1rem', fontSize: '16px' }}>
+          <div style={{ fontWeight: '600', marginBottom: '1rem', fontSize: '16px' }}>
             Ürün Özeti
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '14px' }}>
             <div>
-              <span style={{ color: '#94A3B8' }}>Ürün:</span>
-              <span style={{ color: '#F1F5F9', marginLeft: '0.5rem', fontWeight: '600' }}>
+              <span style={{ color: 'var(--color-text-muted)' }}>Ürün:</span>
+              <span style={{ marginLeft: '0.5rem', fontWeight: '600' }}>
                 {data.product_name || 'Belirtilmemiş'}
               </span>
             </div>
             <div>
-              <span style={{ color: '#94A3B8' }}>Niş:</span>
-              <span style={{ color: '#F1F5F9', marginLeft: '0.5rem', fontWeight: '600' }}>
+              <span style={{ color: 'var(--color-text-muted)' }}>Niş:</span>
+              <span style={{ marginLeft: '0.5rem', fontWeight: '600' }}>
                 {data.niche || 'Belirtilmemiş'}
               </span>
             </div>
             {data.profit_margin && (
               <div>
-                <span style={{ color: '#94A3B8' }}>Kâr Marjı:</span>
-                <span style={{ color: '#10B981', marginLeft: '0.5rem', fontWeight: '600' }}>
+                <span style={{ color: 'var(--color-text-muted)' }}>Kâr Marjı:</span>
+                <span style={{ color: 'var(--color-success)', marginLeft: '0.5rem', fontWeight: '600' }}>
                   {data.profit_margin}x
                 </span>
               </div>
             )}
             {data.engagement_ratio && (
               <div>
-                <span style={{ color: '#94A3B8' }}>Golden Ratio:</span>
+                <span style={{ color: 'var(--color-text-muted)' }}>Altın Oran:</span>
                 <span style={{ color: '#F59E0B', marginLeft: '0.5rem', fontWeight: '600' }}>
                   {data.engagement_ratio}x
                 </span>
@@ -206,38 +202,20 @@ export default function VerdictScreen({ data, onSave, onReset }) {
         <div style={{ display: 'flex', gap: '1rem' }}>
           <button
             onClick={onReset}
-            style={{
-              flex: 1,
-              padding: '1rem',
-              background: 'rgba(30, 41, 59, 0.5)',
-              border: '1px solid rgba(139, 92, 246, 0.3)',
-              borderRadius: 'var(--radius-md)',
-              color: '#F1F5F9',
-              fontWeight: '600',
-              fontSize: '16px',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
+            className="ghost-btn"
+            style={{ flex: 1 }}
           >
             Yeni Ürün Analizi
           </button>
           <button
             onClick={handleSave}
+            className="primary-btn"
             style={{
               flex: 1,
-              padding: '1rem',
-              background: `linear-gradient(135deg, ${color}, ${color}80)`,
-              border: 'none',
-              borderRadius: 'var(--radius-md)',
-              color: 'white',
-              fontWeight: '700',
-              fontSize: '16px',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              boxShadow: `0 4px 12px ${color}40`
+              background: `linear-gradient(135deg, ${color}, ${color}80)`
             }}
           >
-            {isWinner ? 'WINNER Listesine Ekle' : 'Kaydet'}
+            {isWinner ? 'Kazanan Listesine Ekle' : 'Kaydet'}
           </button>
         </div>
       </div>
