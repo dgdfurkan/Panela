@@ -452,6 +452,28 @@ create policy "open insert academy_notes_comments" on academy_notes_comments for
 create policy "open update academy_notes_comments" on academy_notes_comments for update using (true);
 create policy "open delete academy_notes_comments" on academy_notes_comments for delete using (true);
 
+-- Notes Summary (General summary per week)
+create table if not exists public.academy_notes_summary (
+  id uuid default uuid_generate_v4() primary key,
+  week_id uuid references public.academy_weeks(id) on delete cascade unique,
+  content text,
+  updated_at timestamptz default timezone('utc'::text, now()),
+  updated_by_id uuid,
+  updated_by_username text
+);
+
+alter table public.academy_notes_summary enable row level security;
+
+drop policy if exists "open view academy_notes_summary" on academy_notes_summary;
+drop policy if exists "open insert academy_notes_summary" on academy_notes_summary;
+drop policy if exists "open update academy_notes_summary" on academy_notes_summary;
+drop policy if exists "open delete academy_notes_summary" on academy_notes_summary;
+
+create policy "open view academy_notes_summary" on academy_notes_summary for select using (true);
+create policy "open insert academy_notes_summary" on academy_notes_summary for insert with check (true);
+create policy "open update academy_notes_summary" on academy_notes_summary for update using (true);
+create policy "open delete academy_notes_summary" on academy_notes_summary for delete using (true);
+
 -- Quiz Questions
 create table if not exists public.academy_quiz_questions (
   id uuid default uuid_generate_v4() primary key,
