@@ -128,6 +128,8 @@ Her soru için JSON formatında döndür:
     const currentFeedback = currentQuestion ? feedback[currentQuestion.id] : null
     const currentAnswer = currentQuestion ? userAnswers[currentQuestion.id] : ''
 
+    const EMBED_URL = 'https://ef-week1-learn.netlify.app'
+
     return (
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
             {/* Header */}
@@ -176,6 +178,44 @@ Her soru için JSON formatında döndür:
                         </>
                     )}
                 </button>
+            </div>
+
+            {/* Embed Content */}
+            <div style={{
+                background: 'white',
+                padding: '1rem',
+                borderRadius: 'var(--radius-lg)',
+                marginBottom: '1.5rem',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+            }}>
+                <div style={{ fontWeight: 600, color: '#1e293b', marginBottom: '0.75rem' }}>
+                    Hafta 1 İçerik (Embed)
+                </div>
+                <div style={{
+                    position: 'relative',
+                    width: '100%',
+                    paddingBottom: '62.5%', // 16:10-ish to give more vertical room
+                    borderRadius: 'var(--radius-lg)',
+                    overflow: 'hidden',
+                    border: '1px solid #e2e8f0',
+                    background: '#0f172a'
+                }}>
+                    <iframe
+                        src={EMBED_URL}
+                        title="Hafta 1 Öğrenme Alanı"
+                        style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            border: 'none'
+                        }}
+                        loading="lazy"
+                        allowFullScreen
+                        sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
+                    />
+                </div>
             </div>
 
             {questions.length === 0 ? (
