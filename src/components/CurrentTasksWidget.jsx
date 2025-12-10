@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Calendar, ArrowRight, CheckCircle2, Clock } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
@@ -8,28 +8,112 @@ export default function CurrentTasksWidget() {
     const { user } = useAuth()
     const navigate = useNavigate()
     const [tasks, setTasks] = useState([])
+    const [settings, setSettings] = useState({
+        tasks_view_mode: 'latest',
+        tasks_count: 3,
+        tasks_animation_duration: 5,
+        tasks_status_filters: ['Todo', 'In Progress', 'Review']
+    })
     const [loading, setLoading] = useState(true)
+    const intervalRef = useRef(null)
+    const [startIndex, setStartIndex] = useState(0)
 
     useEffect(() => {
-        if (user) fetchTasks()
+        if (user) {
+            fetchSettingsAndTasks()
+        }
+        return () => {
+            if (intervalRef.current) clearInterval(intervalRef.current)
+        }
     }, [user])
 
-    const fetchTasks = async () => {
+    useEffect(() => {
+        if (settings.tasks_view_mode === 'loop') {
+            setupLoopInterval(tasks.length)
+        } else if (intervalRef.current) {
+            clearInterval(intervalRef.current)
+        }
+    }, [settings, tasks])
+
+    const setupLoopInterval = (length) => {
+        if (intervalRef.current) clearInterval(intervalRef.current)
+        const showCount = settings.tasks_count || 3
+        if (length <= showCount) return
+        const durationMs = (settings.tasks_animation_duration || 5) * 1000
+        intervalRef.current = setInterval(() => {
+            setStartIndex((prev) => (prev + showCount) % length)
+        }, durationMs)
+    }
+
+    const fetchSettingsAndTasks = async () => {
         try {
-            const { data, error } = await supabase
+            // Load user settings
+            const { data: userSettings } = await supabase
+                .from('user_settings')
+                .select('tasks_view_mode, tasks_count, tasks_animation_duration, tasks_status_filters')
+                .eq('user_id', user.id)
+                .maybeSingle()
+
+            const mergedSettings = {
+                tasks_view_mode: userSettings?.tasks_view_mode || 'latest',
+                tasks_count: userSettings?.tasks_count || 3,
+                tasks_animation_duration: userSettings?.tasks_animation_duration || 5,
+                tasks_status_filters: userSettings?.tasks_status_filters?.length
+                    ? userSettings.tasks_status_filters
+                    : ['Todo', 'In Progress', 'Review']
+            }
+            setSettings(mergedSettings)
+
+            const activeStatuses = mergedSettings.tasks_status_filters?.length
+                ? mergedSettings.tasks_status_filters
+                : ['Todo', 'In Progress', 'Review']
+
+            // Fetch tasks according to mode
+            const baseQuery = supabase
                 .from('todos')
                 .select('*')
-                .neq('status', 'Done') // Only active tasks
-                .order('due_date', { ascending: true }) // Urgent first
-                .limit(3)
+                .in('status', activeStatuses)
 
-            if (error) throw error
-            setTasks(data || [])
+            if (mergedSettings.tasks_view_mode === 'latest' || mergedSettings.tasks_view_mode === 'loop') {
+                const { data, error } = await baseQuery
+                    .order('created_at', { ascending: false })
+                    .limit(Math.max(mergedSettings.tasks_count || 3, 10))
+                if (error) throw error
+                setTasks(prioritySorted(data || [], mergedSettings.tasks_count))
+            } else {
+                // random
+                const { data, error } = await baseQuery
+                    .order('created_at', { ascending: false })
+                    .limit(Math.max((mergedSettings.tasks_count || 3) * 3, 15))
+                if (error) throw error
+                const shuffled = shuffleArray(data || [])
+                setTasks(prioritySorted(shuffled, mergedSettings.tasks_count))
+            }
         } catch (error) {
             console.error('Error fetching dashboard tasks:', error)
         } finally {
             setLoading(false)
         }
+    }
+
+    const prioritySorted = (list, takeCount = 3) => {
+        const priorities = { 'Todo': 1, 'In Progress': 2, 'Review': 3 }
+        const sorted = [...list].sort((a, b) => {
+            const pa = priorities[a.status] || 99
+            const pb = priorities[b.status] || 99
+            if (pa !== pb) return pa - pb
+            return new Date(a.created_at) - new Date(b.created_at)
+        })
+        return sorted.slice(0, takeCount || 3)
+    }
+
+    const shuffleArray = (arr) => {
+        const copy = [...arr]
+        for (let i = copy.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1))
+            ;[copy[i], copy[j]] = [copy[j], copy[i]]
+        }
+        return copy
     }
 
     const getTagColor = (tag) => {
@@ -41,15 +125,37 @@ export default function CurrentTasksWidget() {
         }
     }
 
+    const getStatusColor = (status) => {
+        switch (status) {
+            case 'Todo': return '#f59e0b' // amber
+            case 'In Progress': return '#3b82f6' // blue
+            case 'Review': return '#a855f7' // purple
+            default: return '#cbd5e1'
+        }
+    }
+
     const formatDate = (dateString) => {
         if (!dateString) return 'Tarih yok'
-        return new Date(dateString).toLocaleDateString('tr-TR', {
+        return new Date(dateString).toLocaleString('tr-TR', {
+            day: '2-digit',
             month: 'short',
-            day: 'numeric',
             hour: '2-digit',
-            minute: '2-digit'
+            minute: '2-digit',
+            hour12: false
         })
     }
+
+    const visibleTasks = useMemo(() => {
+        const count = settings.tasks_count || 3
+        if (settings.tasks_view_mode === 'loop' && tasks.length > count) {
+            const items = []
+            for (let i = 0; i < count; i++) {
+                items.push(tasks[(startIndex + i) % tasks.length])
+            }
+            return items
+        }
+        return tasks.slice(0, count)
+    }, [tasks, settings, startIndex])
 
     if (loading) {
         return (
@@ -74,7 +180,7 @@ export default function CurrentTasksWidget() {
             </div>
 
             <div className="tasks-list">
-                {tasks.length === 0 ? (
+                {visibleTasks.length === 0 ? (
                     <div className="empty-state">
                         <div className="empty-icon-bg">
                             <CheckCircle2 size={32} className="text-success" />
@@ -83,7 +189,7 @@ export default function CurrentTasksWidget() {
                         <p className="empty-desc">Şu an acil bir görevin yok. Kahve molası? ☕</p>
                     </div>
                 ) : (
-                    tasks.map(task => (
+                    visibleTasks.map(task => (
                         <div key={task.id} className="task-item" onClick={() => navigate('/todos')}>
                             <div className="task-content">
                                 <h4 className="task-title">{task.title}</h4>
@@ -98,7 +204,7 @@ export default function CurrentTasksWidget() {
                                 </div>
                             </div>
                             <div className="task-action">
-                                <div className="status-indicator"></div>
+                                <div className="status-indicator" style={{ background: getStatusColor(task.status) }}></div>
                             </div>
                         </div>
                     ))

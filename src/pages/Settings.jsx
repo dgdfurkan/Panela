@@ -21,7 +21,11 @@ export default function Settings() {
     const [settings, setSettings] = useState({
         product_view_mode: 'latest',
         product_count: 3,
-        animation_duration: 5
+        animation_duration: 5,
+        tasks_view_mode: 'latest',
+        tasks_count: 3,
+        tasks_animation_duration: 5,
+        tasks_status_filters: ['Todo', 'In Progress', 'Review']
     })
     const [tokens, setTokens] = useState([])
     const [tokenForm, setTokenForm] = useState({ label: '', token: '' })
@@ -46,7 +50,11 @@ export default function Settings() {
                     setSettings({
                         product_view_mode: data.product_view_mode,
                         product_count: data.product_count,
-                        animation_duration: data.animation_duration
+                        animation_duration: data.animation_duration,
+                        tasks_view_mode: data.tasks_view_mode || 'latest',
+                        tasks_count: data.tasks_count || 3,
+                        tasks_animation_duration: data.tasks_animation_duration || 5,
+                        tasks_status_filters: data.tasks_status_filters?.length ? data.tasks_status_filters : ['Todo', 'In Progress', 'Review']
                     })
                 } else {
                     // Create default settings if not exists
@@ -57,7 +65,11 @@ export default function Settings() {
                             user_id: user.id,
                             product_view_mode: 'latest',
                             product_count: 3,
-                            animation_duration: 5
+                            animation_duration: 5,
+                            tasks_view_mode: 'latest',
+                            tasks_count: 3,
+                            tasks_animation_duration: 5,
+                            tasks_status_filters: ['Todo', 'In Progress', 'Review']
                         }])
                         .select() // Good practice to select back to confirm
                         .single()
@@ -165,6 +177,13 @@ export default function Settings() {
                 setLastSaved(date)
             }
         )
+    }
+
+    const toggleTaskStatusFilter = (statusKey) => {
+        const current = settings.tasks_status_filters || []
+        const exists = current.includes(statusKey)
+        const next = exists ? current.filter(s => s !== statusKey) : [...current, statusKey]
+        handleChange('tasks_status_filters', next.length ? next : ['Todo', 'In Progress', 'Review'])
     }
 
     const handleAddToken = async () => {
@@ -310,6 +329,104 @@ export default function Settings() {
                     </div>
                 </div>
 
+                {/* Yaklaşan Görevler Görünümü */}
+                <div className="glass-panel settings-card">
+                    <div className="card-header compact-header">
+                        <div className="header-left">
+                            <List className="text-primary" size={22} />
+                            <div>
+                                <h3>Ayarlara Yaklaşan Görevler Görünüm</h3>
+                                <p className="setting-desc">Hangi statüler, kaç görev, hangi mod?</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="card-content compact-grid">
+                        <div className="checkbox-group slim">
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    checked={settings.tasks_status_filters?.includes('Todo')}
+                                    onChange={() => toggleTaskStatusFilter('Todo')}
+                                />
+                                <span>Yapılacaklar (Todo)</span>
+                            </label>
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    checked={settings.tasks_status_filters?.includes('In Progress')}
+                                    onChange={() => toggleTaskStatusFilter('In Progress')}
+                                />
+                                <span>Devam Edenler (In Progress)</span>
+                            </label>
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    checked={settings.tasks_status_filters?.includes('Review')}
+                                    onChange={() => toggleTaskStatusFilter('Review')}
+                                />
+                                <span>Kontrol (Review)</span>
+                            </label>
+                        </div>
+
+                        <div className="radio-group slim">
+                            <label className={`radio-option ${settings.tasks_view_mode === 'latest' ? 'active' : ''}`}>
+                                <input
+                                    type="radio"
+                                    name="tasks_view_mode"
+                                    value="latest"
+                                    checked={settings.tasks_view_mode === 'latest'}
+                                    onChange={(e) => handleChange('tasks_view_mode', e.target.value)}
+                                />
+                                <span className="radio-label">📌 Son Eklenenler</span>
+                            </label>
+                            <label className={`radio-option ${settings.tasks_view_mode === 'random' ? 'active' : ''}`}>
+                                <input
+                                    type="radio"
+                                    name="tasks_view_mode"
+                                    value="random"
+                                    checked={settings.tasks_view_mode === 'random'}
+                                    onChange={(e) => handleChange('tasks_view_mode', e.target.value)}
+                                />
+                                <span className="radio-label">🎲 Rastgele</span>
+                            </label>
+                            <label className={`radio-option ${settings.tasks_view_mode === 'loop' ? 'active' : ''}`}>
+                                <input
+                                    type="radio"
+                                    name="tasks_view_mode"
+                                    value="loop"
+                                    checked={settings.tasks_view_mode === 'loop'}
+                                    onChange={(e) => handleChange('tasks_view_mode', e.target.value)}
+                                />
+                                <span className="radio-label">🔄 Animasyonlu Döngü</span>
+                            </label>
+                        </div>
+
+                        <div className="number-group">
+                            <label>Gösterilecek Görev Sayısı</label>
+                            <input
+                                type="number"
+                                min={1}
+                                max={10}
+                                value={settings.tasks_count}
+                                onChange={(e) => handleChange('tasks_count', Number(e.target.value) || 1)}
+                            />
+                        </div>
+
+                        {settings.tasks_view_mode === 'loop' && (
+                            <div className="number-group">
+                                <label>Animasyon Süresi (sn)</label>
+                                <input
+                                    type="number"
+                                    min={2}
+                                    max={30}
+                                    value={settings.tasks_animation_duration}
+                                    onChange={(e) => handleChange('tasks_animation_duration', Number(e.target.value) || 5)}
+                                />
+                            </div>
+                        )}
+                    </div>
+                </div>
+
                 {/* Gemini Token Yönetimi */}
                 <div className="glass-panel settings-card">
                     <div className="card-header">
@@ -447,6 +564,37 @@ export default function Settings() {
                     flex-direction: row;
                     flex-wrap: wrap;
                     gap: 0.75rem;
+                }
+                .checkbox-group.slim {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.5rem;
+                }
+                .checkbox-group.slim label {
+                    display: flex;
+                    gap: 0.5rem;
+                    align-items: center;
+                    font-size: 0.95rem;
+                    color: var(--color-text-main);
+                }
+                .checkbox-group.slim input {
+                    accent-color: var(--color-primary);
+                }
+                .number-group {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.4rem;
+                }
+                .number-group input {
+                    width: 120px;
+                    padding: 0.45rem 0.75rem;
+                    border: 1px solid rgba(0,0,0,0.1);
+                    border-radius: 8px;
+                    font-size: 0.95rem;
+                }
+                .number-group label {
+                    font-weight: 600;
+                    color: var(--color-text-main);
                 }
                 .form-group.inline {
                     gap: 0.35rem;

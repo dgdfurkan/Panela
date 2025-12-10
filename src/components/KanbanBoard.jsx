@@ -39,6 +39,12 @@ export default function KanbanBoard({ todos, onStatusChange, onEdit, onDelete, u
         return todos.filter(t => t.status === status && t.status !== 'Draft')
     }
 
+    const truncate = (text, max = 15) => {
+        if (!text) return ''
+        if (text.length <= max) return text
+        return text.slice(0, max) + '…'
+    }
+
     return (
         <div className="kanban-app fade-in">
             <main className="project">
@@ -104,7 +110,7 @@ export default function KanbanBoard({ todos, onStatusChange, onEdit, onDelete, u
                                         <div className="task__stats">
                                             <span>
                                                 <Flag size={12} />
-                                                <time>{new Date(todo.due_date).toLocaleDateString('tr-TR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</time>
+                                                <time>{new Date(todo.due_date).toLocaleDateString('tr-TR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}</time>
                                             </span>
                                             <span className="task__owner">
                                                 {users[todo.created_by]?.substring(0, 2).toUpperCase() || '??'}
@@ -134,28 +140,31 @@ export default function KanbanBoard({ todos, onStatusChange, onEdit, onDelete, u
                 <div className="task-activity">
                     <h2>Son Hareketler</h2>
                     <ul className="activity-list">
-                        {activities && activities.slice(0, 4).map(act => (
-                            <li key={act.id} className="activity-row">
-                                <span className="activity-icon" data-type={act.action_type}>
-                                    {act.action_type === 'CREATE' && <Plus size={14} />}
-                                    {act.action_type === 'UPDATE' && <Edit size={14} />}
-                                    {act.action_type === 'DELETE' && <Trash2 size={14} />}
-                                    {act.action_type === 'MOVE' && <MoreHorizontal size={14} />}
-                                </span>
-                                <div className="activity-text">
-                                    <div className="activity-user">{act.app_users?.username || 'Kullanıcı'}</div>
-                                    <p className="activity-desc">
-                                        {act.action_type === 'CREATE' && 'yeni görev ekledi.'}
-                                        {act.action_type === 'UPDATE' && 'görevi güncelledi.'}
-                                        {act.action_type === 'DELETE' && `"${act.details}" görevini sildi.`}
-                                        {act.action_type === 'MOVE' && `görevi taşıdı: ${act.details}`}
-                                    </p>
-                                    <time className="activity-time">
-                                        {new Date(act.created_at).toLocaleString('tr-TR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                                    </time>
-                                </div>
-                            </li>
-                        ))}
+                        {activities && activities.slice(0, 4).map(act => {
+                            const shortDetail = truncate(act.details, 15)
+                            return (
+                                <li key={act.id} className="activity-row">
+                                    <span className="activity-icon" data-type={act.action_type}>
+                                        {act.action_type === 'CREATE' && <Plus size={14} />}
+                                        {act.action_type === 'UPDATE' && <Edit size={14} />}
+                                        {act.action_type === 'DELETE' && <Trash2 size={14} />}
+                                        {act.action_type === 'MOVE' && <MoreHorizontal size={14} />}
+                                    </span>
+                                    <div className="activity-text">
+                                        <div className="activity-user">{act.app_users?.username || 'Kullanıcı'}</div>
+                                        <p className="activity-desc">
+                                            {act.action_type === 'CREATE' && `yeni görev ekledi: ${shortDetail || 'Görev'}`}
+                                            {act.action_type === 'UPDATE' && `görevi güncelledi: ${shortDetail || 'Görev'}`}
+                                            {act.action_type === 'DELETE' && `"${shortDetail}" görevini sildi.`}
+                                            {act.action_type === 'MOVE' && `görevi taşıdı: ${shortDetail || 'Görev'}`}
+                                        </p>
+                                        <time className="activity-time">
+                                            {new Date(act.created_at).toLocaleString('tr-TR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false })}
+                                        </time>
+                                    </div>
+                                </li>
+                            )
+                        })}
                         {(!activities || activities.length === 0) && (
                             <li className="activity-row empty">
                                 <span className="activity-icon" data-type="INFO"><MoreHorizontal size={12} /></span>
