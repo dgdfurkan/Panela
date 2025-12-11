@@ -313,7 +313,6 @@ export default function ProductScanner({ userId, onProductsChange }) {
             </div>
           </div>
         </div>
-      </div>
     </div>
   )
 }
