@@ -306,12 +306,9 @@ export default function Research() {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
+          background: 'transparent',
           zIndex: 1100,
-          pointerEvents: 'auto',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
+          pointerEvents: 'auto'
         }}
         onClick={async () => {
           setSelectedProduct(null)
@@ -321,6 +318,10 @@ export default function Research() {
         <div
           data-modal-container
           style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
             background: 'white',
             borderRadius: '16px',
             width: 'min(95vw, 1000px)',
