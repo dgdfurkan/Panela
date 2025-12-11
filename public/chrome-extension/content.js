@@ -298,11 +298,6 @@
       }
     }
     
-    // Sadece en yüksek öncelikli advertiser'ları logla
-    if (advertisers.length > 0) {
-      console.log(`[Panela] ${advertisers.length} advertiser bulundu:`, advertisers.map(a => a.username).join(', '));
-    }
-    
     return advertisers;
   }
   
