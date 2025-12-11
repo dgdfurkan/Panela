@@ -584,7 +584,7 @@ create policy "open delete research_keywords" on research_keywords for delete us
 -- Discovered Products Table
 create table if not exists public.discovered_products (
   id uuid default uuid_generate_v4() primary key,
-  user_id uuid not null,
+  user_id uuid not null references public.app_users(id),
   product_name text not null,
   meta_link text,
   image_url text,
@@ -610,7 +610,7 @@ create policy "open delete discovered_products" on discovered_products for delet
 -- Research History Table
 create table if not exists public.research_history (
   id uuid default uuid_generate_v4() primary key,
-  user_id uuid not null,
+  user_id uuid not null references public.app_users(id),
   keyword text not null,
   country_code text not null check (country_code in ('US', 'CA', 'GB', 'AU', 'NZ')),
   action_type text not null check (action_type in ('clicked', 'reset')),

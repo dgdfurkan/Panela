@@ -64,7 +64,7 @@ export default function ProductScanner({ userId }) {
         .from('discovered_products')
         .select(`
           *,
-          app_users!discovered_products_user_id_fkey(id, username, full_name)
+          app_users(id, username, full_name)
         `)
         .order('created_at', { ascending: false })
 

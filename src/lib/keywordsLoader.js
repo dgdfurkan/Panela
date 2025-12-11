@@ -6,15 +6,24 @@
 
 export const parseKeywordsFromFile = async () => {
   try {
-    // Try public folder first (for production)
-    let response = await fetch('/weeks/week1/Ads Library Keywordlar.txt')
+    // Try different paths
+    const paths = [
+      '/weeks/week1/Ads Library Keywordlar.txt',
+      '/Panela/weeks/week1/Ads Library Keywordlar.txt',
+      './weeks/week1/Ads Library Keywordlar.txt'
+    ]
     
-    // If that fails, try with base path (for development)
-    if (!response.ok) {
-      response = await fetch('/Panela/weeks/week1/Ads Library Keywordlar.txt')
+    let response = null
+    for (const path of paths) {
+      try {
+        response = await fetch(path)
+        if (response.ok) break
+      } catch (e) {
+        continue
+      }
     }
     
-    if (!response.ok) {
+    if (!response || !response.ok) {
       console.warn('Keywords file not found, using empty array')
       return []
     }

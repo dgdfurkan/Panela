@@ -78,7 +78,7 @@ export default function KeywordLauncher({ userId }) {
           keyword, 
           country_code, 
           user_id,
-          app_users!research_history_user_id_fkey(username, full_name)
+          app_users(username, full_name)
         `)
         .eq('action_type', 'clicked')
         .neq('user_id', userId)
