@@ -54,6 +54,12 @@ export default function AutoMetaScanner({ onPrefill }) {
     try {
       let collected = []
       let after = undefined
+      let totalFetched = 0
+      let totalWithCta = 0
+      let totalWith30Plus = 0
+      
+      appendLog(`🔍 Tarama başlatıldı: ${parsedKeywords.length} keyword, ${parsedCountries.length} ülke`)
+      
       while (collected.length < targetCount) {
         const res = await searchAdsArchive({
           countries: parsedCountries,
@@ -68,12 +74,19 @@ export default function AutoMetaScanner({ onPrefill }) {
           after
         })
         const data = res.data || []
-        appendLog(`Çekilen: ${data.length}, toplanan: ${collected.length + data.length}`)
+        totalFetched += data.length
+        appendLog(`📥 Çekilen: ${data.length}, Toplam: ${totalFetched}`)
+
+        if (data.length === 0) {
+          appendLog(`⚠️ Bu sayfada sonuç yok, devam ediliyor...`)
+        }
 
         // CTA filtresi
         const filtered = await Promise.all(
           data.map(async (ad) => {
             const ctaHit = detectCtaHit(ad) || CTA_HINT.test(ad.ad_creative_body || '')
+            if (ctaHit) totalWithCta++
+            
             let pageCount = null
             try {
               pageCount = await countPageAds({
@@ -83,6 +96,7 @@ export default function AutoMetaScanner({ onPrefill }) {
                 accessToken: token || import.meta.env.VITE_META_TOKEN,
                 limit: 50
               })
+              if (pageCount >= 30) totalWith30Plus++
             } catch (e) {
               // ignore count errors
             }
@@ -100,14 +114,25 @@ export default function AutoMetaScanner({ onPrefill }) {
 
         // pagination
         after = res.paging?.cursors?.after
-        if (!after || data.length === 0) break
+        if (!after || data.length === 0) {
+          appendLog(`📄 Sayfa sonu, tarama tamamlandı`)
+          break
+        }
         if (collected.length >= targetCount) break
       }
+
+      appendLog(`📊 Özet: Toplam ${totalFetched} reklam çekildi`)
+      appendLog(`✅ CTA bulunan: ${totalWithCta} reklam`)
+      appendLog(`📈 30+ reklam veren: ${totalWith30Plus} sayfa`)
 
       // Branding eşiği
       const finalized = collected.filter(it => (it.pageCount ?? 0) >= 30 && it.ctaHit)
       setItems(finalized)
-      appendLog(`Tamamlandı. Toplam uygun: ${finalized.length}`)
+      appendLog(`🎯 Final filtre sonucu: ${finalized.length} uygun sayfa`)
+      
+      if (finalized.length === 0 && totalFetched > 0) {
+        appendLog(`💡 İpucu: Filtreler çok sıkı olabilir. CTA veya 30+ reklam filtresini gevşetmeyi deneyin.`)
+      }
     } catch (err) {
       console.error(err)
       const errorMsg = err.message || 'Bilinmeyen hata'
