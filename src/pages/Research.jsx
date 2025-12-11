@@ -44,15 +44,19 @@ export default function Research() {
     }
   }, [user?.id])
 
-  // Modal açıldığında body scroll'unu engelle
+  // Modal açıldığında body scroll'unu engelle ve sayfa kaymasını önle
   useEffect(() => {
     if (selectedProduct) {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
       document.body.style.overflow = 'hidden'
+      document.body.style.paddingRight = `${scrollbarWidth}px`
     } else {
       document.body.style.overflow = ''
+      document.body.style.paddingRight = ''
     }
     return () => {
       document.body.style.overflow = ''
+      document.body.style.paddingRight = ''
     }
   }, [selectedProduct])
 
@@ -297,13 +301,18 @@ export default function Research() {
       <div
         style={{
           position: 'fixed',
-          inset: 0,
-          background: 'rgba(0,0,0,0.4)',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'transparent',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           padding: '1rem',
-          zIndex: 1100
+          zIndex: 1100,
+          overflowY: 'auto',
+          overflowX: 'hidden'
         }}
         onClick={async () => {
           setSelectedProduct(null)
@@ -314,17 +323,32 @@ export default function Research() {
           style={{
             background: 'white',
             borderRadius: '16px',
-            maxWidth: '900px',
-            width: '100%',
-            maxHeight: '90vh',
+            width: 'min(95vw, 1000px)',
+            maxWidth: '1000px',
+            minHeight: 'min(85vh, 700px)',
+            maxHeight: '85vh',
             overflow: 'hidden',
             display: 'grid',
-            gridTemplateColumns: '1.2fr 0.8fr'
+            gridTemplateColumns: '1.2fr 0.8fr',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            margin: 'auto',
+            marginTop: '2rem',
+            marginBottom: '2rem'
           }}
           onClick={e => e.stopPropagation()}
         >
           {/* Left: product info */}
-          <div style={{ padding: '1.25rem', borderRight: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', gap: '0.75rem', overflowY: 'auto' }}>
+          <div style={{ 
+            padding: '1.5rem', 
+            borderRight: '1px solid var(--color-border)', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '1rem', 
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            minHeight: 0,
+            maxHeight: '85vh'
+          }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
@@ -498,13 +522,29 @@ export default function Research() {
           </div>
 
           {/* Right: comments */}
-          <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+          <div style={{ 
+            padding: '1.5rem', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            minHeight: 0,
+            maxHeight: '85vh',
+            overflow: 'hidden'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', flexShrink: 0 }}>
               <MessageSquare size={16} color="var(--color-primary)" />
               <span style={{ fontWeight: '700' }}>Yorumlar</span>
             </div>
 
-            <div style={{ flex: 1, overflowY: 'auto', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '0.75rem', marginBottom: '0.75rem', background: 'var(--color-background)' }}>
+            <div style={{ 
+              flex: 1, 
+              overflowY: 'auto', 
+              border: '1px solid var(--color-border)', 
+              borderRadius: '10px', 
+              padding: '0.75rem', 
+              marginBottom: '0.75rem', 
+              background: 'var(--color-background)',
+              minHeight: 0
+            }}>
               {commentsLoading ? (
                 <div style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>Yükleniyor...</div>
               ) : comments.length === 0 ? (
@@ -523,7 +563,7 @@ export default function Research() {
               )}
             </div>
 
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
               <input
                 type="text"
                 value={newComment}
