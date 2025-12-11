@@ -32,6 +32,7 @@ export default function Research() {
   
   // Modal state
   const [selectedProduct, setSelectedProduct] = useState(null)
+  const [modalScrollPosition, setModalScrollPosition] = useState(0)
   const [comments, setComments] = useState([])
   const [commentsLoading, setCommentsLoading] = useState(false)
   const [newComment, setNewComment] = useState('')
@@ -147,7 +148,14 @@ export default function Research() {
     }
   }
 
-  const handleOpenProduct = async (product) => {
+  const handleOpenProduct = async (product, event) => {
+    // Tıklanan ürünün pozisyonunu kaydet
+    let scrollY = window.scrollY || window.pageYOffset
+    if (event && event.currentTarget) {
+      const rect = event.currentTarget.getBoundingClientRect()
+      scrollY = rect.top + scrollY - 100 // Ürünün üstünden 100px yukarıda aç
+    }
+    setModalScrollPosition(Math.max(0, scrollY))
     setSelectedProduct(product)
     await loadProductComments(product.id)
     await loadUnreadCounts() // Badge'leri güncelle
@@ -307,9 +315,10 @@ export default function Research() {
           bottom: 0,
           background: 'transparent',
           display: 'flex',
-          alignItems: 'center',
+          alignItems: 'flex-start',
           justifyContent: 'center',
           padding: '1rem',
+          paddingTop: `${Math.max(20, modalScrollPosition + 20)}px`,
           zIndex: 1100,
           overflowY: 'auto',
           overflowX: 'hidden'
@@ -332,7 +341,7 @@ export default function Research() {
             gridTemplateColumns: '1.2fr 0.8fr',
             boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
             margin: 'auto',
-            marginTop: '2rem',
+            marginTop: '0',
             marginBottom: '2rem'
           }}
           onClick={e => e.stopPropagation()}
@@ -618,18 +627,6 @@ export default function Research() {
               "Vur-Kaç" taktiği ile Meta Ads Library'de seri üretim araştırma yap. Anahtar kelimeler ve ülkeler ile hızlıca link oluştur, bulduğun ürünleri anında analiz et ve kaydet.
             </p>
           </div>
-          <div style={{
-            width: '64px',
-            height: '64px',
-            borderRadius: 'var(--radius-lg)',
-            background: 'linear-gradient(135deg, var(--color-primary), var(--color-accent))',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: 'var(--shadow-md)'
-          }}>
-            <Search size={32} color="white" />
-          </div>
         </div>
 
         {/* Tabs */}
@@ -848,7 +845,7 @@ export default function Research() {
                   <ProductCard
                     key={product.id}
                     product={product}
-                    onEdit={() => handleOpenProduct(product)}
+                    onEdit={(e) => handleOpenProduct(product, e)}
                     currentUserId={user?.id}
                     unreadCount={unreadCounts[product.id] || 0}
                   />

@@ -142,8 +142,9 @@ export default function ProductScanner({ userId, onProductsChange }) {
             borderRadius: 'var(--radius-md)',
             background: 'white',
             marginBottom: '0.75rem',
-            maxHeight: '38vh',
-            overflowY: 'auto'
+            overflowY: 'auto',
+            flex: 1,
+            minHeight: 0
           }}
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
