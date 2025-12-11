@@ -589,6 +589,8 @@ create table if not exists public.discovered_products (
   meta_link text,
   image_url text,
   ad_count integer default 0,
+  trendyol_link text,
+  amazon_link text,
   scores jsonb default '{"innovative": 0, "lightweight": 0, "low_variation": 0, "problem_solving": 0, "visual_sellable": 0}'::jsonb,
   potential_score decimal(3, 2) default 0,
   notes text,
@@ -628,3 +630,45 @@ create policy "open view research_history" on research_history for select using 
 create policy "open insert research_history" on research_history for insert with check (true);
 create policy "open update research_history" on research_history for update using (true);
 create policy "open delete research_history" on research_history for delete using (true);
+
+-- Product Comments Table
+create table if not exists public.product_comments (
+  id uuid default uuid_generate_v4() primary key,
+  product_id uuid not null references public.discovered_products(id),
+  user_id uuid not null references public.app_users(id),
+  content text not null,
+  created_at timestamptz default timezone('utc'::text, now())
+);
+
+alter table public.product_comments enable row level security;
+
+drop policy if exists "open view product_comments" on product_comments;
+drop policy if exists "open insert product_comments" on product_comments;
+drop policy if exists "open update product_comments" on product_comments;
+drop policy if exists "open delete product_comments" on product_comments;
+
+create policy "open view product_comments" on product_comments for select using (true);
+create policy "open insert product_comments" on product_comments for insert with check (true);
+create policy "open update product_comments" on product_comments for update using (true);
+create policy "open delete product_comments" on product_comments for delete using (true);
+
+-- Comment Reads Table
+create table if not exists public.comment_reads (
+  id uuid default uuid_generate_v4() primary key,
+  comment_id uuid not null references public.product_comments(id),
+  user_id uuid not null references public.app_users(id),
+  seen_at timestamptz default timezone('utc'::text, now()),
+  unique (comment_id, user_id)
+);
+
+alter table public.comment_reads enable row level security;
+
+drop policy if exists "open view comment_reads" on comment_reads;
+drop policy if exists "open insert comment_reads" on comment_reads;
+drop policy if exists "open update comment_reads" on comment_reads;
+drop policy if exists "open delete comment_reads" on comment_reads;
+
+create policy "open view comment_reads" on comment_reads for select using (true);
+create policy "open insert comment_reads" on comment_reads for insert with check (true);
+create policy "open update comment_reads" on comment_reads for update using (true);
+create policy "open delete comment_reads" on comment_reads for delete using (true);

@@ -1,6 +1,6 @@
-import { ExternalLink, User } from 'lucide-react'
+import { ExternalLink, User, MessageSquare } from 'lucide-react'
 
-export default function ProductCard({ product, onEdit, currentUserId }) {
+export default function ProductCard({ product, onEdit, currentUserId, unreadCount = 0 }) {
   const scores = typeof product.scores === 'string' 
     ? JSON.parse(product.scores) 
     : product.scores || {}
@@ -14,6 +14,7 @@ export default function ProductCard({ product, onEdit, currentUserId }) {
   const user = product.app_users || {}
   const isMyProduct = product.user_id === currentUserId
   const userName = user.username || user.full_name || 'Bilinmeyen'
+  const createdAt = product.created_at ? new Date(product.created_at).toLocaleDateString('tr-TR') : ''
 
   return (
     <div
@@ -23,7 +24,8 @@ export default function ProductCard({ product, onEdit, currentUserId }) {
         borderRadius: 'var(--radius-md)',
         background: 'white',
         transition: 'all var(--transition-fast)',
-        cursor: 'pointer'
+        cursor: 'pointer',
+        position: 'relative'
       }}
       onMouseEnter={e => {
         e.currentTarget.style.borderColor = 'var(--color-primary)'
@@ -35,6 +37,28 @@ export default function ProductCard({ product, onEdit, currentUserId }) {
       }}
       onClick={onEdit}
     >
+      {unreadCount > 0 && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '10px',
+            right: '10px',
+            background: 'var(--color-primary)',
+            color: 'white',
+            borderRadius: '12px',
+            padding: '0.15rem 0.45rem',
+            fontSize: '11px',
+            fontWeight: '700',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.25rem',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.12)'
+          }}
+        >
+          <MessageSquare size={12} />
+          {unreadCount}
+        </div>
+      )}
       <div style={{ display: 'flex', gap: '1rem' }}>
         {product.image_url && (
           <img
@@ -105,9 +129,12 @@ export default function ProductCard({ product, onEdit, currentUserId }) {
             )}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '13px', color: 'var(--color-text-muted)' }}>
+              {createdAt && <span>{createdAt}</span>}
+            </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '14px' }}>
               <span style={{ color: 'var(--color-text-muted)' }}>Reklam Sayısı:</span>
-              <span style={{ fontWeight: '600' }}>{product.ad_count || 0}</span>
+              <span style={{ fontWeight: '600' }}>{product.ad_count ?? '-'}</span>
               {product.ad_count > 30 && (
                 <span
                   style={{
@@ -135,25 +162,44 @@ export default function ProductCard({ product, onEdit, currentUserId }) {
                 {product.potential_score?.toFixed(1) || '0.0'}/5
               </span>
             </div>
-            {product.meta_link && (
-              <a
-                href={product.meta_link}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.25rem',
-                  fontSize: '12px',
-                  color: 'var(--color-primary)',
-                  textDecoration: 'none'
-                }}
-              >
-                <ExternalLink size={14} />
-                Meta Link
-              </a>
-            )}
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', fontSize: '12px' }}>
+              {product.meta_link && (
+                <a
+                  href={product.meta_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', color: 'var(--color-primary)', textDecoration: 'none' }}
+                >
+                  <ExternalLink size={14} />
+                  Meta
+                </a>
+              )}
+              {product.trendyol_link && (
+                <a
+                  href={product.trendyol_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', color: 'var(--color-primary)', textDecoration: 'none' }}
+                >
+                  <ExternalLink size={14} />
+                  Trendyol
+                </a>
+              )}
+              {product.amazon_link && (
+                <a
+                  href={product.amazon_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', color: 'var(--color-primary)', textDecoration: 'none' }}
+                >
+                  <ExternalLink size={14} />
+                  Amazon
+                </a>
+              )}
+            </div>
           </div>
         </div>
       </div>

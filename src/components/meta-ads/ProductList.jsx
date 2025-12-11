@@ -1,6 +1,6 @@
-import { ExternalLink, User } from 'lucide-react'
+import { ExternalLink, User, MessageSquare } from 'lucide-react'
 
-export default function ProductList({ products, onEdit, currentUserId }) {
+export default function ProductList({ products, onEdit, currentUserId, unreadCounts = {} }) {
   const getScoreColor = (score) => {
     if (score >= 4) return 'var(--color-success)'
     if (score >= 3) return 'var(--color-warning)'
@@ -13,6 +13,8 @@ export default function ProductList({ products, onEdit, currentUserId }) {
         const scores = typeof product.scores === 'string' 
           ? JSON.parse(product.scores) 
           : product.scores || {}
+        const unread = unreadCounts[product.id] || 0
+        const createdAt = product.created_at ? new Date(product.created_at).toLocaleDateString('tr-TR') : ''
 
         return (
           <div
@@ -26,7 +28,8 @@ export default function ProductList({ products, onEdit, currentUserId }) {
               alignItems: 'center',
               gap: '1rem',
               transition: 'all var(--transition-fast)',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              position: 'relative'
             }}
             onMouseEnter={e => {
               e.currentTarget.style.borderColor = 'var(--color-primary)'
@@ -38,6 +41,28 @@ export default function ProductList({ products, onEdit, currentUserId }) {
             }}
             onClick={() => onEdit(product)}
           >
+            {unread > 0 && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '8px',
+                  right: '8px',
+                  background: 'var(--color-primary)',
+                  color: 'white',
+                  borderRadius: '12px',
+                  padding: '0.1rem 0.4rem',
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.12)'
+                }}
+              >
+                <MessageSquare size={12} />
+                {unread}
+              </div>
+            )}
             {product.image_url && (
               <img
                 src={product.image_url}
@@ -90,7 +115,8 @@ export default function ProductList({ products, onEdit, currentUserId }) {
                 })()}
               </div>
               <div style={{ display: 'flex', gap: '1rem', fontSize: '13px', color: 'var(--color-text-muted)' }}>
-                <span>Reklam: {product.ad_count || 0}</span>
+                {createdAt && <span>{createdAt}</span>}
+                <span>Reklam: {product.ad_count ?? '-'}</span>
                 {product.ad_count > 30 && (
                   <span style={{ color: 'var(--color-success)', fontWeight: '600' }}>
                     🔥 Markalaşma Sinyali
@@ -99,31 +125,47 @@ export default function ProductList({ products, onEdit, currentUserId }) {
                 <span>Skor: <strong style={{ color: getScoreColor(product.potential_score) }}>{product.potential_score?.toFixed(1) || '0.0'}/5</strong></span>
               </div>
             </div>
-            {product.meta_link && (
-              <a
-                href={product.meta_link}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()}
-                style={{
-                  padding: '0.5rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: 'var(--radius-sm)',
-                  color: 'var(--color-primary)',
-                  transition: 'background var(--transition-fast)'
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)'
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.background = 'transparent'
-                }}
-              >
-                <ExternalLink size={18} />
-              </a>
-            )}
+            <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+              {product.meta_link && (
+                <a
+                  href={product.meta_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}
+                  style={{ padding: '0.35rem', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-sm)', color: 'var(--color-primary)', transition: 'background var(--transition-fast)' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                >
+                  <ExternalLink size={16} />
+                </a>
+              )}
+              {product.trendyol_link && (
+                <a
+                  href={product.trendyol_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}
+                  style={{ padding: '0.35rem', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-sm)', color: 'var(--color-primary)', transition: 'background var(--transition-fast)' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                >
+                  <ExternalLink size={16} />
+                </a>
+              )}
+              {product.amazon_link && (
+                <a
+                  href={product.amazon_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}
+                  style={{ padding: '0.35rem', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-sm)', color: 'var(--color-primary)', transition: 'background var(--transition-fast)' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                >
+                  <ExternalLink size={16} />
+                </a>
+              )}
+            </div>
           </div>
         )
       })}
