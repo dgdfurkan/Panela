@@ -51,12 +51,14 @@ export default function Research() {
       const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
       document.body.style.overflow = 'hidden'
       document.body.style.paddingRight = `${scrollbarWidth}px`
-      // Modal açıldığında scroll pozisyonuna git - ürünün tam ortasında
+      // Modal açıldığında scroll pozisyonunu ürünün tam ortasında olacak şekilde ayarla
       if (modalScrollPosition > 0) {
-        // Scroll pozisyonunu ayarla ama modal açıldıktan sonra
+        const viewportHeight = window.innerHeight
+        const modalHeight = Math.min(viewportHeight * 0.85, 700)
+        const targetScroll = modalScrollPosition - (viewportHeight / 2) + (modalHeight / 2)
         setTimeout(() => {
           window.scrollTo({
-            top: modalScrollPosition,
+            top: Math.max(0, targetScroll),
             behavior: 'instant'
           })
         }, 10)
@@ -160,17 +162,15 @@ export default function Research() {
 
   const handleOpenProduct = async (product, event) => {
     // Tıklanan ürünün pozisyonunu kaydet - modal tam ortada açılsın
-    let scrollY = 0
+    let productTop = 0
     if (event && event.currentTarget) {
       const rect = event.currentTarget.getBoundingClientRect()
-      const viewportHeight = window.innerHeight
-      const productCenter = rect.top + (rect.height / 2)
-      // Modal'ı ürünün tam ortasında göstermek için scroll pozisyonunu ayarla
-      scrollY = productCenter + (window.scrollY || window.pageYOffset) - (viewportHeight / 2)
+      // Ürünün viewport'taki pozisyonunu al (scroll dahil)
+      productTop = rect.top + (window.scrollY || window.pageYOffset)
     } else {
-      scrollY = window.scrollY || window.pageYOffset
+      productTop = window.scrollY || window.pageYOffset
     }
-    setModalScrollPosition(Math.max(0, scrollY))
+    setModalScrollPosition(Math.max(0, productTop))
     setSelectedProduct(product)
     await loadProductComments(product.id)
     await loadUnreadCounts() // Badge'leri güncelle
@@ -320,6 +320,14 @@ export default function Research() {
       })
     }
 
+    // Modal'ı tıklanan ürünün tam ortasında göster
+    const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 800
+    const modalHeight = Math.min(viewportHeight * 0.85, 700)
+    const modalTop = modalScrollPosition > 0 
+      ? Math.max(20, modalScrollPosition - (modalHeight / 2))
+      : '50%'
+    const modalTransform = modalScrollPosition > 0 ? 'none' : 'translateY(-50%)'
+
     return (
       <div
         style={{
@@ -330,9 +338,10 @@ export default function Research() {
           bottom: 0,
           background: 'transparent',
           display: 'flex',
-          alignItems: 'center',
+          alignItems: modalScrollPosition > 0 ? 'flex-start' : 'center',
           justifyContent: 'center',
           padding: '1rem',
+          paddingTop: typeof modalTop === 'number' ? `${modalTop}px` : '0',
           zIndex: 1100,
           overflowY: 'auto',
           overflowX: 'hidden'
@@ -348,15 +357,16 @@ export default function Research() {
             borderRadius: '16px',
             width: 'min(95vw, 1000px)',
             maxWidth: '1000px',
-            minHeight: 'min(85vh, 700px)',
+            minHeight: `${modalHeight}px`,
             maxHeight: '85vh',
             overflow: 'hidden',
             display: 'grid',
             gridTemplateColumns: '1.2fr 0.8fr',
             boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
             margin: 'auto',
-            marginTop: 'auto',
-            marginBottom: 'auto'
+            marginTop: typeof modalTop === 'number' ? '0' : 'auto',
+            marginBottom: '2rem',
+            transform: modalTransform
           }}
           onClick={e => e.stopPropagation()}
         >
