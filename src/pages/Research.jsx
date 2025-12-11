@@ -32,7 +32,6 @@ export default function Research() {
   
   // Modal state
   const [selectedProduct, setSelectedProduct] = useState(null)
-  const [modalScrollPosition, setModalScrollPosition] = useState(0)
   const [comments, setComments] = useState([])
   const [commentsLoading, setCommentsLoading] = useState(false)
   const [newComment, setNewComment] = useState('')
@@ -51,18 +50,6 @@ export default function Research() {
       const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
       document.body.style.overflow = 'hidden'
       document.body.style.paddingRight = `${scrollbarWidth}px`
-      // Modal açıldığında scroll pozisyonunu ürünün tam ortasında olacak şekilde ayarla
-      if (modalScrollPosition > 0) {
-        const viewportHeight = window.innerHeight
-        const modalHeight = Math.min(viewportHeight * 0.85, 700)
-        const targetScroll = modalScrollPosition - (viewportHeight / 2) + (modalHeight / 2)
-        setTimeout(() => {
-          window.scrollTo({
-            top: Math.max(0, targetScroll),
-            behavior: 'instant'
-          })
-        }, 10)
-      }
     } else {
       document.body.style.overflow = ''
       document.body.style.paddingRight = ''
@@ -71,7 +58,7 @@ export default function Research() {
       document.body.style.overflow = ''
       document.body.style.paddingRight = ''
     }
-  }, [selectedProduct, modalScrollPosition])
+  }, [selectedProduct])
 
   useEffect(() => {
     if (user?.id) {
@@ -161,16 +148,7 @@ export default function Research() {
   }
 
   const handleOpenProduct = async (product, event) => {
-    // Tıklanan ürünün pozisyonunu kaydet - modal tam ortada açılsın
-    let productTop = 0
-    if (event && event.currentTarget) {
-      const rect = event.currentTarget.getBoundingClientRect()
-      // Ürünün viewport'taki pozisyonunu al (scroll dahil)
-      productTop = rect.top + (window.scrollY || window.pageYOffset)
-    } else {
-      productTop = window.scrollY || window.pageYOffset
-    }
-    setModalScrollPosition(Math.max(0, productTop))
+    // Modal her zaman ekranın tam ortasında açılacak
     setSelectedProduct(product)
     await loadProductComments(product.id)
     await loadUnreadCounts() // Badge'leri güncelle
@@ -320,14 +298,6 @@ export default function Research() {
       })
     }
 
-    // Modal'ı tıklanan ürünün tam ortasında göster
-    const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 800
-    const modalHeight = Math.min(viewportHeight * 0.85, 700)
-    const modalTop = modalScrollPosition > 0 
-      ? Math.max(20, modalScrollPosition - (modalHeight / 2))
-      : '50%'
-    const modalTransform = modalScrollPosition > 0 ? 'none' : 'translateY(-50%)'
-
     return (
       <div
         style={{
@@ -338,10 +308,9 @@ export default function Research() {
           bottom: 0,
           background: 'transparent',
           display: 'flex',
-          alignItems: modalScrollPosition > 0 ? 'flex-start' : 'center',
+          alignItems: 'center',
           justifyContent: 'center',
           padding: '1rem',
-          paddingTop: typeof modalTop === 'number' ? `${modalTop}px` : '0',
           zIndex: 1100,
           overflowY: 'auto',
           overflowX: 'hidden'
@@ -357,16 +326,13 @@ export default function Research() {
             borderRadius: '16px',
             width: 'min(95vw, 1000px)',
             maxWidth: '1000px',
-            minHeight: `${modalHeight}px`,
+            minHeight: 'min(85vh, 700px)',
             maxHeight: '85vh',
             overflow: 'hidden',
             display: 'grid',
             gridTemplateColumns: '1.2fr 0.8fr',
             boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-            margin: 'auto',
-            marginTop: typeof modalTop === 'number' ? '0' : 'auto',
-            marginBottom: '2rem',
-            transform: modalTransform
+            margin: 'auto'
           }}
           onClick={e => e.stopPropagation()}
         >
@@ -869,7 +835,7 @@ export default function Research() {
                   <ProductCard
                     key={product.id}
                     product={product}
-                    onEdit={(e) => handleOpenProduct(product, e)}
+                    onEdit={() => handleOpenProduct(product)}
                     currentUserId={user?.id}
                     unreadCount={unreadCounts[product.id] || 0}
                   />
