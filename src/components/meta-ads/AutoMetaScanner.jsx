@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Play, X, Loader2, ExternalLink, CheckCircle2 } from 'lucide-react'
+import { Play, X, Loader2, ExternalLink, CheckCircle2, Shield } from 'lucide-react'
 import { detectCtaHit, searchAdsArchive, countPageAds } from '../../lib/metaAdsClient'
 
 const CTA_HINT = /shop\s*now|şimdi\s*alışveriş\s*yap/i
@@ -15,6 +15,8 @@ const fourteenDaysAgo = () => {
 }
 
 export default function AutoMetaScanner({ onPrefill }) {
+  const hasEnvToken = Boolean(import.meta.env.VITE_META_TOKEN)
+  const hasProxy = Boolean(import.meta.env.VITE_META_PROXY_URL)
   const [token, setToken] = useState('')
   const [countries, setCountries] = useState(DEFAULT_COUNTRIES.join(','))
   const [keywords, setKeywords] = useState('')
@@ -151,7 +153,19 @@ export default function AutoMetaScanner({ onPrefill }) {
             Ülke/keyword kombinasyonlarını sırayla tarar, “Shop now/Şimdi alışveriş yap” CTA’sı olan ve son 14 günde 30+ reklamı olan sayfaları listeler.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          {hasProxy && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '12px', color: 'var(--color-success)', background: 'rgba(16,185,129,0.1)', padding: '0.35rem 0.6rem', borderRadius: '10px', border: '1px solid rgba(16,185,129,0.3)' }}>
+              <Shield size={14} />
+              Proxy aktif (token gizli)
+            </span>
+          )}
+          {hasEnvToken && !hasProxy && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '12px', color: '#2563eb', background: 'rgba(59,130,246,0.1)', padding: '0.35rem 0.6rem', borderRadius: '10px', border: '1px solid rgba(59,130,246,0.3)' }}>
+              <Shield size={14} />
+              Env token kullanılacak
+            </span>
+          )}
           <button
             onClick={() => { setItems([]); setLog([]); }}
             style={{ padding: '0.55rem 0.9rem', border: '1px solid var(--color-border)', borderRadius: '10px', background: 'white', fontWeight: '600' }}
@@ -207,17 +221,19 @@ export default function AutoMetaScanner({ onPrefill }) {
           <label className="eyebrow">Sayfa Başına Limit</label>
           <input type="number" value={pageLimit} onChange={e => setPageLimit(parseInt(e.target.value) || 25)} />
         </div>
-        <div className="glass-panel" style={{ padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
-          <label className="eyebrow">Access Token (POC)</label>
-          <input value={token} onChange={e => setToken(e.target.value)} placeholder="Prod’da proxy kullan" />
-        </div>
+        {!hasEnvToken && !hasProxy && (
+          <div className="glass-panel" style={{ padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
+            <label className="eyebrow">Access Token (POC)</label>
+            <input value={token} onChange={e => setToken(e.target.value)} placeholder="Prod’da proxy kullan" />
+          </div>
+        )}
       </div>
 
       <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem' }}>
         <button
           onClick={handleRun}
           className="primary"
-          disabled={loading || (!token && !import.meta.env.VITE_META_TOKEN)}
+          disabled={loading || (!hasProxy && !hasEnvToken && !token)}
           style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.65rem 1.1rem' }}
         >
           {loading ? <Loader2 size={16} className="spin" /> : <Play size={16} />}

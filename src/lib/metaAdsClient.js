@@ -1,5 +1,6 @@
 const GRAPH_API_VERSION = 'v19.0'
 const GRAPH_BASE = `https://graph.facebook.com/${GRAPH_API_VERSION}`
+const PROXY_URL = import.meta.env.VITE_META_PROXY_URL || ''
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
@@ -84,6 +85,30 @@ export async function searchAdsArchive(opts) {
   if (after) params.set('after', after)
 
   const url = `${GRAPH_BASE}/ads_archive?${params.toString()}`
+
+  // Proxy kullan (token’ı client’a sızdırmamak için)
+  if (PROXY_URL) {
+    const res = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'search',
+        query: Object.fromEntries(params),
+        after,
+        countries,
+        search_terms,
+        publisher_platforms,
+        since,
+        until
+      })
+    })
+    if (!res.ok) {
+      const txt = await res.text()
+      throw new Error(`Proxy error ${res.status}: ${txt}`)
+    }
+    return res.json()
+  }
+
   return graphFetch(url, accessToken)
 }
 
@@ -101,6 +126,25 @@ export async function countPageAds({ page_id, since, until, accessToken, limit =
   if (until) params.set('ad_delivery_date_max', until)
 
   const url = `${GRAPH_BASE}/ads_archive?${params.toString()}`
+
+  if (PROXY_URL) {
+    const res = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'count',
+        query: Object.fromEntries(params)
+      })
+    })
+    if (!res.ok) {
+      const txt = await res.text()
+      throw new Error(`Proxy error ${res.status}: ${txt}`)
+    }
+    const data = await res.json()
+    let count = (data.data || []).length
+    return count
+  }
+
   const data = await graphFetch(url, accessToken)
   // Tahmini count: data length + varsa paging cursors (basit yaklaşım)
   let count = (data.data || []).length
