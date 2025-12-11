@@ -98,7 +98,7 @@ export async function searchAdsArchive(opts) {
 
   const url = `${GRAPH_BASE}/ads_archive?${params.toString()}`
 
-  // Proxy kullan (token’ı client’a sızdırmamak için)
+  // Proxy kullan (token'ı client'a sızdırmamak için)
   const PROXY_URL = getProxyUrl()
   if (PROXY_URL) {
     const res = await fetch(PROXY_URL, {
@@ -124,8 +124,38 @@ export async function searchAdsArchive(opts) {
       })
     })
     if (!res.ok) {
-      const txt = await res.text()
-      throw new Error(`Proxy error ${res.status}: ${txt}`)
+      let errorData
+      try {
+        errorData = await res.json()
+      } catch (e) {
+        const txt = await res.text()
+        throw new Error(`Proxy error ${res.status}: ${txt}`)
+      }
+      
+      // Proxy'den gelen detaylı hata mesajını kullan
+      const errorMessage = errorData.error || 'Unknown proxy error'
+      const errorCode = errorData.code
+      const errorDetails = errorData.details
+      
+      // Token sorunları için özel mesaj
+      if (errorCode === 'TOKEN_VALIDATION_ERROR' || errorMessage.includes('token') || errorMessage.includes('Token')) {
+        throw new Error(`Token hatası: ${errorMessage}. Lütfen Supabase secrets'da META_ADS_TOKEN'in doğru şekilde set edildiğinden emin olun.`)
+      }
+      
+      // Meta API hataları için detaylı mesaj
+      if (errorDetails && errorDetails.code) {
+        const codeMsg = errorDetails.code === 1 
+          ? 'Token geçersiz veya süresi dolmuş. Lütfen yeni bir token oluşturun.'
+          : errorDetails.code === 190
+          ? 'Token süresi dolmuş. Lütfen yeni bir token oluşturun.'
+          : errorDetails.code === 10 || errorDetails.code === 200
+          ? 'Token yetersiz izinlere sahip. ads_read veya ads_management izinlerini kontrol edin.'
+          : ''
+        
+        throw new Error(`${errorMessage}${codeMsg ? ` ${codeMsg}` : ''}${errorDetails.originalMessage ? ` (${errorDetails.originalMessage})` : ''}`)
+      }
+      
+      throw new Error(`Proxy error ${res.status}: ${errorMessage}${errorDetails ? ` - ${JSON.stringify(errorDetails)}` : ''}`)
     }
     return res.json()
   }
@@ -167,8 +197,38 @@ export async function countPageAds({ page_id, since, until, accessToken, limit =
       })
     })
     if (!res.ok) {
-      const txt = await res.text()
-      throw new Error(`Proxy error ${res.status}: ${txt}`)
+      let errorData
+      try {
+        errorData = await res.json()
+      } catch (e) {
+        const txt = await res.text()
+        throw new Error(`Proxy error ${res.status}: ${txt}`)
+      }
+      
+      // Proxy'den gelen detaylı hata mesajını kullan
+      const errorMessage = errorData.error || 'Unknown proxy error'
+      const errorCode = errorData.code
+      const errorDetails = errorData.details
+      
+      // Token sorunları için özel mesaj
+      if (errorCode === 'TOKEN_VALIDATION_ERROR' || errorMessage.includes('token') || errorMessage.includes('Token')) {
+        throw new Error(`Token hatası: ${errorMessage}. Lütfen Supabase secrets'da META_ADS_TOKEN'in doğru şekilde set edildiğinden emin olun.`)
+      }
+      
+      // Meta API hataları için detaylı mesaj
+      if (errorDetails && errorDetails.code) {
+        const codeMsg = errorDetails.code === 1 
+          ? 'Token geçersiz veya süresi dolmuş. Lütfen yeni bir token oluşturun.'
+          : errorDetails.code === 190
+          ? 'Token süresi dolmuş. Lütfen yeni bir token oluşturun.'
+          : errorDetails.code === 10 || errorDetails.code === 200
+          ? 'Token yetersiz izinlere sahip. ads_read veya ads_management izinlerini kontrol edin.'
+          : ''
+        
+        throw new Error(`${errorMessage}${codeMsg ? ` ${codeMsg}` : ''}${errorDetails.originalMessage ? ` (${errorDetails.originalMessage})` : ''}`)
+      }
+      
+      throw new Error(`Proxy error ${res.status}: ${errorMessage}${errorDetails ? ` - ${JSON.stringify(errorDetails)}` : ''}`)
     }
     const data = await res.json()
     let count = (data.data || []).length

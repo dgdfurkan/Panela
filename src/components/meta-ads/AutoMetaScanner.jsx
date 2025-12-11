@@ -110,7 +110,16 @@ export default function AutoMetaScanner({ onPrefill }) {
       appendLog(`Tamamlandı. Toplam uygun: ${finalized.length}`)
     } catch (err) {
       console.error(err)
-      appendLog(`Hata: ${err.message}`)
+      const errorMsg = err.message || 'Bilinmeyen hata'
+      
+      // Token hataları için özel mesaj
+      if (errorMsg.includes('token') || errorMsg.includes('Token') || errorMsg.includes('TOKEN')) {
+        appendLog(`❌ Token Hatası: ${errorMsg}`)
+        appendLog(`💡 Çözüm: Supabase secrets'da META_ADS_TOKEN'in doğru şekilde set edildiğinden emin olun.`)
+        appendLog(`💡 Token'ın ads_read veya ads_management izinlerine sahip olduğunu kontrol edin.`)
+      } else {
+        appendLog(`❌ Hata: ${errorMsg}`)
+      }
     } finally {
       setLoading(false)
     }

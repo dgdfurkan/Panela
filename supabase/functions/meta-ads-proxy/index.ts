@@ -15,6 +15,98 @@ const CORS_HEADERS = {
   'Access-Control-Max-Age': '86400'
 }
 
+// Token validasyon fonksiyonu
+function validateToken(token: string | undefined): { valid: boolean; error?: string } {
+  if (!token) {
+    return { valid: false, error: 'META_ADS_TOKEN missing' }
+  }
+  
+  const trimmed = token.trim()
+  if (!trimmed) {
+    return { valid: false, error: 'META_ADS_TOKEN is empty' }
+  }
+  
+  // Meta token'ları genellikle en az 20 karakter uzunluğundadır
+  if (trimmed.length < 20) {
+    return { valid: false, error: 'Invalid token format: token too short' }
+  }
+  
+  // Meta token'ları genellikle alfanumerik karakterler ve bazı özel karakterler içerir
+  if (!/^[A-Za-z0-9_\-\.]+$/.test(trimmed)) {
+    return { valid: false, error: 'Invalid token format: contains invalid characters' }
+  }
+  
+  return { valid: true }
+}
+
+// OAuthException kodlarını anlamlı mesajlara çevir
+function mapOAuthError(error: any): { message: string; code?: number; type?: string; originalMessage?: string } {
+  if (!error) {
+    return { message: 'Unknown error occurred' }
+  }
+  
+  const code = error.code || error.error_code
+  const type = error.type || error.error_subcode
+  const message = error.message || error.error_message || 'Unknown error'
+  
+  // OAuthException kodları mapping
+  const codeMap: Record<number, string> = {
+    1: 'Invalid or expired access token',
+    2: 'Session key invalid or no longer valid',
+    4: 'Application request limit reached',
+    10: 'Permission denied',
+    17: 'User request limit reached',
+    190: 'Access token has expired',
+    200: 'Permissions error',
+    368: 'Temporarily blocked due to too many API calls',
+  }
+  
+  const mappedMessage = codeMap[code] || message
+  
+  return {
+    message: mappedMessage,
+    code,
+    type,
+    originalMessage: message
+  }
+}
+
+// Meta API hata response'unu parse et
+function parseMetaError(response: any, status: number): { error: string; details?: any; code?: number } {
+  if (response.error) {
+    const mapped = mapOAuthError(response.error)
+    return {
+      error: mapped.message,
+      details: {
+        code: mapped.code,
+        type: mapped.type,
+        originalMessage: mapped.originalMessage,
+        fullError: response.error
+      },
+      code: mapped.code
+    }
+  }
+  
+  if (status >= 400 && status < 500) {
+    return {
+      error: 'Client error: Invalid request',
+      details: response
+    }
+  }
+  
+  if (status >= 500) {
+    return {
+      error: 'Meta API server error',
+      details: response
+    }
+  }
+  
+  return {
+    error: 'Unknown error occurred',
+    details: response
+  }
+}
+
 const handler: ServeHandler = async (req) => {
   try {
     // CORS preflight
@@ -25,6 +117,26 @@ const handler: ServeHandler = async (req) => {
       })
     }
 
+    // Debug endpoint (opsiyonel)
+    const urlPath = new URL(req.url).pathname
+    if (urlPath.includes('/debug') && req.method === 'GET') {
+      const token = Deno.env.get('META_ADS_TOKEN')
+      const validation = validateToken(token)
+      return new Response(JSON.stringify({
+        tokenPresent: !!token,
+        tokenValid: validation.valid,
+        tokenError: validation.error,
+        tokenLength: token ? token.length : 0,
+        tokenPreview: token ? `${token.substring(0, 10)}...${token.substring(token.length - 5)}` : null
+      }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          ...CORS_HEADERS
+        }
+      })
+    }
+
     if (req.method !== 'POST') {
       return new Response(JSON.stringify({ error: 'POST only' }), {
         status: 405,
@@ -32,9 +144,14 @@ const handler: ServeHandler = async (req) => {
       })
     }
 
+    // Token validasyonu
     const token = Deno.env.get('META_ADS_TOKEN')
-    if (!token) {
-      return new Response(JSON.stringify({ error: 'META_ADS_TOKEN missing' }), {
+    const tokenValidation = validateToken(token)
+    if (!tokenValidation.valid) {
+      return new Response(JSON.stringify({ 
+        error: tokenValidation.error,
+        code: 'TOKEN_VALIDATION_ERROR'
+      }), {
         status: 500,
         headers: CORS_HEADERS
       })
@@ -58,7 +175,7 @@ const handler: ServeHandler = async (req) => {
         params.set(k, String(v))
       }
     })
-    params.set('access_token', token)
+    params.set('access_token', token!)
 
     const url = `${GRAPH_BASE}/ads_archive?${params.toString()}`
 
@@ -66,10 +183,29 @@ const handler: ServeHandler = async (req) => {
       return new Response(JSON.stringify({ error: 'Unknown action' }), { status: 400, headers: CORS_HEADERS })
     }
 
+    // Meta API'ye istek at
     const fbRes = await fetch(url, { method: 'GET' })
     const data = await fbRes.json()
     const status = fbRes.status
 
+    // Hata durumunda detaylı parse et
+    if (status >= 400) {
+      const errorInfo = parseMetaError(data, status)
+      return new Response(JSON.stringify({
+        error: errorInfo.error,
+        details: errorInfo.details,
+        code: errorInfo.code,
+        metaResponse: data
+      }), {
+        status: status,
+        headers: {
+          'Content-Type': 'application/json',
+          ...CORS_HEADERS
+        }
+      })
+    }
+
+    // Başarılı response
     return new Response(JSON.stringify(data), {
       status,
       headers: {
@@ -78,7 +214,11 @@ const handler: ServeHandler = async (req) => {
       }
     })
   } catch (e: any) {
-    return new Response(JSON.stringify({ error: 'Unhandled', details: e?.message }), {
+    return new Response(JSON.stringify({ 
+      error: 'Unhandled error', 
+      details: e?.message,
+      stack: e?.stack 
+    }), {
       status: 500,
       headers: CORS_HEADERS
     })
