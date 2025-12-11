@@ -309,7 +309,7 @@ export default function Research() {
           width: '100%',
           height: '100%',
           background: 'transparent',
-          zIndex: 1100,
+          zIndex: 9999,
           pointerEvents: 'auto',
           display: 'flex',
           alignItems: 'center',
