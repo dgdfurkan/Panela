@@ -51,12 +51,15 @@ export default function Research() {
       const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
       document.body.style.overflow = 'hidden'
       document.body.style.paddingRight = `${scrollbarWidth}px`
-      // Modal açıldığında scroll pozisyonuna git
+      // Modal açıldığında scroll pozisyonuna git - ürünün tam ortasında
       if (modalScrollPosition > 0) {
-        window.scrollTo({
-          top: modalScrollPosition,
-          behavior: 'instant'
-        })
+        // Scroll pozisyonunu ayarla ama modal açıldıktan sonra
+        setTimeout(() => {
+          window.scrollTo({
+            top: modalScrollPosition,
+            behavior: 'instant'
+          })
+        }, 10)
       }
     } else {
       document.body.style.overflow = ''
@@ -156,11 +159,14 @@ export default function Research() {
   }
 
   const handleOpenProduct = async (product, event) => {
-    // Tıklanan ürünün pozisyonunu kaydet
+    // Tıklanan ürünün pozisyonunu kaydet - modal tam ortada açılsın
     let scrollY = 0
     if (event && event.currentTarget) {
       const rect = event.currentTarget.getBoundingClientRect()
-      scrollY = rect.top + (window.scrollY || window.pageYOffset)
+      const viewportHeight = window.innerHeight
+      const productCenter = rect.top + (rect.height / 2)
+      // Modal'ı ürünün tam ortasında göstermek için scroll pozisyonunu ayarla
+      scrollY = productCenter + (window.scrollY || window.pageYOffset) - (viewportHeight / 2)
     } else {
       scrollY = window.scrollY || window.pageYOffset
     }
@@ -314,9 +320,6 @@ export default function Research() {
       })
     }
 
-    const modalTop = modalScrollPosition > 0 ? Math.max(20, modalScrollPosition - 50) : '50%'
-    const modalTransform = modalScrollPosition > 0 ? 'none' : 'translateY(-50%)'
-
     return (
       <div
         style={{
@@ -327,10 +330,9 @@ export default function Research() {
           bottom: 0,
           background: 'transparent',
           display: 'flex',
-          alignItems: modalScrollPosition > 0 ? 'flex-start' : 'center',
+          alignItems: 'center',
           justifyContent: 'center',
           padding: '1rem',
-          paddingTop: typeof modalTop === 'number' ? `${modalTop}px` : '0',
           zIndex: 1100,
           overflowY: 'auto',
           overflowX: 'hidden'
@@ -353,9 +355,8 @@ export default function Research() {
             gridTemplateColumns: '1.2fr 0.8fr',
             boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
             margin: 'auto',
-            marginTop: typeof modalTop === 'number' ? '0' : 'auto',
-            marginBottom: '2rem',
-            transform: modalTransform
+            marginTop: 'auto',
+            marginBottom: 'auto'
           }}
           onClick={e => e.stopPropagation()}
         >

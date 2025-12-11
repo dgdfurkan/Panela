@@ -145,6 +145,8 @@ export default function KeywordLauncher({ userId }) {
         url,
         ts: Date.now()
       }))
+      // Anlık güncelleme için custom event gönder
+      window.dispatchEvent(new Event('meta_last_search_updated'))
     } catch (e) {
       // ignore storage errors
     }

@@ -41,22 +41,47 @@ export default function ProductScanner({ userId, onProductsChange }) {
   }, [formData.scores])
 
 
-  // Prefill from last search stored by KeywordLauncher
+  // Prefill from last search stored by KeywordLauncher - anlık güncelleme
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem('meta_last_search')
-      if (!raw) return
-      const parsed = JSON.parse(raw)
-      if (parsed?.keyword) {
-        setFormData(prev => ({
-          ...prev,
-          search_keyword: parsed.keyword,
-          country_code: parsed.country_code || prev.country_code,
-          meta_link: parsed.url || prev.meta_link
-        }))
+    const updateFromStorage = () => {
+      try {
+        const raw = localStorage.getItem('meta_last_search')
+        if (!raw) return
+        const parsed = JSON.parse(raw)
+        if (parsed?.keyword) {
+          setFormData(prev => ({
+            ...prev,
+            search_keyword: parsed.keyword,
+            country_code: parsed.country_code || prev.country_code,
+            meta_link: parsed.url || prev.meta_link
+          }))
+        }
+      } catch (e) {
+        // ignore
       }
-    } catch (e) {
-      // ignore
+    }
+
+    // İlk yükleme
+    updateFromStorage()
+
+    // Storage değişikliklerini dinle (diğer tab'lardan gelen güncellemeler için)
+    const handleStorageChange = (e) => {
+      if (e.key === 'meta_last_search') {
+        updateFromStorage()
+      }
+    }
+
+    // Custom event dinle (aynı tab içindeki güncellemeler için)
+    const handleCustomStorage = () => {
+      updateFromStorage()
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    window.addEventListener('meta_last_search_updated', handleCustomStorage)
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('meta_last_search_updated', handleCustomStorage)
     }
   }, [])
 
