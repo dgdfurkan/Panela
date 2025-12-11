@@ -183,6 +183,49 @@ div[style*="justify-content:flex-end"] {
   margin-right: 0 !important;
 }
 
+/* ============================================
+   ÜST HEADER/NAVBAR - ULTRA KOMPAKT + SCROLL HIDE
+   ============================================ */
+
+/* Üst navbar/header - ULTRA DARALT */
+.x6s0dn4.x9f619.x78zum5.x2lah0s.x5yr21d.xdj266r.x11t971q.xat24cr.xvc5jky.xr8eajr.x1dr75xp.xz9dl7a.xp48ta0.xsag5q8.xtssl2i.x1n2onr6.xh8yej3.x10s2t04.x13tfk3b.x2i0hdy.x1jkuegs,
+div.x6s0dn4.x9f619.x78zum5.x2lah0s.x5yr21d.xdj266r.x11t971q.xat24cr.xvc5jky.xr8eajr.x1dr75xp.xz9dl7a.xp48ta0.xsag5q8.xtssl2i.x1n2onr6.xh8yej3.x10s2t04.x13tfk3b.x2i0hdy.x1jkuegs {
+  height: auto !important;
+  min-height: 32px !important;
+  max-height: 40px !important;
+  padding: 0.2rem 0.4rem !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 1000 !important;
+  background: white !important;
+  transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out !important;
+}
+
+/* Header içindeki elementleri kompakt yap */
+.x6s0dn4.x9f619.x78zum5.x2lah0s.x5yr21d.xdj266r.x11t971q.xat24cr.xvc5jky.xr8eajr.x1dr75xp.xz9dl7a.xp48ta0.xsag5q8.xtssl2i.x1n2onr6.xh8yej3.x10s2t04.x13tfk3b.x2i0hdy.x1jkuegs > *,
+div.x6s0dn4.x9f619.x78zum5.x2lah0s.x5yr21d.xdj266r.x11t971q.xat24cr.xvc5jky.xr8eajr.x1dr75xp.xz9dl7a.xp48ta0.xsag5q8.xtssl2i.x1n2onr6.xh8yej3.x10s2t04.x13tfk3b.x2i0hdy.x1jkuegs > * {
+  margin: 0 0.15rem !important;
+  padding: 0.15rem 0.3rem !important;
+  font-size: 0.75rem !important;
+  height: auto !important;
+}
+
+/* Scroll'da header gizleme class'ı */
+.panela-header-hidden {
+  transform: translateY(-100%) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Scroll'da header göster class'ı */
+.panela-header-visible {
+  transform: translateY(0) !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
 /* Responsive tasarım */
 @media (max-width: 768px) {
   body > div[role="main"] > div,
