@@ -2,6 +2,7 @@ import { useAuth } from '../context/AuthContext'
 import KeywordLauncher from '../components/meta-ads/KeywordLauncher'
 import ProductScanner from '../components/meta-ads/ProductScanner'
 import { Search } from 'lucide-react'
+import AutoMetaScanner from '../components/meta-ads/AutoMetaScanner'
 
 export default function Research() {
   const { user } = useAuth()
@@ -33,6 +34,9 @@ export default function Research() {
             <Search size={32} color="white" />
           </div>
         </div>
+
+        {/* Auto Meta Scanner panel */}
+        <AutoMetaScanner />
 
         {/* Two Panel Layout */}
         <div
