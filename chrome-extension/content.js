@@ -458,30 +458,42 @@
         return card.style.display !== 'none' && hasTargetButton(card);
       });
       
+      console.log(`[Panela] İlk aramada ${adCards.length} reklam kartı bulundu (role="article")`);
+      
       // Eğer article bulunamazsa, alternatif selector'lar dene
       if (adCards.length === 0) {
-        const allCards = document.querySelectorAll('div[data-pagelet], div[style*="position"]');
-        adCards = Array.from(allCards).filter(card => {
+        // Tüm div'leri kontrol et
+        const allDivs = document.querySelectorAll('div');
+        adCards = Array.from(allDivs).filter(card => {
+          // Görünür mü?
+          if (card.style.display === 'none' || card.offsetHeight === 0) return false;
+          
+          // Reklam içeriği var mı?
           const hasImage = card.querySelector('img');
           const hasAdContent = hasImage || card.textContent.length > 100;
-          return hasAdContent && hasTargetButton(card) && card.style.display !== 'none';
+          
+          // Shop Now butonu var mı?
+          const hasButton = hasTargetButton(card);
+          
+          return hasAdContent && hasButton;
         });
+        
+        console.log(`[Panela] Alternatif aramada ${adCards.length} reklam kartı bulundu`);
       }
       
-      console.log(`[Panela] ${adCards.length} reklam kartı bulundu`);
+      console.log(`[Panela] Toplam ${adCards.length} reklam kartı bulundu`);
       
-      // Debug: İlk kartı incele
-      if (adCards.length > 0) {
-        const firstCard = adCards[0];
-        const links = firstCard.querySelectorAll('a');
-        console.log(`[Panela] İlk kartta ${links.length} link bulundu`);
+      // Debug: İlk 3 kartı incele
+      adCards.slice(0, 3).forEach((card, cardIdx) => {
+        const links = card.querySelectorAll('a[href]');
+        console.log(`[Panela] Kart ${cardIdx}: ${links.length} link bulundu`);
         links.forEach((link, idx) => {
           const href = link.getAttribute('href');
-          if (href) {
-            console.log(`[Panela] Link ${idx}: ${href}`);
+          if (href && href.includes('facebook.com')) {
+            console.log(`[Panela] Kart ${cardIdx} - Link ${idx}: ${href}`);
           }
         });
-      }
+      });
       
       // Tüm advertiser'ları topla
       if (allAdvertisers.length === 0) {
