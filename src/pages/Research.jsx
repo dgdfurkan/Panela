@@ -299,45 +299,18 @@ export default function Research() {
     }
 
     return (
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          width: '100%',
-          height: '100%',
-          background: 'transparent',
-          zIndex: 9999,
-          pointerEvents: 'auto',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}
-        onClick={async () => {
-          setSelectedProduct(null)
-          await loadUnreadCounts() // Modal kapandığında badge'leri güncelle
-        }}
-      >
+      <>
         <div
-          data-modal-container
-          style={{
-            position: 'relative',
-            background: 'white',
-            borderRadius: '16px',
-            width: 'min(95vw, 1000px)',
-            maxWidth: '1000px',
-            height: 'min(85vh, 700px)',
-            maxHeight: '85vh',
-            overflow: 'hidden',
-            display: 'grid',
-            gridTemplateColumns: '1.2fr 0.8fr',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-            pointerEvents: 'auto'
+          className="product-modal-overlay"
+          onClick={async () => {
+            setSelectedProduct(null)
+            await loadUnreadCounts() // Modal kapandığında badge'leri güncelle
           }}
-          onClick={e => e.stopPropagation()}
         >
+          <div
+            className="product-modal-container"
+            onClick={e => e.stopPropagation()}
+          >
           {/* Left: product info */}
           <div style={{ 
             padding: '1.5rem', 
@@ -592,7 +565,61 @@ export default function Research() {
             </div>
           </div>
         </div>
-      </div>
+        </div>
+        <style>{`
+          .product-modal-overlay {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            background: transparent !important;
+            z-index: 9999 !important;
+            pointer-events: auto !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          
+          .product-modal-container {
+            position: relative !important;
+            background: white !important;
+            border-radius: 16px !important;
+            width: min(95vw, 1000px) !important;
+            max-width: 1000px !important;
+            height: min(85vh, 700px) !important;
+            max-height: 85vh !important;
+            overflow: hidden !important;
+            display: grid !important;
+            grid-template-columns: 1.2fr 0.8fr !important;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3) !important;
+            pointer-events: auto !important;
+            margin: auto !important;
+          }
+          
+          @media (max-width: 768px) {
+            .product-modal-container {
+              grid-template-columns: 1fr !important;
+              grid-template-rows: auto auto !important;
+              height: min(90vh, 600px) !important;
+              max-height: 90vh !important;
+              width: min(95vw, 100%) !important;
+            }
+            .product-modal-container > div:first-child {
+              border-right: none !important;
+              border-bottom: 1px solid var(--color-border) !important;
+              max-height: 50% !important;
+            }
+            .product-modal-container > div:last-child {
+              max-height: 50% !important;
+            }
+          }
+        `}</style>
+      </>
     )
   }
 
@@ -892,24 +919,6 @@ export default function Research() {
           }
         }
         
-        /* Modal responsive styles */
-        @media (max-width: 768px) {
-          [data-modal-container] {
-            grid-template-columns: 1fr !important;
-            grid-template-rows: auto auto !important;
-            height: min(90vh, 600px) !important;
-            max-height: 90vh !important;
-            width: min(95vw, 100%) !important;
-          }
-          [data-modal-container] > div:first-child {
-            border-right: none !important;
-            border-bottom: 1px solid var(--color-border) !important;
-            max-height: 50% !important;
-          }
-          [data-modal-container] > div:last-child {
-            max-height: 50% !important;
-          }
-        }
       `}</style>
     </div>
   )
