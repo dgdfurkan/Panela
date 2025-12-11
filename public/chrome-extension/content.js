@@ -203,43 +203,74 @@
   // ADVERTISER KONTROL SİSTEMİ
   // ============================================
 
-  // Advertiser linklerini bul - Daha geniş arama
+  // Advertiser linklerini bul - Daha geniş ve agresif arama
   function findAdvertiserLinks(adCard) {
-    // Tüm linkleri bul
-    const allLinks = adCard.querySelectorAll('a[href*="facebook.com"]');
+    // Tüm linkleri bul (href attribute'u olan tüm a elementleri)
+    const allLinks = adCard.querySelectorAll('a[href]');
     const advertisers = [];
     const foundUsernames = new Set();
     
     allLinks.forEach(link => {
-      const href = link.getAttribute('href');
+      let href = link.getAttribute('href');
       if (!href) return;
       
-      // Facebook sayfa linklerini bul (ads/library hariç)
-      if (href.includes('facebook.com/') && 
-          !href.includes('/ads/library') && 
-          !href.includes('/login') &&
-          !href.includes('/help') &&
-          !href.includes('/privacy') &&
-          !href.includes('/terms')) {
+      // Relative URL'leri absolute'ye çevir
+      if (href.startsWith('/')) {
+        href = 'https://www.facebook.com' + href;
+      }
+      
+      // Facebook sayfa linklerini bul
+      if (href.includes('facebook.com/')) {
+        // Ads library, login, help gibi sayfaları filtrele
+        const excluded = ['/ads/library', '/login', '/help', '/privacy', '/terms', '/about', '/pages', '/groups', '/events', '/watch', '/marketplace', '/games'];
+        const isExcluded = excluded.some(ex => href.includes(ex));
         
-        // URL'den advertiser username'ini çıkar
-        let match = href.match(/facebook\.com\/([^\/\?&#]+)/);
-        if (match && match[1]) {
-          const username = match[1];
-          
-          // Geçersiz username'leri filtrele
-          const invalid = ['www', 'ads', 'login', 'help', 'privacy', 'terms', 'about', 'pages', 'groups', 'events', 'watch'];
-          if (!invalid.includes(username.toLowerCase()) && !foundUsernames.has(username)) {
-            foundUsernames.add(username);
-            advertisers.push({
-              username: username,
-              url: href.startsWith('http') ? href : `https://${href}`,
-              card: adCard
-            });
+        if (!isExcluded) {
+          // URL'den advertiser username'ini çıkar
+          let match = href.match(/facebook\.com\/([^\/\?&#]+)/);
+          if (match && match[1]) {
+            const username = match[1];
+            
+            // Geçersiz username'leri filtrele
+            const invalid = ['www', 'ads', 'login', 'help', 'privacy', 'terms', 'about', 'pages', 'groups', 'events', 'watch', 'marketplace', 'games', 'profile.php'];
+            
+            // Username uzunluğu kontrolü (çok kısa veya çok uzun olmasın)
+            if (username.length >= 3 && username.length <= 50 && 
+                !invalid.includes(username.toLowerCase()) && 
+                !foundUsernames.has(username) &&
+                !username.match(/^\d+$/)) { // Sadece sayılardan oluşan username'leri atla
+              
+              foundUsernames.add(username);
+              advertisers.push({
+                username: username,
+                url: href.startsWith('http') ? href : `https://${href}`,
+                card: adCard
+              });
+              
+              console.log(`[Panela] Advertiser bulundu: ${username} - ${href}`);
+            }
           }
         }
       }
     });
+    
+    // Eğer link bulunamadıysa, text içinde de ara
+    if (advertisers.length === 0) {
+      const cardText = adCard.textContent || '';
+      // "facebook.com/username" pattern'ini ara
+      const textMatch = cardText.match(/facebook\.com\/([a-zA-Z0-9._-]+)/);
+      if (textMatch && textMatch[1]) {
+        const username = textMatch[1];
+        if (username.length >= 3 && username.length <= 50) {
+          advertisers.push({
+            username: username,
+            url: `https://www.facebook.com/${username}`,
+            card: adCard
+          });
+          console.log(`[Panela] Text'ten advertiser bulundu: ${username}`);
+        }
+      }
+    }
     
     return advertisers;
   }
@@ -424,11 +455,34 @@
       const params = getCurrentSearchParams();
       
       // Sadece görünür reklam kartlarını al (Shop Now/Şimdi alışveriş yap olanlar)
-      const adCards = Array.from(document.querySelectorAll('[role="article"]')).filter(card => {
+      let adCards = Array.from(document.querySelectorAll('[role="article"]')).filter(card => {
         return card.style.display !== 'none' && hasTargetButton(card);
       });
       
+      // Eğer article bulunamazsa, alternatif selector'lar dene
+      if (adCards.length === 0) {
+        const allCards = document.querySelectorAll('div[data-pagelet], div[style*="position"]');
+        adCards = Array.from(allCards).filter(card => {
+          const hasImage = card.querySelector('img');
+          const hasAdContent = hasImage || card.textContent.length > 100;
+          return hasAdContent && hasTargetButton(card) && card.style.display !== 'none';
+        });
+      }
+      
       console.log(`[Panela] ${adCards.length} reklam kartı bulundu`);
+      
+      // Debug: İlk kartı incele
+      if (adCards.length > 0) {
+        const firstCard = adCards[0];
+        const links = firstCard.querySelectorAll('a');
+        console.log(`[Panela] İlk kartta ${links.length} link bulundu`);
+        links.forEach((link, idx) => {
+          const href = link.getAttribute('href');
+          if (href) {
+            console.log(`[Panela] Link ${idx}: ${href}`);
+          }
+        });
+      }
       
       // Tüm advertiser'ları topla
       if (allAdvertisers.length === 0) {
