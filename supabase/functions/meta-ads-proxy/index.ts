@@ -132,21 +132,46 @@ const handler: ServeHandler = async (req) => {
       const token = Deno.env.get('META_ADS_TOKEN')
       const validation = validateToken(token)
       
-      // Token'ı Meta API'ye test et
-      let metaTestResult = null
+      // Token'ı Meta API'ye test et - /me endpoint
+      let metaMeTest = null
+      // Token'ı Ads Archive API'ye test et - /ads_archive endpoint
+      let metaAdsArchiveTest = null
+      
       if (token && validation.valid) {
+        const trimmedToken = token.trim()
+        
+        // Test 1: /me endpoint (genel erişim)
         try {
-          const testUrl = `https://graph.facebook.com/v19.0/me?access_token=${token.trim()}`
-          const testRes = await fetch(testUrl, { method: 'GET' })
-          const testData = await testRes.json()
-          metaTestResult = {
-            status: testRes.status,
-            success: testRes.ok,
-            error: testData.error || null,
-            data: testData
+          const meUrl = `https://graph.facebook.com/v19.0/me?access_token=${trimmedToken}`
+          const meRes = await fetch(meUrl, { method: 'GET' })
+          const meData = await meRes.json()
+          metaMeTest = {
+            status: meRes.status,
+            success: meRes.ok,
+            error: meData.error || null,
+            data: meData
           }
         } catch (e) {
-          metaTestResult = {
+          metaMeTest = {
+            error: e.message
+          }
+        }
+        
+        // Test 2: /ads_archive endpoint (ads_read izni gerektirir)
+        try {
+          const adsArchiveUrl = `https://graph.facebook.com/v19.0/ads_archive?search_type=KEYWORD_UNORDERED&ad_type=ALL&ad_active_status=all&limit=1&access_token=${trimmedToken}`
+          const adsRes = await fetch(adsArchiveUrl, { method: 'GET' })
+          const adsData = await adsRes.json()
+          metaAdsArchiveTest = {
+            status: adsRes.status,
+            success: adsRes.ok,
+            error: adsData.error || null,
+            hasData: !!adsData.data,
+            dataCount: adsData.data?.length || 0,
+            fullResponse: adsData
+          }
+        } catch (e) {
+          metaAdsArchiveTest = {
             error: e.message
           }
         }
@@ -158,7 +183,13 @@ const handler: ServeHandler = async (req) => {
         tokenError: validation.error,
         tokenLength: token ? token.length : 0,
         tokenPreview: token ? `${token.substring(0, 10)}...${token.substring(token.length - 5)}` : null,
-        metaApiTest: metaTestResult
+        metaMeTest: metaMeTest,
+        metaAdsArchiveTest: metaAdsArchiveTest,
+        diagnosis: metaAdsArchiveTest?.error 
+          ? `Token Ads Archive API'ye erişemiyor: ${metaAdsArchiveTest.error.message || metaAdsArchiveTest.error}`
+          : metaAdsArchiveTest?.success 
+            ? 'Token Ads Archive API'ye erişebiliyor ✅'
+            : 'Token test edilemedi'
       }), {
         status: 200,
         headers: {
