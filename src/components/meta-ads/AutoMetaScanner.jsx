@@ -174,151 +174,235 @@ export default function AutoMetaScanner({ onPrefill }) {
   }
 
   return (
-    <div className="glass-panel" style={{ padding: '1.25rem', borderRadius: '16px', background: 'white', border: '1px solid var(--color-border)' }}>
-      <div
-        style={{
-          marginBottom: '1rem',
-          padding: '1rem',
-          borderRadius: '16px',
-          background: 'white',
-          border: '1px solid var(--color-border)',
-          boxShadow: '0 14px 28px rgba(15,23,42,0.06)',
-          color: 'var(--color-text-main)',
-          display: 'grid',
-          gridTemplateColumns: '1fr auto',
-          gap: '1rem',
-          alignItems: 'center'
-        }}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+        <div>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.25rem' }}>
             <span style={{ background: 'var(--color-surface-muted, #f8fafc)', border: '1px solid var(--color-border)', padding: '0.25rem 0.55rem', borderRadius: '10px', fontSize: '12px', letterSpacing: '0.3px', color: 'var(--color-text-main)' }}>
               Otomatik Meta Tarayıcı
             </span>
             <span style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)', color: '#0f766e', padding: '0.25rem 0.55rem', borderRadius: '10px', fontSize: '12px', fontWeight: 700 }}>
               CTA + 30+ reklam filtresi
             </span>
-          </div>
-          <h3 style={{ margin: 0, fontSize: '1.18rem', fontWeight: 800, letterSpacing: '-0.2px', color: 'var(--color-text-main)' }}>
-            14 günde “Shop now/Şimdi alışveriş yap” CTA’sını yakalayan sayfaları bul
-          </h3>
-          <p style={{ margin: 0, color: 'var(--color-text-muted)', fontSize: '13px', lineHeight: 1.5 }}>
-            Ülke + keyword kombinasyonlarını sırayla tarar; CTA yakalayan ve son 14 günde 30+ reklam verenleri öne çıkarır. Listeyi taslağa tek tıkla aktar.
-          </p>
-          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
-            <span style={{ background: '#eef2ff', border: '1px solid #e0e7ff', color: '#4338ca', padding: '0.22rem 0.55rem', borderRadius: '999px', fontSize: '12px' }}>Kombine tarama</span>
-            <span style={{ background: '#f3e8ff', border: '1px solid #e9d5ff', color: '#6b21a8', padding: '0.22rem 0.55rem', borderRadius: '999px', fontSize: '12px' }}>CTA denetimi</span>
-            <span style={{ background: '#ecfdf3', border: '1px solid #d1fae5', color: '#0f766e', padding: '0.22rem 0.55rem', borderRadius: '999px', fontSize: '12px' }}>30+ branding sinyali</span>
-          </div>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end' }}>
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             {hasProxy && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '12px', color: '#0f766e', background: '#ecfdf3', padding: '0.35rem 0.6rem', borderRadius: '12px', border: '1px solid #d1fae5' }}>
-                <Shield size={14} />
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '12px', color: '#0f766e', background: '#ecfdf3', padding: '0.25rem 0.55rem', borderRadius: '10px', border: '1px solid #d1fae5' }}>
+                <Shield size={12} />
                 Proxy aktif
               </span>
             )}
             {hasEnvToken && !hasProxy && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '12px', color: '#1d4ed8', background: '#eef2ff', padding: '0.35rem 0.6rem', borderRadius: '12px', border: '1px solid #e0e7ff' }}>
-                <Shield size={14} />
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '12px', color: '#1d4ed8', background: '#eef2ff', padding: '0.25rem 0.55rem', borderRadius: '10px', border: '1px solid #e0e7ff' }}>
+                <Shield size={12} />
                 Env token
               </span>
             )}
           </div>
-          <button
-            onClick={() => { setItems([]); setLog([]); }}
-            style={{
-              padding: '0.6rem 1rem',
-              border: '1px solid var(--color-border)',
-              borderRadius: '12px',
-              background: 'white',
-              color: 'var(--color-text-main)',
-              fontWeight: 700,
-              boxShadow: '0 10px 24px rgba(15,23,42,0.08)'
-            }}
-          >
-            Temizle
-          </button>
+          <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--color-text-main)' }}>
+            14 günde "Shop now/Şimdi alışveriş yap" CTA'sını yakalayan sayfaları bul
+          </h3>
         </div>
+        <button
+          onClick={() => { setItems([]); setLog([]); }}
+          style={{
+            padding: '0.5rem 0.75rem',
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-sm)',
+            background: 'white',
+            color: 'var(--color-text-main)',
+            fontWeight: 600,
+            fontSize: '13px'
+          }}
+        >
+          Temizle
+        </button>
       </div>
 
-      {/* Form */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.9rem', marginBottom: '1rem' }}>
-        <div className="glass-panel" style={{ padding: '0.85rem', borderRadius: '14px', border: '1px solid var(--color-border)', background: 'white' }}>
-          <label className="eyebrow">Ülkeler (virgülle)</label>
-          <input className="input" style={{ borderRadius: '12px' }} value={countries} onChange={e => setCountries(e.target.value)} />
-        </div>
-        <div className="glass-panel" style={{ padding: '0.85rem', borderRadius: '14px', border: '1px solid var(--color-border)', background: 'white' }}>
-          <label className="eyebrow">Keywords (virgülle)</label>
-          <input className="input" style={{ borderRadius: '12px' }} value={keywords} onChange={e => setKeywords(e.target.value)} />
-        </div>
-        <div className="glass-panel" style={{ padding: '0.85rem', borderRadius: '14px', border: '1px solid var(--color-border)', background: 'white' }}>
-          <label className="eyebrow">Platformlar</label>
-          <input className="input" style={{ borderRadius: '12px' }} value={platforms} onChange={e => setPlatforms(e.target.value)} placeholder="facebook,instagram" />
-        </div>
-        <div className="glass-panel" style={{ padding: '0.85rem', borderRadius: '14px', border: '1px solid var(--color-border)', background: 'white' }}>
-          <label className="eyebrow">Media Type</label>
-          <select className="input" style={{ borderRadius: '12px' }} value={mediaType} onChange={e => setMediaType(e.target.value)}>
-            <option value="ALL">ALL</option>
-            <option value="VIDEO">VIDEO</option>
-            <option value="IMAGE">IMAGE</option>
-          </select>
-        </div>
-        <div className="glass-panel" style={{ padding: '0.85rem', borderRadius: '14px', border: '1px solid var(--color-border)', background: 'white' }}>
-          <label className="eyebrow">Status</label>
-          <select className="input" style={{ borderRadius: '12px' }} value={status} onChange={e => setStatus(e.target.value)}>
-            <option value="ALL">ALL</option>
-            <option value="ACTIVE">ACTIVE</option>
-            <option value="INACTIVE">INACTIVE</option>
-          </select>
-        </div>
-        <div className="glass-panel" style={{ padding: '0.85rem', borderRadius: '14px', border: '1px solid var(--color-border)', background: 'white' }}>
-          <label className="eyebrow">Tarih (Min)</label>
-          <input className="input" style={{ borderRadius: '12px' }} type="date" value={since} onChange={e => setSince(e.target.value)} />
-        </div>
-        <div className="glass-panel" style={{ padding: '0.85rem', borderRadius: '14px', border: '1px solid var(--color-border)', background: 'white' }}>
-          <label className="eyebrow">Tarih (Max)</label>
-          <input className="input" style={{ borderRadius: '12px' }} type="date" value={until} onChange={e => setUntil(e.target.value)} />
-        </div>
-        <div className="glass-panel" style={{ padding: '0.85rem', borderRadius: '14px', border: '1px solid var(--color-border)', background: 'white' }}>
-          <label className="eyebrow">Hedef Adet</label>
-          <input className="input" style={{ borderRadius: '12px' }} type="number" value={targetCount} onChange={e => setTargetCount(parseInt(e.target.value) || 0)} />
-        </div>
-        <div className="glass-panel" style={{ padding: '0.85rem', borderRadius: '14px', border: '1px solid var(--color-border)', background: 'white' }}>
-          <label className="eyebrow">Sayfa Başına Limit</label>
-          <input className="input" style={{ borderRadius: '12px' }} type="number" value={pageLimit} onChange={e => setPageLimit(parseInt(e.target.value) || 25)} />
-        </div>
-        {!hasEnvToken && !hasProxy && (
-          <div className="glass-panel" style={{ padding: '0.85rem', borderRadius: '14px', border: '1px solid var(--color-border)', background: 'white' }}>
-            <label className="eyebrow">Access Token (POC)</label>
-            <input className="input" style={{ borderRadius: '12px' }} value={token} onChange={e => setToken(e.target.value)} placeholder="Prod’da proxy kullan" />
+      {/* Form Panel - ProductScanner stili */}
+      <div
+        id="meta-scanner-form"
+        style={{
+          padding: '1rem',
+          border: '1px solid var(--color-border)',
+          borderRadius: 'var(--radius-md)',
+          background: 'white',
+          marginBottom: '0.75rem',
+          maxHeight: '50vh',
+          overflowY: 'auto'
+        }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {/* İlk satır */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500', color: 'var(--color-text-muted)' }}>Ülkeler (virgülle)</label>
+              <input
+                type="text"
+                value={countries}
+                onChange={e => setCountries(e.target.value)}
+                placeholder="US,CA,GB"
+                style={{ width: '100%', padding: '0.5rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', fontSize: '13px', background: 'white' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500', color: 'var(--color-text-muted)' }}>Keywords (virgülle)</label>
+              <input
+                type="text"
+                value={keywords}
+                onChange={e => setKeywords(e.target.value)}
+                placeholder="shop now, buy now"
+                style={{ width: '100%', padding: '0.5rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', fontSize: '13px', background: 'white' }}
+              />
+            </div>
           </div>
-        )}
-        <div className="glass-panel" style={{ padding: '0.85rem', borderRadius: '14px', border: '1px solid var(--color-border)', background: 'white' }}>
-          <label className="eyebrow" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            <Link2 size={14} />
-            Proxy URL (isteğe bağlı)
-          </label>
-          <input
-            className="input"
-            style={{ borderRadius: '12px' }}
-            value={proxyOverride}
-            onChange={e => handleProxySave(e.target.value)}
-            placeholder={envProxy || 'https://<ref>.functions.supabase.co/meta-ads-proxy'}
-          />
-          <small style={{ color: 'var(--color-text-muted)' }}>
-            Boş bırakırsan env’deki `VITE_META_PROXY_URL` kullanılır.
-          </small>
+
+          {/* İkinci satır */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500', color: 'var(--color-text-muted)' }}>Platformlar</label>
+              <input
+                type="text"
+                value={platforms}
+                onChange={e => setPlatforms(e.target.value)}
+                placeholder="facebook,instagram"
+                style={{ width: '100%', padding: '0.5rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', fontSize: '13px', background: 'white' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500', color: 'var(--color-text-muted)' }}>Media Type</label>
+              <select
+                value={mediaType}
+                onChange={e => setMediaType(e.target.value)}
+                style={{ width: '100%', padding: '0.5rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', fontSize: '13px', background: 'white' }}
+              >
+                <option value="ALL">ALL</option>
+                <option value="VIDEO">VIDEO</option>
+                <option value="IMAGE">IMAGE</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Üçüncü satır */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500', color: 'var(--color-text-muted)' }}>Status</label>
+              <select
+                value={status}
+                onChange={e => setStatus(e.target.value)}
+                style={{ width: '100%', padding: '0.5rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', fontSize: '13px', background: 'white' }}
+              >
+                <option value="ALL">ALL</option>
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="INACTIVE">INACTIVE</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500', color: 'var(--color-text-muted)' }}>Tarih (Min)</label>
+              <input
+                type="date"
+                value={since}
+                onChange={e => setSince(e.target.value)}
+                style={{ width: '100%', padding: '0.5rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', fontSize: '13px', background: 'white' }}
+              />
+            </div>
+          </div>
+
+          {/* Dördüncü satır */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500', color: 'var(--color-text-muted)' }}>Tarih (Max)</label>
+              <input
+                type="date"
+                value={until}
+                onChange={e => setUntil(e.target.value)}
+                style={{ width: '100%', padding: '0.5rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', fontSize: '13px', background: 'white' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500', color: 'var(--color-text-muted)' }}>Hedef Adet</label>
+              <input
+                type="number"
+                value={targetCount}
+                onChange={e => setTargetCount(parseInt(e.target.value) || 0)}
+                style={{ width: '100%', padding: '0.5rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', fontSize: '13px', background: 'white' }}
+              />
+            </div>
+          </div>
+
+          {/* Beşinci satır */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500', color: 'var(--color-text-muted)' }}>Sayfa Başına Limit</label>
+              <input
+                type="number"
+                value={pageLimit}
+                onChange={e => setPageLimit(parseInt(e.target.value) || 25)}
+                style={{ width: '100%', padding: '0.5rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', fontSize: '13px', background: 'white' }}
+              />
+            </div>
+            {!hasEnvToken && !hasProxy && (
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500', color: 'var(--color-text-muted)' }}>Access Token (POC)</label>
+                <input
+                  type="text"
+                  value={token}
+                  onChange={e => setToken(e.target.value)}
+                  placeholder="Prod'da proxy kullan"
+                  style={{ width: '100%', padding: '0.5rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', fontSize: '13px', background: 'white' }}
+                />
+              </div>
+            )}
+            {(!hasEnvToken && !hasProxy) ? null : (
+              <div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500', color: 'var(--color-text-muted)' }}>
+                  <Link2 size={12} />
+                  Proxy URL (isteğe bağlı)
+                </label>
+                <input
+                  type="text"
+                  value={proxyOverride}
+                  onChange={e => handleProxySave(e.target.value)}
+                  placeholder={envProxy || 'https://<ref>.functions.supabase.co/meta-ads-proxy'}
+                  style={{ width: '100%', padding: '0.5rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', fontSize: '13px', background: 'white' }}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Proxy URL tek başına (eğer token yoksa) */}
+          {!hasEnvToken && !hasProxy && (
+            <div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500', color: 'var(--color-text-muted)' }}>
+                <Link2 size={12} />
+                Proxy URL (isteğe bağlı)
+              </label>
+              <input
+                type="text"
+                value={proxyOverride}
+                onChange={e => handleProxySave(e.target.value)}
+                placeholder={envProxy || 'https://<ref>.functions.supabase.co/meta-ads-proxy'}
+                style={{ width: '100%', padding: '0.5rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', fontSize: '13px', background: 'white' }}
+              />
+            </div>
+          )}
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem' }}>
+      {/* Action Button */}
+      <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.75rem' }}>
         <button
           onClick={handleRun}
           className="primary"
           disabled={loading || (!hasProxy && !hasEnvToken && !token)}
-          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.65rem 1.1rem' }}
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '0.5rem', 
+            padding: '0.65rem 1.1rem',
+            borderRadius: 'var(--radius-sm)',
+            fontSize: '14px',
+            fontWeight: 600
+          }}
         >
           {loading ? <Loader2 size={16} className="spin" /> : <Play size={16} />}
           Taramayı Başlat
