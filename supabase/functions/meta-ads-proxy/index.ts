@@ -19,7 +19,7 @@ const handler: ServeHandler = async (req) => {
   try {
     // CORS preflight
     if (req.method === 'OPTIONS') {
-      return new Response('ok', {
+      return new Response(null, {
         status: 204,
         headers: CORS_HEADERS
       })
