@@ -8,8 +8,11 @@ export const parseKeywordsFromFile = async () => {
   try {
     // Try different paths
     const paths = [
-      '/weeks/week1/Ads Library Keywordlar.txt',
+      // GH Pages base path first
       '/Panela/weeks/week1/Ads Library Keywordlar.txt',
+      // direct root (dev server)
+      '/weeks/week1/Ads Library Keywordlar.txt',
+      // relative fallback
       './weeks/week1/Ads Library Keywordlar.txt'
     ]
     

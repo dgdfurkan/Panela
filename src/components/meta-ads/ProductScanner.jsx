@@ -252,6 +252,25 @@ export default function ProductScanner({ userId }) {
     if (!selectedProduct || selectedProduct.user_id !== userId) return
     if (!confirm('Bu ürünü silmek istediğine emin misin?')) return
     try {
+      // Cascade delete: comment_reads -> product_comments -> product
+      const { data: commentIds } = await supabase
+        .from('product_comments')
+        .select('id')
+        .eq('product_id', selectedProduct.id)
+
+      const ids = (commentIds || []).map(c => c.id)
+      if (ids.length > 0) {
+        await supabase
+          .from('comment_reads')
+          .delete()
+          .in('comment_id', ids)
+      }
+
+      await supabase
+        .from('product_comments')
+        .delete()
+        .eq('product_id', selectedProduct.id)
+
       const { error } = await supabase
         .from('discovered_products')
         .delete()
