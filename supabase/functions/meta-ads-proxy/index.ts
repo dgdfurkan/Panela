@@ -131,12 +131,34 @@ const handler: ServeHandler = async (req) => {
     if (urlPath.includes('/debug') && req.method === 'GET') {
       const token = Deno.env.get('META_ADS_TOKEN')
       const validation = validateToken(token)
+      
+      // Token'ı Meta API'ye test et
+      let metaTestResult = null
+      if (token && validation.valid) {
+        try {
+          const testUrl = `https://graph.facebook.com/v19.0/me?access_token=${token.trim()}`
+          const testRes = await fetch(testUrl, { method: 'GET' })
+          const testData = await testRes.json()
+          metaTestResult = {
+            status: testRes.status,
+            success: testRes.ok,
+            error: testData.error || null,
+            data: testData
+          }
+        } catch (e) {
+          metaTestResult = {
+            error: e.message
+          }
+        }
+      }
+      
       return new Response(JSON.stringify({
         tokenPresent: !!token,
         tokenValid: validation.valid,
         tokenError: validation.error,
         tokenLength: token ? token.length : 0,
-        tokenPreview: token ? `${token.substring(0, 10)}...${token.substring(token.length - 5)}` : null
+        tokenPreview: token ? `${token.substring(0, 10)}...${token.substring(token.length - 5)}` : null,
+        metaApiTest: metaTestResult
       }), {
         status: 200,
         headers: {
@@ -155,11 +177,25 @@ const handler: ServeHandler = async (req) => {
 
     // Token validasyonu
     const token = Deno.env.get('META_ADS_TOKEN')
+    
+    // Debug: Token'ı logla (maskelenmiş)
+    console.log('Token check:', {
+      tokenPresent: !!token,
+      tokenLength: token ? token.length : 0,
+      tokenPreview: token ? `${token.substring(0, 10)}...${token.substring(token.length - 5)}` : null,
+      tokenStart: token ? token.substring(0, 20) : null
+    })
+    
     const tokenValidation = validateToken(token)
     if (!tokenValidation.valid) {
+      console.error('Token validation failed:', tokenValidation.error)
       return new Response(JSON.stringify({ 
         error: tokenValidation.error,
-        code: 'TOKEN_VALIDATION_ERROR'
+        code: 'TOKEN_VALIDATION_ERROR',
+        debug: {
+          tokenPresent: !!token,
+          tokenLength: token ? token.length : 0
+        }
       }), {
         status: 500,
         headers: CORS_HEADERS
@@ -184,9 +220,19 @@ const handler: ServeHandler = async (req) => {
         params.set(k, String(v))
       }
     })
-    params.set('access_token', token!)
+    
+    // Token'ı URL'e ekle
+    const tokenToUse = token!.trim() // Trim yaparak boşlukları temizle
+    params.set('access_token', tokenToUse)
 
     const url = `${GRAPH_BASE}/ads_archive?${params.toString()}`
+    
+    // Debug: URL'i logla (token maskelenmiş)
+    console.log('Meta API Request:', {
+      url: url.replace(/access_token=[^&]+/, 'access_token=***'),
+      tokenLength: tokenToUse.length,
+      tokenStart: tokenToUse.substring(0, 20)
+    })
 
     if (action !== 'search' && action !== 'count') {
       return new Response(JSON.stringify({ error: 'Unknown action' }), { status: 400, headers: CORS_HEADERS })
@@ -206,7 +252,12 @@ const handler: ServeHandler = async (req) => {
         status,
         error: data.error,
         fullResponse: data,
-        url: url.replace(/access_token=[^&]+/, 'access_token=***')
+        url: url.replace(/access_token=[^&]+/, 'access_token=***'),
+        tokenInfo: {
+          tokenLength: tokenToUse.length,
+          tokenStart: tokenToUse.substring(0, 20),
+          tokenEnd: tokenToUse.substring(tokenToUse.length - 10)
+        }
       })
       
       return new Response(JSON.stringify({
