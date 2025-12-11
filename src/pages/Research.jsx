@@ -304,13 +304,15 @@ export default function Research() {
           position: 'fixed',
           top: 0,
           left: 0,
-          right: 0,
-          bottom: 0,
+          width: '100vw',
+          height: '100vh',
           background: 'transparent',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 1100,
+          margin: 0,
+          padding: 0,
           overflow: 'hidden'
         }}
         onClick={async () => {
@@ -330,7 +332,8 @@ export default function Research() {
             display: 'grid',
             gridTemplateColumns: '1.2fr 0.8fr',
             boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-            margin: 'auto'
+            position: 'relative',
+            margin: 0
           }}
           onClick={e => e.stopPropagation()}
         >
