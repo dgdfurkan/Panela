@@ -186,9 +186,9 @@ const handler: ServeHandler = async (req) => {
         metaMeTest: metaMeTest,
         metaAdsArchiveTest: metaAdsArchiveTest,
         diagnosis: metaAdsArchiveTest?.error 
-          ? `Token Ads Archive API'ye erişemiyor: ${metaAdsArchiveTest.error.message || metaAdsArchiveTest.error}`
+          ? `Token Ads Archive API'ye erisemiyor: ${metaAdsArchiveTest.error.message || metaAdsArchiveTest.error}`
           : metaAdsArchiveTest?.success 
-            ? 'Token Ads Archive API'ye erişebiliyor ✅'
+            ? 'Token Ads Archive API\'ye erisebiliyor'
             : 'Token test edilemedi'
       }), {
         status: 200,
