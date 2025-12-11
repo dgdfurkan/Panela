@@ -3,10 +3,9 @@ import KeywordLauncher from '../components/meta-ads/KeywordLauncher'
 import ProductScanner from '../components/meta-ads/ProductScanner'
 import { Search, Zap, Rocket } from 'lucide-react'
 import AutoMetaScanner from '../components/meta-ads/AutoMetaScanner'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import ProductCard from '../components/meta-ads/ProductCard'
 import { supabase } from '../lib/supabaseClient'
-import { useEffect } from 'react'
 
 export default function Research() {
   const { user } = useAuth()
