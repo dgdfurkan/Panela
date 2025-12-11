@@ -4,10 +4,65 @@ import ProductScanner from '../components/meta-ads/ProductScanner'
 import { Search, Zap, Rocket } from 'lucide-react'
 import AutoMetaScanner from '../components/meta-ads/AutoMetaScanner'
 import { useState } from 'react'
+import ProductCard from '../components/meta-ads/ProductCard'
+import { supabase } from '../lib/supabaseClient'
+import { useEffect } from 'react'
 
 export default function Research() {
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState('classic') // classic | auto
+  const [products, setProducts] = useState([])
+  const [productsLoading, setProductsLoading] = useState(true)
+  const [unreadCounts, setUnreadCounts] = useState({})
+
+  useEffect(() => {
+    if (user?.id) {
+      loadProducts()
+      loadUnreadCounts()
+    }
+  }, [user?.id])
+
+  const loadProducts = async () => {
+    setProductsLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('discovered_products')
+        .select('*, app_users(id, username, full_name)')
+        .order('created_at', { ascending: false })
+        .limit(20)
+      if (error) throw error
+      setProducts(data || [])
+    } catch (error) {
+      console.error('Error loading products:', error)
+      setProducts([])
+    } finally {
+      setProductsLoading(false)
+    }
+  }
+
+  const loadUnreadCounts = async () => {
+    if (!user?.id) return
+    try {
+      const { data } = await supabase
+        .from('comment_reads')
+        .select('comment_id, product_comments!inner(product_id)')
+        .eq('user_id', user.id)
+        .eq('read', false)
+      
+      const counts = {}
+      if (data) {
+        data.forEach(item => {
+          const productId = item.product_comments?.product_id
+          if (productId) {
+            counts[productId] = (counts[productId] || 0) + 1
+          }
+        })
+      }
+      setUnreadCounts(counts)
+    } catch (error) {
+      console.error('Error loading unread counts:', error)
+    }
+  }
 
   return (
     <div className="page-container fade-in">
@@ -50,6 +105,7 @@ export default function Research() {
               background: activeTab === 'classic' ? 'linear-gradient(135deg, var(--color-primary), var(--color-accent))' : 'white',
               color: activeTab === 'classic' ? 'white' : 'var(--color-text-main)',
               border: activeTab === 'classic' ? 'none' : '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-md)',
               boxShadow: activeTab === 'classic' ? 'var(--shadow-glow)' : 'none'
             }}
           >
@@ -67,6 +123,7 @@ export default function Research() {
               background: activeTab === 'auto' ? 'linear-gradient(135deg, #0ea5e9, #6366f1)' : 'white',
               color: activeTab === 'auto' ? 'white' : 'var(--color-text-main)',
               border: activeTab === 'auto' ? 'none' : '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-md)',
               boxShadow: activeTab === 'auto' ? 'var(--shadow-glow)' : 'none'
             }}
           >
@@ -74,6 +131,29 @@ export default function Research() {
             Otomatik Meta Tarayıcı
           </button>
         </div>
+
+        {/* Products Grid - Tab butonlarının altında */}
+        {activeTab === 'classic' && (
+          <div style={{ marginBottom: '1.5rem' }}>
+            {productsLoading ? (
+              <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>Yükleniyor...</div>
+            ) : products.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>Henüz ürün eklenmedi</div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+                {products.map(product => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onEdit={() => {}}
+                    currentUserId={user?.id}
+                    unreadCount={unreadCounts[product.id] || 0}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {activeTab === 'auto' ? (
           <AutoMetaScanner />
@@ -97,7 +177,7 @@ export default function Research() {
 
             {/* Right Panel: Product Scanner */}
             <div style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-              <ProductScanner userId={user?.id} />
+              <ProductScanner userId={user?.id} onProductsChange={loadProducts} />
             </div>
           </div>
         )}

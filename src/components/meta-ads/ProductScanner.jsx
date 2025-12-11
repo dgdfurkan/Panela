@@ -13,7 +13,7 @@ const CRITERIA = [
   { key: 'visual_sellable', label: 'Göstererek Satılabilir mi?' }
 ]
 
-export default function ProductScanner({ userId }) {
+export default function ProductScanner({ userId, onProductsChange }) {
   const [viewMode, setViewMode] = useState('card')
   const [products, setProducts] = useState([])
   const [allUsers, setAllUsers] = useState([])
@@ -84,6 +84,7 @@ export default function ProductScanner({ userId }) {
       const { data, error } = await query
       if (error) throw error
       setProducts(data || [])
+      if (onProductsChange) onProductsChange()
     } catch (error) {
       console.error('Error loading products:', error)
       setProducts([])
@@ -192,6 +193,7 @@ export default function ProductScanner({ userId }) {
       })
       await loadProducts()
       await loadCommentsMeta()
+      if (onProductsChange) onProductsChange()
     } catch (error) {
       console.error('Error saving product:', error)
       alert('Ürün kaydedilirken hata oluştu')
@@ -308,6 +310,7 @@ export default function ProductScanner({ userId }) {
       setSelectedProduct(null)
       await loadProducts()
       await loadCommentsMeta()
+      if (onProductsChange) onProductsChange()
     } catch (error) {
       console.error('Error deleting product:', error)
       alert('Ürün silinemedi')
