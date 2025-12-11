@@ -90,7 +90,7 @@ export async function searchAdsArchive(opts) {
   ].join(','))
 
   if (countries.length) countries.forEach((c, i) => params.set(`ad_reached_countries[${i}]`, c))
-  if (search_terms.length) search_terms.forEach((s, i) => params.set(`search_terms[${i}]`, s))
+  if (search_terms.length) params.set('search_terms', search_terms.join(' '))
   if (publisher_platforms.length) publisher_platforms.forEach((p, i) => params.set(`publisher_platforms[${i}]`, p.toLowerCase()))
   if (since) params.set('ad_delivery_date_min', since)
   if (until) params.set('ad_delivery_date_max', until)
