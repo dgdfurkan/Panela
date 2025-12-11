@@ -240,11 +240,105 @@ const handler: ServeHandler = async (req) => {
       return new Response(JSON.stringify({ error: 'Invalid JSON', details: e?.message }), { status: 400, headers: CORS_HEADERS })
     }
 
-    const { action, query = {} } = body
+    const { action, query = {}, countries, search_terms, publisher_platforms, since, until } = body
 
     const params = new URLSearchParams()
+    
+    // Meta API'nin beklediği formata göre parametreleri ekle
+    // search_type ve ad_type her zaman eklenir
+    params.set('search_type', query.search_type || 'KEYWORD_UNORDERED')
+    params.set('ad_type', query.ad_type || 'ALL')
+    
+    // ad_active_status
+    if (query.ad_active_status) {
+      params.set('ad_active_status', String(query.ad_active_status).toUpperCase())
+    } else {
+      params.set('ad_active_status', 'ALL')
+    }
+    
+    // media_type
+    if (query.media_type) {
+      params.set('media_type', String(query.media_type).toUpperCase())
+    }
+    
+    // limit
+    if (query.limit) {
+      params.set('limit', String(query.limit))
+    }
+    
+    // fields
+    if (query.fields) {
+      params.set('fields', String(query.fields))
+    }
+    
+    // ad_reached_countries - array formatında: ad_reached_countries[0]=TR
+    if (countries && Array.isArray(countries) && countries.length > 0) {
+      countries.forEach((country, idx) => {
+        params.set(`ad_reached_countries[${idx}]`, String(country).toUpperCase())
+      })
+    } else if (query['ad_reached_countries[0]']) {
+      // Eğer query'den geliyorsa (eski format için backward compatibility)
+      Object.keys(query).forEach(key => {
+        if (key.startsWith('ad_reached_countries[')) {
+          params.set(key, String(query[key]))
+        }
+      })
+    }
+    
+    // search_terms - Meta API tek string bekliyor, array ise birleştir
+    if (search_terms && Array.isArray(search_terms) && search_terms.length > 0) {
+      params.set('search_terms', search_terms.join(' '))
+    } else if (search_terms && typeof search_terms === 'string') {
+      params.set('search_terms', search_terms)
+    } else if (query.search_terms) {
+      params.set('search_terms', String(query.search_terms))
+    }
+    
+    // publisher_platforms - array formatında: publisher_platforms[0]=facebook
+    if (publisher_platforms && Array.isArray(publisher_platforms) && publisher_platforms.length > 0) {
+      publisher_platforms.forEach((platform, idx) => {
+        params.set(`publisher_platforms[${idx}]`, String(platform).toLowerCase())
+      })
+    } else if (query['publisher_platforms[0]']) {
+      // Eğer query'den geliyorsa (eski format için backward compatibility)
+      Object.keys(query).forEach(key => {
+        if (key.startsWith('publisher_platforms[')) {
+          params.set(key, String(query[key]))
+        }
+      })
+    }
+    
+    // Tarih parametreleri
+    if (since) {
+      params.set('ad_delivery_date_min', String(since))
+    } else if (query.ad_delivery_date_min) {
+      params.set('ad_delivery_date_min', String(query.ad_delivery_date_min))
+    }
+    
+    if (until) {
+      params.set('ad_delivery_date_max', String(until))
+    } else if (query.ad_delivery_date_max) {
+      params.set('ad_delivery_date_max', String(query.ad_delivery_date_max))
+    }
+    
+    // after (pagination)
+    if (query.after) {
+      params.set('after', String(query.after))
+    }
+    
+    // Diğer query parametrelerini ekle (backward compatibility için)
     Object.entries(query).forEach(([k, v]) => {
       if (v === undefined || v === null) return
+      // Zaten işlediğimiz parametreleri atla
+      if (['search_type', 'ad_type', 'ad_active_status', 'media_type', 'limit', 'fields', 
+           'ad_delivery_date_min', 'ad_delivery_date_max', 'after', 'search_terms'].includes(k)) {
+        return
+      }
+      // Array parametrelerini zaten işledik
+      if (k.startsWith('ad_reached_countries[') || k.startsWith('publisher_platforms[')) {
+        return
+      }
+      // Diğer parametreleri ekle
       if (Array.isArray(v)) {
         v.forEach((item, idx) => params.set(`${k}[${idx}]`, String(item)))
       } else {
