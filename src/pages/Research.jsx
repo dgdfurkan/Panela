@@ -1,34 +1,95 @@
 import { useAuth } from '../context/AuthContext'
 import KeywordLauncher from '../components/meta-ads/KeywordLauncher'
 import ProductScanner from '../components/meta-ads/ProductScanner'
-import { Search, Zap, Rocket, Package } from 'lucide-react'
+import { Search, Zap, Rocket, Package, MessageSquare, Trash2, Filter, X } from 'lucide-react'
 import AutoMetaScanner from '../components/meta-ads/AutoMetaScanner'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import ProductCard from '../components/meta-ads/ProductCard'
 import { supabase } from '../lib/supabaseClient'
 
+const CRITERIA = [
+  { key: 'innovative', label: 'İnovatif mi?' },
+  { key: 'lightweight', label: 'Hafif mi?' },
+  { key: 'low_variation', label: 'Varyasyonu Az mı?' },
+  { key: 'problem_solving', label: 'Sorun Çözüyor mu?' },
+  { key: 'visual_sellable', label: 'Göstererek Satılabilir mi?' }
+]
+
 export default function Research() {
   const { user } = useAuth()
-  const [activeTab, setActiveTab] = useState('classic') // classic | auto | products
+  const [activeTab, setActiveTab] = useState('classic') // classic | products | auto
   const [products, setProducts] = useState([])
   const [productsLoading, setProductsLoading] = useState(true)
   const [unreadCounts, setUnreadCounts] = useState({})
+  const [allUsers, setAllUsers] = useState([])
+  
+  // Filters
+  const [filterUser, setFilterUser] = useState('all')
+  const [filterAdCountMin, setFilterAdCountMin] = useState('')
+  const [filterAdCountMax, setFilterAdCountMax] = useState('')
+  const [filterCountry, setFilterCountry] = useState('')
+  const [filterKeyword, setFilterKeyword] = useState('')
+  
+  // Modal state
+  const [selectedProduct, setSelectedProduct] = useState(null)
+  const [comments, setComments] = useState([])
+  const [commentsLoading, setCommentsLoading] = useState(false)
+  const [newComment, setNewComment] = useState('')
 
   useEffect(() => {
     if (user?.id) {
+      loadUsers()
       loadProducts()
       loadUnreadCounts()
     }
   }, [user?.id])
 
+  useEffect(() => {
+    if (user?.id) {
+      loadProducts()
+    }
+  }, [filterUser, filterAdCountMin, filterAdCountMax, filterCountry, filterKeyword, user?.id])
+
+  const loadUsers = async () => {
+    try {
+      const { data } = await supabase
+        .from('app_users')
+        .select('id, username, full_name')
+        .order('username', { ascending: true })
+      if (data) setAllUsers(data)
+    } catch (error) {
+      console.error('Error loading users:', error)
+    }
+  }
+
   const loadProducts = async () => {
     setProductsLoading(true)
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('discovered_products')
         .select('*, app_users(id, username, full_name)')
         .order('created_at', { ascending: false })
-        .limit(20)
+
+      if (filterUser === 'me') {
+        query = query.eq('user_id', user.id)
+      } else if (filterUser !== 'all') {
+        query = query.eq('user_id', filterUser)
+      }
+
+      if (filterAdCountMin) {
+        query = query.gte('ad_count', parseInt(filterAdCountMin) || 0)
+      }
+      if (filterAdCountMax) {
+        query = query.lte('ad_count', parseInt(filterAdCountMax) || 999999)
+      }
+      if (filterCountry) {
+        query = query.eq('country_code', filterCountry.toUpperCase())
+      }
+      if (filterKeyword) {
+        query = query.ilike('search_keyword', `%${filterKeyword}%`)
+      }
+
+      const { data, error } = await query
       if (error) throw error
       setProducts(data || [])
     } catch (error) {
@@ -62,6 +123,420 @@ export default function Research() {
       console.error('Error loading unread counts:', error)
     }
   }
+
+  const handleOpenProduct = async (product) => {
+    setSelectedProduct(product)
+    await loadProductComments(product.id)
+  }
+
+  const loadProductComments = async (productId) => {
+    setCommentsLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('product_comments')
+        .select('id, user_id, content, created_at, app_users(id, username, full_name)')
+        .eq('product_id', productId)
+        .order('created_at', { ascending: true })
+
+      if (error) throw error
+      setComments(data || [])
+
+      if (data && data.length > 0 && user?.id) {
+        const upserts = data.map(c => ({
+          comment_id: c.id,
+          user_id: user.id,
+          seen_at: new Date().toISOString()
+        }))
+        await supabase.from('comment_reads').upsert(upserts, { onConflict: 'comment_id,user_id' })
+        setUnreadCounts(prev => ({ ...prev, [productId]: 0 }))
+      }
+    } catch (error) {
+      console.error('Error loading comments:', error)
+    } finally {
+      setCommentsLoading(false)
+    }
+  }
+
+  const handleAddComment = async () => {
+    if (!newComment.trim() || !selectedProduct) return
+    try {
+      const { error } = await supabase
+        .from('product_comments')
+        .insert({
+          product_id: selectedProduct.id,
+          user_id: user.id,
+          content: newComment.trim()
+        })
+      if (error) throw error
+      setNewComment('')
+      await loadProductComments(selectedProduct.id)
+      await loadUnreadCounts()
+    } catch (error) {
+      console.error('Error adding comment:', error)
+      alert('Yorum eklenirken hata oluştu')
+    }
+  }
+
+  const handleUpdateProduct = async (fields) => {
+    if (!selectedProduct || selectedProduct.user_id !== user?.id) return
+    try {
+      const { error } = await supabase
+        .from('discovered_products')
+        .update(fields)
+        .eq('id', selectedProduct.id)
+        .eq('user_id', user.id)
+      if (error) throw error
+      await loadProducts()
+      const refreshed = (await supabase
+        .from('discovered_products')
+        .select('*, app_users(id, username, full_name)')
+        .eq('id', selectedProduct.id)
+        .single()).data
+      setSelectedProduct(refreshed || null)
+    } catch (error) {
+      console.error('Error updating product:', error)
+      alert('Ürün güncellenemedi')
+    }
+  }
+
+  const handleDeleteProduct = async () => {
+    if (!selectedProduct || selectedProduct.user_id !== user?.id) return
+    if (!confirm('Bu ürünü silmek istediğine emin misin?')) return
+    try {
+      const { data: commentIds } = await supabase
+        .from('product_comments')
+        .select('id')
+        .eq('product_id', selectedProduct.id)
+
+      const ids = (commentIds || []).map(c => c.id)
+      if (ids.length > 0) {
+        await supabase
+          .from('comment_reads')
+          .delete()
+          .in('comment_id', ids)
+      }
+
+      await supabase
+        .from('product_comments')
+        .delete()
+        .eq('product_id', selectedProduct.id)
+
+      const { error } = await supabase
+        .from('discovered_products')
+        .delete()
+        .eq('id', selectedProduct.id)
+        .eq('user_id', user.id)
+      if (error) throw error
+      setSelectedProduct(null)
+      await loadProducts()
+      await loadUnreadCounts()
+    } catch (error) {
+      console.error('Error deleting product:', error)
+      alert('Ürün silinemedi')
+    }
+  }
+
+  const renderModal = () => {
+    if (!selectedProduct) return null
+    const isOwner = selectedProduct.user_id === user?.id
+    const userInfo = selectedProduct.app_users || {}
+    const createdAtText = selectedProduct.created_at
+      ? new Date(selectedProduct.created_at).toLocaleString('tr-TR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      : ''
+
+    const handleFieldChange = (key, value) => {
+      if (!isOwner) return
+      setSelectedProduct(prev => ({ ...prev, [key]: value }))
+    }
+
+    const handleSaveModal = async () => {
+      if (!isOwner) return
+      await handleUpdateProduct({
+        product_name: selectedProduct.product_name || null,
+        meta_link: selectedProduct.meta_link || null,
+        proof_link: selectedProduct.proof_link || null,
+        trendyol_link: selectedProduct.trendyol_link || null,
+        amazon_link: selectedProduct.amazon_link || null,
+        image_url: selectedProduct.image_url || null,
+        ad_count: selectedProduct.ad_count ?? null,
+        country_code: selectedProduct.country_code || null,
+        search_keyword: selectedProduct.search_keyword || null,
+        notes: selectedProduct.notes || null,
+        scores: selectedProduct.scores,
+        potential_score: selectedProduct.potential_score
+      })
+    }
+
+    return (
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.4)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem',
+          zIndex: 1100
+        }}
+        onClick={() => setSelectedProduct(null)}
+      >
+        <div
+          style={{
+            background: 'white',
+            borderRadius: '16px',
+            maxWidth: '900px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'hidden',
+            display: 'grid',
+            gridTemplateColumns: '1.2fr 0.8fr'
+          }}
+          onClick={e => e.stopPropagation()}
+        >
+          {/* Left: product info */}
+          <div style={{ padding: '1.25rem', borderRight: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', gap: '0.75rem', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                  Ekleyen: {userInfo.username || userInfo.full_name || 'Bilinmeyen'}
+                </div>
+                {createdAtText && (
+                  <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                    Eklenme: {createdAtText}
+                  </div>
+                )}
+                <h3 style={{ margin: '0.25rem 0', fontSize: '18px' }}>
+                  {selectedProduct.product_name || 'İsimsiz Ürün'}
+                </h3>
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                {isOwner && (
+                  <button
+                    onClick={handleDeleteProduct}
+                    style={{
+                      border: '1px solid var(--color-error)',
+                      color: 'var(--color-error)',
+                      background: 'white',
+                      borderRadius: '10px',
+                      padding: '0.4rem 0.7rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                      fontWeight: '600'
+                    }}
+                  >
+                    <Trash2 size={14} />
+                    Sil
+                  </button>
+                )}
+                <button
+                  onClick={() => setSelectedProduct(null)}
+                  style={{
+                    border: '1px solid var(--color-border)',
+                    background: 'white',
+                    borderRadius: '10px',
+                    padding: '0.4rem 0.7rem',
+                    fontWeight: '600'
+                  }}
+                >
+                  Kapat
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div>
+                <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Meta Link</label>
+                <input
+                  type="text"
+                  value={selectedProduct.meta_link || ''}
+                  onChange={e => handleFieldChange('meta_link', e.target.value)}
+                  disabled={!isOwner}
+                  style={{ width: '100%', padding: '0.55rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: '10px' }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Trendyol Link</label>
+                <input
+                  type="text"
+                  value={selectedProduct.trendyol_link || ''}
+                  onChange={e => handleFieldChange('trendyol_link', e.target.value)}
+                  disabled={!isOwner}
+                  style={{ width: '100%', padding: '0.55rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: '10px' }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Amazon Link</label>
+                <input
+                  type="text"
+                  value={selectedProduct.amazon_link || ''}
+                  onChange={e => handleFieldChange('amazon_link', e.target.value)}
+                  disabled={!isOwner}
+                  style={{ width: '100%', padding: '0.55rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: '10px' }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Reklam Sayısı</label>
+                <input
+                  type="number"
+                  value={selectedProduct.ad_count ?? ''}
+                  onChange={e => handleFieldChange('ad_count', e.target.value)}
+                  disabled={!isOwner}
+                  style={{ width: '100%', padding: '0.55rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: '10px' }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div>
+                <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Ülke Kodu (US/CA/GB/AU/NZ)</label>
+                <input
+                  type="text"
+                  value={selectedProduct.country_code || ''}
+                  onChange={e => handleFieldChange('country_code', e.target.value)}
+                  disabled={!isOwner}
+                  style={{ width: '100%', padding: '0.55rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: '10px' }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Anahtar Kelime</label>
+                <input
+                  type="text"
+                  value={selectedProduct.search_keyword || ''}
+                  onChange={e => handleFieldChange('search_keyword', e.target.value)}
+                  disabled={!isOwner}
+                  style={{ width: '100%', padding: '0.55rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: '10px' }}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Reklam Sayısı Kanıt Linki</label>
+              <input
+                type="text"
+                value={selectedProduct.proof_link || ''}
+                onChange={e => handleFieldChange('proof_link', e.target.value)}
+                disabled={!isOwner}
+                style={{ width: '100%', padding: '0.55rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: '10px' }}
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+              {CRITERIA.map(c => {
+                const value = (selectedProduct.scores && selectedProduct.scores[c.key]) || 0
+                return (
+                  <div key={c.key} style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', padding: '0.5rem', border: '1px solid var(--color-border)', borderRadius: '10px', background: 'var(--color-background)' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', fontWeight: '700' }}>{c.label}</span>
+                    <span style={{ fontWeight: '700', fontSize: '13px' }}>{value || 0}/5</span>
+                  </div>
+                )
+              })}
+            </div>
+
+            <div>
+              <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Not</label>
+              <textarea
+                value={selectedProduct.notes || ''}
+                onChange={e => handleFieldChange('notes', e.target.value)}
+                disabled={!isOwner}
+                rows={3}
+                style={{ width: '100%', padding: '0.55rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: '10px', resize: 'vertical' }}
+              />
+            </div>
+
+            {isOwner && (
+              <div>
+                <button
+                  onClick={handleSaveModal}
+                  style={{
+                    padding: '0.6rem 1rem',
+                    background: 'linear-gradient(135deg, var(--color-primary), var(--color-accent))',
+                    color: 'white',
+                    borderRadius: '12px',
+                    fontWeight: '700',
+                    border: 'none',
+                    width: '100%'
+                  }}
+                >
+                  Güncelle
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Right: comments */}
+          <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+              <MessageSquare size={16} color="var(--color-primary)" />
+              <span style={{ fontWeight: '700' }}>Yorumlar</span>
+            </div>
+
+            <div style={{ flex: 1, overflowY: 'auto', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '0.75rem', marginBottom: '0.75rem', background: 'var(--color-background)' }}>
+              {commentsLoading ? (
+                <div style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>Yükleniyor...</div>
+              ) : comments.length === 0 ? (
+                <div style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>Henüz yorum yok</div>
+              ) : (
+                comments.map(c => {
+                  const u = c.app_users || {}
+                  return (
+                    <div key={c.id} style={{ padding: '0.65rem', borderRadius: '8px', background: 'white', marginBottom: '0.5rem', border: '1px solid var(--color-border)' }}>
+                      <div style={{ fontSize: '13px', fontWeight: '700' }}>{u.username || u.full_name || 'Bilinmeyen'}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{new Date(c.created_at).toLocaleString('tr-TR')}</div>
+                      <div style={{ marginTop: '0.35rem', fontSize: '13px' }}>{c.content}</div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <input
+                type="text"
+                value={newComment}
+                onChange={e => setNewComment(e.target.value)}
+                placeholder="Yorum yaz..."
+                style={{ flex: 1, padding: '0.65rem 0.75rem', border: '1px solid var(--color-border)', borderRadius: '10px' }}
+                onKeyPress={e => e.key === 'Enter' && handleAddComment()}
+              />
+              <button
+                onClick={handleAddComment}
+                disabled={!newComment.trim()}
+                style={{
+                  padding: '0.65rem 1rem',
+                  background: 'linear-gradient(135deg, var(--color-primary), var(--color-accent))',
+                  color: 'white',
+                  borderRadius: '10px',
+                  border: 'none',
+                  fontWeight: '700',
+                  opacity: !newComment.trim() ? 0.5 : 1,
+                  cursor: !newComment.trim() ? 'not-allowed' : 'pointer'
+                }}
+              >
+                Gönder
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const hasActiveFilters = filterUser !== 'all' || filterAdCountMin || filterAdCountMax || filterCountry || filterKeyword
+  const availableCountries = useMemo(() => {
+    const countries = new Set()
+    products.forEach(p => {
+      if (p.country_code) countries.add(p.country_code)
+    })
+    return Array.from(countries).sort()
+  }, [products])
 
   return (
     <div className="page-container fade-in">
@@ -112,24 +587,6 @@ export default function Research() {
             Hızlı Başlatıcı
           </button>
           <button
-            onClick={() => setActiveTab('auto')}
-            className="primary"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              padding: '0.65rem 1rem',
-              background: activeTab === 'auto' ? 'linear-gradient(135deg, #0ea5e9, #6366f1)' : 'white',
-              color: activeTab === 'auto' ? 'white' : 'var(--color-text-main)',
-              border: activeTab === 'auto' ? 'none' : '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-md)',
-              boxShadow: activeTab === 'auto' ? 'var(--shadow-glow)' : 'none'
-            }}
-          >
-            <Rocket size={16} />
-            Otomatik Meta Tarayıcı
-          </button>
-          <button
             onClick={() => setActiveTab('products')}
             className="primary"
             style={{
@@ -147,22 +604,185 @@ export default function Research() {
             <Package size={16} />
             Ürünler
           </button>
+          <button
+            onClick={() => setActiveTab('auto')}
+            className="primary"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.65rem 1rem',
+              background: activeTab === 'auto' ? 'linear-gradient(135deg, #0ea5e9, #6366f1)' : 'white',
+              color: activeTab === 'auto' ? 'white' : 'var(--color-text-main)',
+              border: activeTab === 'auto' ? 'none' : '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-md)',
+              boxShadow: activeTab === 'auto' ? 'var(--shadow-glow)' : 'none'
+            }}
+          >
+            <Rocket size={16} />
+            Otomatik Meta Tarayıcı
+          </button>
         </div>
 
         {/* Content based on active tab */}
         {activeTab === 'products' ? (
           <div>
+            {/* Filters */}
+            <div
+              style={{
+                padding: '1rem',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-md)',
+                background: 'white',
+                marginBottom: '1rem',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                <Filter size={16} color="var(--color-primary)" />
+                <span style={{ fontWeight: '600', fontSize: '14px' }}>Filtrele</span>
+                {hasActiveFilters && (
+                  <button
+                    onClick={() => {
+                      setFilterUser('all')
+                      setFilterAdCountMin('')
+                      setFilterAdCountMax('')
+                      setFilterCountry('')
+                      setFilterKeyword('')
+                    }}
+                    style={{
+                      marginLeft: 'auto',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.25rem',
+                      padding: '0.35rem 0.65rem',
+                      background: 'rgba(239, 68, 68, 0.1)',
+                      color: 'var(--color-error)',
+                      border: '1px solid var(--color-error)',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <X size={12} />
+                    Temizle
+                  </button>
+                )}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500', color: 'var(--color-text-muted)' }}>Ürünleri Bulan</label>
+                  <select
+                    value={filterUser}
+                    onChange={e => setFilterUser(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem 0.65rem',
+                      border: '1px solid var(--color-border)',
+                      borderRadius: 'var(--radius-sm)',
+                      background: 'white',
+                      fontSize: '13px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="all">Tüm Kullanıcılar</option>
+                    <option value="me">Sadece Benim</option>
+                    {allUsers.filter(u => u.id !== user?.id).map(u => (
+                      <option key={u.id} value={u.id}>
+                        {u.username || u.full_name || 'Bilinmeyen'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500', color: 'var(--color-text-muted)' }}>Reklam Sayısı (Min)</label>
+                  <input
+                    type="number"
+                    value={filterAdCountMin}
+                    onChange={e => setFilterAdCountMin(e.target.value)}
+                    placeholder="0"
+                    min="0"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem 0.65rem',
+                      border: '1px solid var(--color-border)',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '13px'
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500', color: 'var(--color-text-muted)' }}>Reklam Sayısı (Max)</label>
+                  <input
+                    type="number"
+                    value={filterAdCountMax}
+                    onChange={e => setFilterAdCountMax(e.target.value)}
+                    placeholder="999"
+                    min="0"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem 0.65rem',
+                      border: '1px solid var(--color-border)',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '13px'
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500', color: 'var(--color-text-muted)' }}>Ülke Kodu</label>
+                  <select
+                    value={filterCountry}
+                    onChange={e => setFilterCountry(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem 0.65rem',
+                      border: '1px solid var(--color-border)',
+                      borderRadius: 'var(--radius-sm)',
+                      background: 'white',
+                      fontSize: '13px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="">Tüm Ülkeler</option>
+                    {availableCountries.map(country => (
+                      <option key={country} value={country}>{country}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500', color: 'var(--color-text-muted)' }}>Anahtar Kelime</label>
+                  <input
+                    type="text"
+                    value={filterKeyword}
+                    onChange={e => setFilterKeyword(e.target.value)}
+                    placeholder="Ara..."
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem 0.65rem',
+                      border: '1px solid var(--color-border)',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '13px'
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Products Grid */}
             {productsLoading ? (
               <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>Yükleniyor...</div>
             ) : products.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>Henüz ürün eklenmedi</div>
+              <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>
+                {hasActiveFilters ? 'Filtrelere uygun ürün bulunamadı' : 'Henüz ürün eklenmedi'}
+              </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
                 {products.map(product => (
                   <ProductCard
                     key={product.id}
                     product={product}
-                    onEdit={() => {}}
+                    onEdit={() => handleOpenProduct(product)}
                     currentUserId={user?.id}
                     unreadCount={unreadCounts[product.id] || 0}
                   />
@@ -197,6 +817,8 @@ export default function Research() {
           </div>
         )}
       </div>
+
+      {renderModal()}
 
       {/* Responsive Styles */}
       <style>{`
