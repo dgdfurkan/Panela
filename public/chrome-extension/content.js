@@ -349,7 +349,7 @@
     adCard.appendChild(badge);
   }
 
-  // Advertiser kontrol et - iframe ile
+  // Advertiser kontrol et - Background script üzerinden
   async function checkAdvertiser(advertiser, params) {
     // Cache kontrolü
     const cacheKey = getCacheKey(advertiser.username, params.country, params.dateRange);
@@ -360,91 +360,36 @@
     }
     
     try {
-      // Meta Ads Library URL'ini oluştur
-      const url = buildAdsLibraryUrl(advertiser.username, params.country, params.dateRange);
-      console.log(`[Panela] Kontrol ediliyor: ${advertiser.username} - ${url}`);
+      console.log(`[Panela] Kontrol ediliyor: ${advertiser.username}`);
       
-      // iframe ile sayfayı yükle (CORS bypass)
-      const count = await loadPageInIframe(url);
-      
-      const result = {
+      // Background script'e mesaj gönder
+      const response = await chrome.runtime.sendMessage({
+        action: 'checkAdvertiser',
         advertiser: advertiser.username,
-        count: count,
-        url: url
-      };
+        country: params.country,
+        dateRange: params.dateRange
+      });
       
-      // Cache'e kaydet
-      setCachedResult(cacheKey, result);
-      
-      console.log(`[Panela] Sonuç: ${advertiser.username} - ${count} reklam`);
-      return result;
+      if (response && response.success && response.result) {
+        const result = {
+          advertiser: advertiser.username,
+          count: response.result.count || 0,
+          url: response.result.url
+        };
+        
+        // Cache'e kaydet
+        setCachedResult(cacheKey, result);
+        
+        console.log(`[Panela] Sonuç: ${advertiser.username} - ${result.count} reklam`);
+        return result;
+      } else {
+        console.warn(`[Panela] Kontrol başarısız: ${advertiser.username}`);
+        return null;
+      }
     } catch (error) {
       console.error('[Panela] Advertiser kontrol hatası:', error);
-      // Hata durumunda null döndür
       return null;
     }
-  }
-  
-  // iframe ile sayfa yükle ve sonuç sayısını al
-  function loadPageInIframe(url) {
-    return new Promise((resolve, reject) => {
-      const iframe = document.createElement('iframe');
-      iframe.style.display = 'none';
-      iframe.style.width = '0';
-      iframe.style.height = '0';
-      iframe.style.position = 'absolute';
-      iframe.style.left = '-9999px';
-      
-      let resolved = false;
-      const timeout = setTimeout(() => {
-        if (!resolved) {
-          resolved = true;
-          document.body.removeChild(iframe);
-          console.warn('[Panela] Timeout - sayfa yüklenemedi');
-          resolve(0);
-        }
-      }, 10000); // 10 saniye timeout
-      
-      iframe.onload = () => {
-        if (resolved) return;
-        
-        try {
-          // iframe içeriğine eriş
-          const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-          
-          // Sonuç sayısını bul
-          const count = parseResultCount(iframeDoc.body.innerHTML);
-          
-          resolved = true;
-          clearTimeout(timeout);
-          document.body.removeChild(iframe);
-          
-          resolve(count);
-        } catch (error) {
-          // Cross-origin hatası olabilir, alternatif yöntem dene
-          console.warn('[Panela] iframe içeriğine erişilemedi, alternatif yöntem deneniyor:', error);
-          
-          // Alternatif: URL'yi aç ve sonucu bekle (daha sonra implement edilebilir)
-          resolved = true;
-          clearTimeout(timeout);
-          document.body.removeChild(iframe);
-          
-          // Şimdilik 0 döndür, daha sonra başka yöntem deneyeceğiz
-          resolve(0);
-        }
-      };
-      
-      iframe.onerror = () => {
-        if (resolved) return;
-        resolved = true;
-        clearTimeout(timeout);
-        document.body.removeChild(iframe);
-        reject(new Error('iframe yüklenemedi'));
-      };
-      
-      iframe.src = url;
-      document.body.appendChild(iframe);
-    });
   }
   
   // Meta Ads Library URL oluştur
