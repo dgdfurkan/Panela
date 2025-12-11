@@ -173,37 +173,42 @@
       return null;
     }
     
+    let scrollTimeout;
     window.addEventListener('scroll', () => {
-      if (isScrolling) return;
-      isScrolling = true;
-      
-      requestAnimationFrame(() => {
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        const topSection = findTopSection();
+      // Throttle - scroll'u yavaşlatma, sadece gizleme/gösterme işlemini yap
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        if (isScrolling) return;
+        isScrolling = true;
         
-        if (!topSection) {
+        requestAnimationFrame(() => {
+          const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+          const topSection = findTopSection();
+          
+          if (!topSection) {
+            isScrolling = false;
+            return;
+          }
+          
+          // Scroll direction kontrolü
+          if (scrollTop > lastScrollTop && scrollTop > 30) {
+            // Aşağı scroll - HEMEN gizle (alan açılsın)
+            topSection.classList.remove('panela-top-visible');
+            topSection.classList.add('panela-top-hidden');
+          } else if (scrollTop < lastScrollTop) {
+            // Yukarı scroll - HEMEN göster
+            topSection.classList.remove('panela-top-hidden');
+            topSection.classList.add('panela-top-visible');
+          } else if (scrollTop <= 30) {
+            // En üstte - her zaman göster
+            topSection.classList.remove('panela-top-hidden');
+            topSection.classList.add('panela-top-visible');
+          }
+          
+          lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
           isScrolling = false;
-          return;
-        }
-        
-        // Scroll direction kontrolü
-        if (scrollTop > lastScrollTop && scrollTop > 30) {
-          // Aşağı scroll - HEMEN gizle (alan açılsın)
-          topSection.classList.remove('panela-top-visible');
-          topSection.classList.add('panela-top-hidden');
-        } else if (scrollTop < lastScrollTop) {
-          // Yukarı scroll - HEMEN göster
-          topSection.classList.remove('panela-top-hidden');
-          topSection.classList.add('panela-top-visible');
-        } else if (scrollTop <= 30) {
-          // En üstte - her zaman göster
-          topSection.classList.remove('panela-top-hidden');
-          topSection.classList.add('panela-top-visible');
-        }
-        
-        lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
-        isScrolling = false;
-      });
+        });
+      }, 50); // Throttle - scroll'u yavaşlatma
     }, { passive: true });
     
     // İlk yüklemede container'ı bul ve class ekle

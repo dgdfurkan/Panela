@@ -24,6 +24,12 @@ body > div[role="main"] > div > div {
   padding: 1rem !important;
 }
 
+/* Scroll davranışını bozma - SADECE görsel değişiklikler */
+html, body {
+  overflow: auto !important;
+  scroll-behavior: auto !important;
+}
+
 /* Kompakt görünüm için font boyutlarını ayarla */
 [role="article"]:not([style*="display: none"]) * {
   font-size: 0.9rem !important;
@@ -201,6 +207,8 @@ div.x12peec7.x9f619.x78zum5.xdt5ytf > div.x8bgqxi.x1n2onr6 {
   pointer-events: none !important;
   position: relative !important;
   z-index: 1 !important;
+  height: auto !important;
+  max-height: none !important;
 }
 
 /* Scroll'da üst alan göster */
@@ -208,6 +216,8 @@ div.x12peec7.x9f619.x78zum5.xdt5ytf > div.x8bgqxi.x1n2onr6 {
   transform: translateY(0) !important;
   opacity: 1 !important;
   pointer-events: auto !important;
+  height: auto !important;
+  max-height: none !important;
 }
 
 /* Responsive tasarım */
