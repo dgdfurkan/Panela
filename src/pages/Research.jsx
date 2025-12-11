@@ -157,10 +157,12 @@ export default function Research() {
 
   const handleOpenProduct = async (product, event) => {
     // Tıklanan ürünün pozisyonunu kaydet
-    let scrollY = window.scrollY || window.pageYOffset
+    let scrollY = 0
     if (event && event.currentTarget) {
       const rect = event.currentTarget.getBoundingClientRect()
-      scrollY = rect.top + scrollY - 100 // Ürünün üstünden 100px yukarıda aç
+      scrollY = rect.top + (window.scrollY || window.pageYOffset)
+    } else {
+      scrollY = window.scrollY || window.pageYOffset
     }
     setModalScrollPosition(Math.max(0, scrollY))
     setSelectedProduct(product)
@@ -312,6 +314,9 @@ export default function Research() {
       })
     }
 
+    const modalTop = modalScrollPosition > 0 ? Math.max(20, modalScrollPosition - 50) : '50%'
+    const modalTransform = modalScrollPosition > 0 ? 'none' : 'translateY(-50%)'
+
     return (
       <div
         style={{
@@ -322,10 +327,10 @@ export default function Research() {
           bottom: 0,
           background: 'transparent',
           display: 'flex',
-          alignItems: 'flex-start',
+          alignItems: modalScrollPosition > 0 ? 'flex-start' : 'center',
           justifyContent: 'center',
           padding: '1rem',
-          paddingTop: `${Math.max(20, modalScrollPosition + 20)}px`,
+          paddingTop: typeof modalTop === 'number' ? `${modalTop}px` : '0',
           zIndex: 1100,
           overflowY: 'auto',
           overflowX: 'hidden'
@@ -348,8 +353,9 @@ export default function Research() {
             gridTemplateColumns: '1.2fr 0.8fr',
             boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
             margin: 'auto',
-            marginTop: '0',
-            marginBottom: '2rem'
+            marginTop: typeof modalTop === 'number' ? '0' : 'auto',
+            marginBottom: '2rem',
+            transform: modalTransform
           }}
           onClick={e => e.stopPropagation()}
         >

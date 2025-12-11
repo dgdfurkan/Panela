@@ -132,21 +132,21 @@ export default function ProductScanner({ userId, onProductsChange }) {
       {/* Header - Fixed */}
       <div style={{ flexShrink: 0, marginBottom: '0.75rem' }}>
         <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.75rem' }}>Hızlı Analiz ve Kayıt</h2>
+      </div>
 
-        {/* Quick Add Form */}
-        <div
-          id="product-form"
-          style={{
-            padding: '1rem',
-            border: '1px solid var(--color-border)',
-            borderRadius: 'var(--radius-md)',
-            background: 'white',
-            marginBottom: '0.75rem',
-            overflowY: 'auto',
-            flex: 1,
-            minHeight: 0
-          }}
-        >
+      {/* Quick Add Form - Scrollable */}
+      <div
+        id="product-form"
+        style={{
+          padding: '1rem',
+          border: '1px solid var(--color-border)',
+          borderRadius: 'var(--radius-md)',
+          background: 'white',
+          overflowY: 'auto',
+          flex: 1,
+          minHeight: 0
+        }}
+      >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <div>
