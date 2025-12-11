@@ -200,11 +200,26 @@ const handler: ServeHandler = async (req) => {
     // Hata durumunda detaylı parse et
     if (status >= 400) {
       const errorInfo = parseMetaError(data, status)
+      
+      // Debug için: Meta'nın tam hata mesajını logla
+      console.error('Meta API Error:', {
+        status,
+        error: data.error,
+        fullResponse: data,
+        url: url.replace(/access_token=[^&]+/, 'access_token=***')
+      })
+      
       return new Response(JSON.stringify({
         error: errorInfo.error,
         details: errorInfo.details,
         code: errorInfo.code,
-        metaResponse: data
+        metaResponse: data,
+        debug: {
+          errorCode: data.error?.code,
+          errorType: data.error?.type,
+          errorMessage: data.error?.message,
+          errorSubcode: data.error?.error_subcode
+        }
       }), {
         status: status,
         headers: {
