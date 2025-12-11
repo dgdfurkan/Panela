@@ -190,23 +190,22 @@ div[style*="justify-content:flex-end"] {
 /* Üst filtre/bilgi container'ı - ULTRA DARALT */
 div.x8bgqxi.x1n2onr6,
 div.x12peec7.x9f619.x78zum5.xdt5ytf > div.x8bgqxi.x1n2onr6 {
-  transition: max-height 0.3s ease-out, opacity 0.3s ease-out, margin 0.3s ease-out, padding 0.3s ease-out !important;
-  overflow: hidden !important;
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out !important;
+  will-change: transform, opacity !important;
 }
 
 /* Scroll'da üst alan gizleme - ALAN AÇILSIN (silinmiş gibi) */
 .panela-top-hidden {
-  max-height: 0 !important;
+  transform: translateY(-100%) !important;
   opacity: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
   pointer-events: none !important;
+  position: relative !important;
+  z-index: 1 !important;
 }
 
 /* Scroll'da üst alan göster */
 .panela-top-visible {
-  max-height: 500px !important;
+  transform: translateY(0) !important;
   opacity: 1 !important;
   pointer-events: auto !important;
 }
