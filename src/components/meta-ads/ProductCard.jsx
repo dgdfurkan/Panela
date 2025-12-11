@@ -14,7 +14,15 @@ export default function ProductCard({ product, onEdit, currentUserId, unreadCoun
   const user = product.app_users || {}
   const isMyProduct = product.user_id === currentUserId
   const userName = user.username || user.full_name || 'Bilinmeyen'
-  const createdAt = product.created_at ? new Date(product.created_at).toLocaleDateString('tr-TR') : ''
+  const createdAt = product.created_at
+    ? new Date(product.created_at).toLocaleString('tr-TR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    : ''
 
   return (
     <div

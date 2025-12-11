@@ -271,6 +271,15 @@ export default function ProductScanner({ userId }) {
     if (!selectedProduct) return null
     const isOwner = selectedProduct.user_id === userId
     const userInfo = selectedProduct.app_users || {}
+    const createdAtText = selectedProduct.created_at
+      ? new Date(selectedProduct.created_at).toLocaleString('tr-TR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      : ''
 
     const handleFieldChange = (key, value) => {
       if (!isOwner) return
@@ -326,6 +335,11 @@ export default function ProductScanner({ userId }) {
                 <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
                   Ekleyen: {userInfo.username || userInfo.full_name || 'Bilinmeyen'}
                 </div>
+                {createdAtText && (
+                  <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                    Eklenme: {createdAtText}
+                  </div>
+                )}
                 <h3 style={{ margin: '0.25rem 0', fontSize: '18px' }}>
                   {selectedProduct.product_name || 'İsimsiz Ürün'}
                 </h3>
@@ -406,6 +420,18 @@ export default function ProductScanner({ userId }) {
                   style={{ width: '100%', padding: '0.55rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: '10px' }}
                 />
               </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+              {CRITERIA.map(c => {
+                const value = (selectedProduct.scores && selectedProduct.scores[c.key]) || 0
+                return (
+                  <div key={c.key} style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', padding: '0.5rem', border: '1px solid var(--color-border)', borderRadius: '10px', background: 'var(--color-background)' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', fontWeight: '700' }}>{c.label}</span>
+                    <span style={{ fontWeight: '700', fontSize: '13px' }}>{value || 0}/5</span>
+                  </div>
+                )
+              })}
             </div>
 
             <div>
