@@ -487,6 +487,9 @@
       if (allAdvertisers.length === 0) {
         adCards.forEach((card, cardIndex) => {
           const advertisers = findAdvertiserLinks(card);
+          if (advertisers.length > 0) {
+            console.log(`[Panela] Kart ${cardIndex}: ${advertisers.length} advertiser bulundu`, advertisers.map(a => a.username));
+          }
           advertisers.forEach(advertiser => {
             allAdvertisers.push({
               ...advertiser,
@@ -497,7 +500,7 @@
         });
       }
       
-      console.log(`[Panela] ${allAdvertisers.length} advertiser bulundu`);
+      console.log(`[Panela] Toplam ${allAdvertisers.length} advertiser bulundu:`, allAdvertisers.map(a => a.username));
       
       let checked = 0;
       let highCount = 0;
