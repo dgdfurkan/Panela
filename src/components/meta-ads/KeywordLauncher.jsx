@@ -93,21 +93,14 @@ export default function KeywordLauncher({ userId }) {
     const combo = `${keyword}|${countryCode}`
     
     // Create Meta Ads Library URL
-    let url = `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=${countryCode}&q=${encodeURIComponent(keyword)}&search_type=keyword_unordered&media_type=all`
+    let url = `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=${countryCode}&is_targeted_country=false&media_type=all&q=${encodeURIComponent(keyword)}&search_type=keyword_unordered`
     
-    // Add date range if provided
+    // Add date range if provided (Meta Ads Library format: start_date[min] and start_date[max])
     if (startDate) {
-      // Convert YYYY-MM-DD to timestamp (Unix timestamp in seconds)
-      const startTimestamp = Math.floor(new Date(startDate).getTime() / 1000)
-      url += `&start_date=${startTimestamp}`
+      url += `&start_date[min]=${startDate}`
     }
     if (endDate) {
-      // Convert YYYY-MM-DD to timestamp (Unix timestamp in seconds)
-      // Set to end of day (23:59:59)
-      const endDateObj = new Date(endDate)
-      endDateObj.setHours(23, 59, 59, 999)
-      const endTimestamp = Math.floor(endDateObj.getTime() / 1000)
-      url += `&end_date=${endTimestamp}`
+      url += `&start_date[max]=${endDate}`
     }
     
     // Open in new tab
