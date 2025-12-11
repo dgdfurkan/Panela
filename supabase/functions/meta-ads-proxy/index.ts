@@ -9,13 +9,35 @@ const GRAPH_VERSION = 'v19.0'
 const GRAPH_BASE = `https://graph.facebook.com/${GRAPH_VERSION}`
 
 const handler: ServeHandler = async (req) => {
+  // CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS'
+      }
+    })
+  }
+
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'POST only' }), { status: 405 })
+    return new Response(JSON.stringify({ error: 'POST only' }), {
+      status: 405,
+      headers: {
+        'Access-Control-Allow-Origin': '*'
+      }
+    })
   }
 
   const token = Deno.env.get('META_ADS_TOKEN')
   if (!token) {
-    return new Response(JSON.stringify({ error: 'META_ADS_TOKEN missing' }), { status: 500 })
+    return new Response(JSON.stringify({ error: 'META_ADS_TOKEN missing' }), {
+      status: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*'
+      }
+    })
   }
 
   let body: any = {}
@@ -51,7 +73,11 @@ const handler: ServeHandler = async (req) => {
 
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': '*'
+    }
   })
 }
 
