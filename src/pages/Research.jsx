@@ -51,6 +51,13 @@ export default function Research() {
       const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
       document.body.style.overflow = 'hidden'
       document.body.style.paddingRight = `${scrollbarWidth}px`
+      // Modal açıldığında scroll pozisyonuna git
+      if (modalScrollPosition > 0) {
+        window.scrollTo({
+          top: modalScrollPosition,
+          behavior: 'instant'
+        })
+      }
     } else {
       document.body.style.overflow = ''
       document.body.style.paddingRight = ''
@@ -59,7 +66,7 @@ export default function Research() {
       document.body.style.overflow = ''
       document.body.style.paddingRight = ''
     }
-  }, [selectedProduct])
+  }, [selectedProduct, modalScrollPosition])
 
   useEffect(() => {
     if (user?.id) {
