@@ -143,40 +143,76 @@
     return observer;
   }
 
-  // Header'ı scroll'da gizle/göster
+  // Üst filtre/bilgi alanlarını scroll'da gizle/göster
   function setupScrollHide() {
     let lastScrollTop = 0;
-    let scrollTimeout;
-    const headerSelector = '.x6s0dn4.x9f619.x78zum5.x2lah0s.x5yr21d.xdj266r.x11t971q.xat24cr.xvc5jky.xr8eajr.x1dr75xp.xz9dl7a.xp48ta0.xsag5q8.xtssl2i.x1n2onr6.xh8yej3.x10s2t04.x13tfk3b.x2i0hdy.x1jkuegs';
+    let isScrolling = false;
+    
+    // Üst filtre ve bilgi alanlarını içeren container'ı bul
+    function findTopSection() {
+      // Farklı selector'lar dene
+      const selectors = [
+        'div.x8bgqxi.x1n2onr6', // Ana container
+        'div.x12peec7.x9f619.x78zum5.xdt5ytf', // Üst section
+        'div.xh8yej3.x13vifvy.x7wzq59.x6cuj84', // Header area
+        '[data-pagelet*="header"]',
+        '[data-pagelet*="filter"]'
+      ];
+      
+      for (const selector of selectors) {
+        const element = document.querySelector(selector);
+        if (element) {
+          // İçinde filtre veya bilgi alanları var mı kontrol et
+          const hasFilters = element.querySelector('.xdbano7, .xyamay9.xp48ta0, .x2izyaf.x78zum5.xl56j7k');
+          if (hasFilters || element.textContent.includes('sonuç') || element.textContent.includes('Aktif')) {
+            return element;
+          }
+        }
+      }
+      
+      return null;
+    }
     
     window.addEventListener('scroll', () => {
-      clearTimeout(scrollTimeout);
-      scrollTimeout = setTimeout(() => {
+      if (isScrolling) return;
+      isScrolling = true;
+      
+      requestAnimationFrame(() => {
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        const header = document.querySelector(headerSelector);
+        const topSection = findTopSection();
         
-        if (!header) return;
+        if (!topSection) {
+          isScrolling = false;
+          return;
+        }
         
-        // Scroll threshold - 50px'den fazla scroll yapıldıysa
-        if (scrollTop > 50) {
-          if (scrollTop > lastScrollTop) {
-            // Aşağı scroll - gizle
-            header.classList.remove('panela-header-visible');
-            header.classList.add('panela-header-hidden');
-          } else {
-            // Yukarı scroll - göster
-            header.classList.remove('panela-header-hidden');
-            header.classList.add('panela-header-visible');
-          }
-        } else {
+        // Scroll direction kontrolü
+        if (scrollTop > lastScrollTop && scrollTop > 30) {
+          // Aşağı scroll - HEMEN gizle (alan açılsın)
+          topSection.classList.remove('panela-top-visible');
+          topSection.classList.add('panela-top-hidden');
+        } else if (scrollTop < lastScrollTop) {
+          // Yukarı scroll - HEMEN göster
+          topSection.classList.remove('panela-top-hidden');
+          topSection.classList.add('panela-top-visible');
+        } else if (scrollTop <= 30) {
           // En üstte - her zaman göster
-          header.classList.remove('panela-header-hidden');
-          header.classList.add('panela-header-visible');
+          topSection.classList.remove('panela-top-hidden');
+          topSection.classList.add('panela-top-visible');
         }
         
         lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
-      }, 10); // Throttle
+        isScrolling = false;
+      });
     }, { passive: true });
+    
+    // İlk yüklemede container'ı bul ve class ekle
+    setTimeout(() => {
+      const topSection = findTopSection();
+      if (topSection) {
+        topSection.classList.add('panela-top-visible');
+      }
+    }, 1500);
   }
 
   // Sayfa yüklendiğinde filtrelemeyi başlat
