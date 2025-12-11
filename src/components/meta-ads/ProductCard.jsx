@@ -1,6 +1,6 @@
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, User } from 'lucide-react'
 
-export default function ProductCard({ product, onEdit }) {
+export default function ProductCard({ product, onEdit, currentUserId }) {
   const scores = typeof product.scores === 'string' 
     ? JSON.parse(product.scores) 
     : product.scores || {}
@@ -10,6 +10,10 @@ export default function ProductCard({ product, onEdit }) {
     if (score >= 3) return 'var(--color-warning)'
     return 'var(--color-error)'
   }
+
+  const user = product.app_users || {}
+  const isMyProduct = product.user_id === currentUserId
+  const userName = user.username || user.full_name || 'Bilinmeyen'
 
   return (
     <div
@@ -49,18 +53,57 @@ export default function ProductCard({ product, onEdit }) {
           />
         )}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <h3
-            style={{
-              margin: '0 0 0.5rem',
-              fontSize: '16px',
-              fontWeight: '600',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            {product.product_name || 'İsimsiz Ürün'}
-          </h3>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+            <h3
+              style={{
+                margin: 0,
+                fontSize: '16px',
+                fontWeight: '600',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                flex: 1
+              }}
+            >
+              {product.product_name || 'İsimsiz Ürün'}
+            </h3>
+            {!isMyProduct && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  padding: '0.25rem 0.5rem',
+                  background: 'rgba(139, 92, 246, 0.1)',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: '11px',
+                  fontWeight: '600',
+                  color: 'var(--color-primary)',
+                  marginLeft: '0.5rem',
+                  flexShrink: 0
+                }}
+              >
+                <User size={12} />
+                {userName}
+              </div>
+            )}
+            {isMyProduct && (
+              <div
+                style={{
+                  padding: '0.25rem 0.5rem',
+                  background: 'rgba(16, 185, 129, 0.1)',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: '11px',
+                  fontWeight: '600',
+                  color: 'var(--color-success)',
+                  marginLeft: '0.5rem',
+                  flexShrink: 0
+                }}
+              >
+                Benim
+              </div>
+            )}
+          </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '14px' }}>
               <span style={{ color: 'var(--color-text-muted)' }}>Reklam Sayısı:</span>

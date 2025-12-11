@@ -18,6 +18,7 @@ export default function KeywordLauncher({ userId }) {
   const [loading, setLoading] = useState(true)
   const [clickedCombos, setClickedCombos] = useState(new Set())
   const [otherUserCombos, setOtherUserCombos] = useState(new Set())
+  const [otherUsersInfo, setOtherUsersInfo] = useState(new Map())
   const [historyModalOpen, setHistoryModalOpen] = useState(false)
   
   // Date range state
@@ -70,20 +71,53 @@ export default function KeywordLauncher({ userId }) {
       })
       setClickedCombos(myCombos)
 
-      // Load other users' clicked combos
+      // Load other users' clicked combos with user info
       const { data: otherData } = await supabase
         .from('research_history')
-        .select('keyword, country_code, user_id')
+        .select(`
+          keyword, 
+          country_code, 
+          user_id,
+          app_users!research_history_user_id_fkey(username, full_name)
+        `)
         .eq('action_type', 'clicked')
         .neq('user_id', userId)
 
+      const otherCombos = new Set()
+      const otherUsersMap = new Map() // Store user info for each combo
+      
+      otherData?.forEach(item => {
+        const combo = `${item.keyword}|${item.country_code}`
+        otherCombos.add(combo)
+        // Store user info for this combo
+        if (!otherUsersMap.has(combo)) {
+          otherUsersMap.set(combo, [])
+        }
+        const userInfo = item.app_users
+        if (userInfo && !otherUsersMap.get(combo).find(u => u.id === item.user_id)) {
+          otherUsersMap.get(combo).push({
+            id: item.user_id,
+            username: userInfo.username || 'Bilinmeyen',
+            full_name: userInfo.full_name
+          })
+        }
+      })
+      setOtherUserCombos(otherCombos)
+      setOtherUsersInfo(otherUsersMap)
+    } catch (error) {
+      console.error('Error loading clicked states:', error)
+      // Fallback: just load combos without user info
+      const { data: otherData } = await supabase
+        .from('research_history')
+        .select('keyword, country_code')
+        .eq('action_type', 'clicked')
+        .neq('user_id', userId)
+      
       const otherCombos = new Set()
       otherData?.forEach(item => {
         otherCombos.add(`${item.keyword}|${item.country_code}`)
       })
       setOtherUserCombos(otherCombos)
-    } catch (error) {
-      console.error('Error loading clicked states:', error)
     }
   }
 

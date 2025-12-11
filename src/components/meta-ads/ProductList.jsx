@@ -1,6 +1,6 @@
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, User } from 'lucide-react'
 
-export default function ProductList({ products, onEdit }) {
+export default function ProductList({ products, onEdit, currentUserId }) {
   const getScoreColor = (score) => {
     if (score >= 4) return 'var(--color-success)'
     if (score >= 3) return 'var(--color-warning)'
@@ -55,18 +55,40 @@ export default function ProductList({ products, onEdit }) {
               />
             )}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <h3
-                style={{
-                  margin: '0 0 0.25rem',
-                  fontSize: '15px',
-                  fontWeight: '600',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {product.product_name || 'İsimsiz Ürün'}
-              </h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                <h3
+                  style={{
+                    margin: 0,
+                    fontSize: '15px',
+                    fontWeight: '600',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    flex: 1
+                  }}
+                >
+                  {product.product_name || 'İsimsiz Ürün'}
+                </h3>
+                {(() => {
+                  const user = product.app_users || {}
+                  const isMyProduct = product.user_id === currentUserId
+                  const userName = user.username || user.full_name || 'Bilinmeyen'
+                  
+                  if (isMyProduct) {
+                    return (
+                      <span style={{ fontSize: '10px', color: 'var(--color-success)', fontWeight: '600', flexShrink: 0 }}>
+                        Benim
+                      </span>
+                    )
+                  }
+                  return (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '10px', color: 'var(--color-primary)', fontWeight: '600', flexShrink: 0 }}>
+                      <User size={12} />
+                      {userName}
+                    </div>
+                  )
+                })()}
+              </div>
               <div style={{ display: 'flex', gap: '1rem', fontSize: '13px', color: 'var(--color-text-muted)' }}>
                 <span>Reklam: {product.ad_count || 0}</span>
                 {product.ad_count > 30 && (

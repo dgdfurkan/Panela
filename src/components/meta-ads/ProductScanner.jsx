@@ -16,8 +16,10 @@ const CRITERIA = [
 export default function ProductScanner({ userId }) {
   const [viewMode, setViewMode] = useState('card') // 'card' or 'list'
   const [products, setProducts] = useState([])
+  const [allUsers, setAllUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [filterUser, setFilterUser] = useState('all') // 'all', 'me', or user_id
   
   // Form state
   const [formData, setFormData] = useState({
@@ -36,11 +38,6 @@ export default function ProductScanner({ userId }) {
   })
   const [editingProduct, setEditingProduct] = useState(null)
 
-  useEffect(() => {
-    if (userId) {
-      loadProducts()
-    }
-  }, [userId])
 
   useEffect(() => {
     // Calculate potential score
@@ -52,20 +49,62 @@ export default function ProductScanner({ userId }) {
   const loadProducts = async () => {
     setLoading(true)
     try {
-      const { data, error } = await supabase
+      // Load all users first
+      const { data: usersData } = await supabase
+        .from('app_users')
+        .select('id, username, full_name')
+        .order('username', { ascending: true })
+
+      if (usersData) {
+        setAllUsers(usersData)
+      }
+
+      // Load all products with user info
+      let query = supabase
         .from('discovered_products')
-        .select('*')
-        .eq('user_id', userId)
+        .select(`
+          *,
+          app_users!discovered_products_user_id_fkey(id, username, full_name)
+        `)
         .order('created_at', { ascending: false })
+
+      // Apply filter
+      if (filterUser === 'me') {
+        query = query.eq('user_id', userId)
+      } else if (filterUser !== 'all') {
+        query = query.eq('user_id', filterUser)
+      }
+
+      const { data, error } = await query
 
       if (error) throw error
       setProducts(data || [])
     } catch (error) {
       console.error('Error loading products:', error)
+      // Fallback: load without user info
+      let query = supabase
+        .from('discovered_products')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (filterUser === 'me') {
+        query = query.eq('user_id', userId)
+      } else if (filterUser !== 'all') {
+        query = query.eq('user_id', filterUser)
+      }
+
+      const { data } = await query
+      setProducts(data || [])
     } finally {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (userId) {
+      loadProducts()
+    }
+  }, [userId, filterUser])
 
   const handleSave = async () => {
     // Validation: Meta Link, Ad Count, and all 5 criteria are required
@@ -186,7 +225,28 @@ export default function ProductScanner({ userId }) {
       <div style={{ flexShrink: 0, marginBottom: '0.75rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
           <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700' }}>Hızlı Analiz ve Kayıt</h2>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            {/* User Filter */}
+            <select
+              value={filterUser}
+              onChange={e => setFilterUser(e.target.value)}
+              style={{
+                padding: '0.5rem 0.75rem',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-sm)',
+                background: 'white',
+                fontSize: '13px',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="all">Tüm Kullanıcılar</option>
+              <option value="me">Sadece Benim</option>
+              {allUsers.filter(u => u.id !== userId).map(user => (
+                <option key={user.id} value={user.id}>
+                  {user.username || user.full_name || 'Bilinmeyen'}
+                </option>
+              ))}
+            </select>
             <button
               onClick={() => setViewMode('list')}
               style={{
@@ -476,11 +536,11 @@ export default function ProductScanner({ userId }) {
         ) : viewMode === 'card' ? (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
             {products.map(product => (
-              <ProductCard key={product.id} product={product} onEdit={handleEdit} />
+              <ProductCard key={product.id} product={product} onEdit={handleEdit} currentUserId={userId} />
             ))}
           </div>
         ) : (
-          <ProductList products={products} onEdit={handleEdit} />
+          <ProductList products={products} onEdit={handleEdit} currentUserId={userId} />
         )}
       </div>
     </div>
