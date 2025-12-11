@@ -302,18 +302,18 @@ export default function Research() {
       <div
         style={{
           position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: '100vw',
+          height: '100vh',
           background: 'transparent',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           padding: '1rem',
           zIndex: 1100,
-          overflowY: 'auto',
-          overflowX: 'hidden'
+          pointerEvents: 'auto'
         }}
         onClick={async () => {
           setSelectedProduct(null)
@@ -332,7 +332,7 @@ export default function Research() {
             display: 'grid',
             gridTemplateColumns: '1.2fr 0.8fr',
             boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-            margin: 'auto'
+            pointerEvents: 'auto'
           }}
           onClick={e => e.stopPropagation()}
         >
