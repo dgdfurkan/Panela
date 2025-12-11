@@ -558,3 +558,73 @@ create policy "open view product_hunting_lab" on product_hunting_lab for select 
 create policy "open insert product_hunting_lab" on product_hunting_lab for insert with check (true);
 create policy "open update product_hunting_lab" on product_hunting_lab for update using (true);
 create policy "open delete product_hunting_lab" on product_hunting_lab for delete using (true);
+
+-- Meta Ads Discovery Hub Tables
+
+-- Research Keywords Table
+create table if not exists public.research_keywords (
+  id uuid default uuid_generate_v4() primary key,
+  keyword text not null unique,
+  created_at timestamptz default timezone('utc'::text, now()),
+  created_by uuid references public.profiles(id)
+);
+
+alter table public.research_keywords enable row level security;
+
+drop policy if exists "open view research_keywords" on research_keywords;
+drop policy if exists "open insert research_keywords" on research_keywords;
+drop policy if exists "open update research_keywords" on research_keywords;
+drop policy if exists "open delete research_keywords" on research_keywords;
+
+create policy "open view research_keywords" on research_keywords for select using (true);
+create policy "open insert research_keywords" on research_keywords for insert with check (true);
+create policy "open update research_keywords" on research_keywords for update using (true);
+create policy "open delete research_keywords" on research_keywords for delete using (true);
+
+-- Discovered Products Table
+create table if not exists public.discovered_products (
+  id uuid default uuid_generate_v4() primary key,
+  user_id uuid not null,
+  product_name text not null,
+  meta_link text,
+  image_url text,
+  ad_count integer default 0,
+  scores jsonb default '{"innovative": 0, "lightweight": 0, "low_variation": 0, "problem_solving": 0, "visual_sellable": 0}'::jsonb,
+  potential_score decimal(3, 2) default 0,
+  notes text,
+  created_at timestamptz default timezone('utc'::text, now())
+);
+
+alter table public.discovered_products enable row level security;
+
+drop policy if exists "open view discovered_products" on discovered_products;
+drop policy if exists "open insert discovered_products" on discovered_products;
+drop policy if exists "open update discovered_products" on discovered_products;
+drop policy if exists "open delete discovered_products" on discovered_products;
+
+create policy "open view discovered_products" on discovered_products for select using (true);
+create policy "open insert discovered_products" on discovered_products for insert with check (true);
+create policy "open update discovered_products" on discovered_products for update using (true);
+create policy "open delete discovered_products" on discovered_products for delete using (true);
+
+-- Research History Table
+create table if not exists public.research_history (
+  id uuid default uuid_generate_v4() primary key,
+  user_id uuid not null,
+  keyword text not null,
+  country_code text not null check (country_code in ('US', 'CA', 'GB', 'AU', 'NZ')),
+  action_type text not null check (action_type in ('clicked', 'reset')),
+  created_at timestamptz default timezone('utc'::text, now())
+);
+
+alter table public.research_history enable row level security;
+
+drop policy if exists "open view research_history" on research_history;
+drop policy if exists "open insert research_history" on research_history;
+drop policy if exists "open update research_history" on research_history;
+drop policy if exists "open delete research_history" on research_history;
+
+create policy "open view research_history" on research_history for select using (true);
+create policy "open insert research_history" on research_history for insert with check (true);
+create policy "open update research_history" on research_history for update using (true);
+create policy "open delete research_history" on research_history for delete using (true);

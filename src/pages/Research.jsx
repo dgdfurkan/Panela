@@ -1,81 +1,23 @@
-import { useState, useEffect } from 'react'
-import { Target, Trophy, Trash2, AlertCircle } from 'lucide-react'
-import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
-import WinnerHunterWizard from '../components/winner-hunter/WinnerHunterWizard'
+import KeywordLauncher from '../components/meta-ads/KeywordLauncher'
+import ProductScanner from '../components/meta-ads/ProductScanner'
+import { Search } from 'lucide-react'
 
 export default function Research() {
   const { user } = useAuth()
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-
-  const handleSave = async (data) => {
-    setSaving(true)
-    setError('')
-    setSuccess('')
-    
-    try {
-      if (!user || !user.id) {
-        throw new Error('Oturum kapalı. Lütfen tekrar giriş yapın.')
-      }
-
-      // Veritabanına kaydet
-      const { error: insertError } = await supabase
-        .from('product_hunting_lab')
-        .insert([{
-          ...data,
-          user_id: user.id,
-          updated_at: new Date().toISOString()
-        }])
-
-      if (insertError) throw insertError
-
-      setSuccess('Ürün analizi başarıyla kaydedildi!')
-      
-      // Eğer WINNER ise products tablosuna da ekle (opsiyonel)
-      if (data.status === 'WINNER') {
-        const { error: productError } = await supabase
-          .from('products')
-          .insert([{
-            name: data.product_name,
-            status: 'Researching',
-            priority: 'High',
-            thoughts: `Winner Score: ${data.winner_score}\nNiş: ${data.niche}\nKâr Marjı: ${data.profit_margin}x\nGolden Ratio: ${data.engagement_ratio}x`,
-            user_id: user.id
-          }])
-        
-        if (productError) {
-          console.error('Products tablosuna ekleme hatası:', productError)
-        }
-      }
-    } catch (err) {
-      console.error('Kaydetme hatası:', err)
-      setError(err.message || 'Ürün analizi kaydedilirken bir hata oluştu')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  useEffect(() => {
-    if (success) {
-      const timer = setTimeout(() => setSuccess(''), 5000)
-      return () => clearTimeout(timer)
-    }
-  }, [success])
 
   return (
     <div className="page-container fade-in">
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '1600px', margin: '0 auto', padding: '0 1rem' }}>
         {/* Header */}
         <div className="page-head" style={{ marginBottom: '2rem' }}>
           <div>
-            <div className="eyebrow">Kazanan Ürün Avcısı</div>
+            <div className="eyebrow">Meta Ads Discovery Hub</div>
             <h1 style={{ margin: '0.5rem 0', fontSize: '2rem', fontWeight: '700' }}>
-              The Winner Hunter
+              Hızlı Ürün Araştırma Merkezi
             </h1>
             <p style={{ margin: '0.5rem 0 0', color: 'var(--color-text-muted)', fontSize: '0.95rem' }}>
-              Mark Builds Brands Metodolojisi - Duygusal kararlar verme. <strong>VERİ, MATEMATİK ve PSİKOLOJİ</strong> ile ürünlerini analiz et.
+              "Vur-Kaç" taktiği ile Meta Ads Library'de seri üretim araştırma yap. Anahtar kelimeler ve ülkeler ile hızlıca link oluştur, bulduğun ürünleri anında analiz et ve kaydet.
             </p>
           </div>
           <div style={{
@@ -88,35 +30,52 @@ export default function Research() {
             justifyContent: 'center',
             boxShadow: 'var(--shadow-md)'
           }}>
-            <Target size={32} color="white" />
+            <Search size={32} color="white" />
           </div>
         </div>
 
-        {/* Success/Error Messages */}
-        {success && (
-          <div className="toast" style={{
-            background: 'rgba(16, 185, 129, 0.08)',
-            borderColor: 'rgba(16, 185, 129, 0.25)',
-            marginBottom: '1.5rem'
-          }}>
-            <Trophy size={18} />
-            {success}
+        {/* Two Panel Layout */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '40% 1px 60%',
+            gap: '1.5rem',
+            height: 'calc(100vh - 250px)',
+            minHeight: '600px'
+          }}
+        >
+          {/* Left Panel: Keyword Launcher */}
+          <div style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <KeywordLauncher userId={user?.id} />
           </div>
-        )}
 
-        {error && (
-          <div className="toast error" style={{ marginBottom: '1.5rem' }}>
-            <AlertCircle size={18} />
-            {error}
+          {/* Divider */}
+          <div style={{ background: 'var(--color-border)', width: '1px' }} />
+
+          {/* Right Panel: Product Scanner */}
+          <div style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <ProductScanner userId={user?.id} />
           </div>
-        )}
-
-        {/* Winner Hunter Wizard */}
-        <WinnerHunterWizard
-          onSave={handleSave}
-          userId={user?.id}
-        />
+        </div>
       </div>
+
+      {/* Responsive Styles */}
+      <style>{`
+        @media (max-width: 1024px) {
+          .page-container > div > div:last-child {
+            grid-template-columns: 1fr !important;
+            grid-template-rows: auto 1px auto !important;
+            height: auto !important;
+            min-height: auto !important;
+          }
+          .page-container > div > div:last-child > div:first-child {
+            height: 500px !important;
+          }
+          .page-container > div > div:last-child > div:last-child {
+            height: 600px !important;
+          }
+        }
+      `}</style>
     </div>
   )
 }

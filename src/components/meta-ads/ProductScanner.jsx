@@ -1,0 +1,485 @@
+import { useState, useEffect } from 'react'
+import { Save, List, Grid, X, Image as ImageIcon } from 'lucide-react'
+import { supabase } from '../../lib/supabaseClient'
+import StarRating from './StarRating'
+import ProductCard from './ProductCard'
+import ProductList from './ProductList'
+
+const CRITERIA = [
+  { key: 'innovative', label: 'İnovatif mi?' },
+  { key: 'lightweight', label: 'Hafif mi?' },
+  { key: 'low_variation', label: 'Varyasyonu Az mı?' },
+  { key: 'problem_solving', label: 'Sorun Çözüyor mu?' },
+  { key: 'visual_sellable', label: 'Göstererek Satılabilir mi?' }
+]
+
+export default function ProductScanner({ userId }) {
+  const [viewMode, setViewMode] = useState('card') // 'card' or 'list'
+  const [products, setProducts] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    product_name: '',
+    meta_link: '',
+    image_url: '',
+    ad_count: '',
+    scores: {
+      innovative: 0,
+      lightweight: 0,
+      low_variation: 0,
+      problem_solving: 0,
+      visual_sellable: 0
+    },
+    notes: ''
+  })
+  const [editingProduct, setEditingProduct] = useState(null)
+
+  useEffect(() => {
+    if (userId) {
+      loadProducts()
+    }
+  }, [userId])
+
+  useEffect(() => {
+    // Calculate potential score
+    const scores = Object.values(formData.scores)
+    const avg = scores.reduce((a, b) => a + b, 0) / scores.length
+    setFormData(prev => ({ ...prev, potential_score: avg }))
+  }, [formData.scores])
+
+  const loadProducts = async () => {
+    setLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('discovered_products')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setProducts(data || [])
+    } catch (error) {
+      console.error('Error loading products:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSave = async () => {
+    if (!formData.product_name.trim()) {
+      alert('Ürün adı gereklidir')
+      return
+    }
+
+    setSaving(true)
+    try {
+      const scores = formData.scores
+      const potential_score = Object.values(scores).reduce((a, b) => a + b, 0) / Object.values(scores).length
+
+      const productData = {
+        user_id: userId,
+        product_name: formData.product_name,
+        meta_link: formData.meta_link || null,
+        image_url: formData.image_url || null,
+        ad_count: parseInt(formData.ad_count) || 0,
+        scores,
+        potential_score: parseFloat(potential_score.toFixed(2)),
+        notes: formData.notes || null
+      }
+
+      if (editingProduct) {
+        // Update
+        const { error } = await supabase
+          .from('discovered_products')
+          .update(productData)
+          .eq('id', editingProduct.id)
+
+        if (error) throw error
+      } else {
+        // Insert
+        const { error } = await supabase
+          .from('discovered_products')
+          .insert([productData])
+
+        if (error) throw error
+      }
+
+      // Reset form
+      setFormData({
+        product_name: '',
+        meta_link: '',
+        image_url: '',
+        ad_count: '',
+        scores: {
+          innovative: 0,
+          lightweight: 0,
+          low_variation: 0,
+          problem_solving: 0,
+          visual_sellable: 0
+        },
+        notes: ''
+      })
+      setEditingProduct(null)
+      loadProducts()
+    } catch (error) {
+      console.error('Error saving product:', error)
+      alert('Ürün kaydedilirken bir hata oluştu')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleEdit = (product) => {
+    setEditingProduct(product)
+    setFormData({
+      product_name: product.product_name || '',
+      meta_link: product.meta_link || '',
+      image_url: product.image_url || '',
+      ad_count: product.ad_count?.toString() || '',
+      scores: typeof product.scores === 'string' 
+        ? JSON.parse(product.scores) 
+        : product.scores || {
+            innovative: 0,
+            lightweight: 0,
+            low_variation: 0,
+            problem_solving: 0,
+            visual_sellable: 0
+          },
+      notes: product.notes || ''
+    })
+    // Scroll to form
+    document.getElementById('product-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  const handleScoreChange = (key, value) => {
+    setFormData(prev => ({
+      ...prev,
+      scores: {
+        ...prev.scores,
+        [key]: value
+      }
+    }))
+  }
+
+  const adCount = parseInt(formData.ad_count) || 0
+  const hasBrandingSignal = adCount > 30
+  const potentialScore = Object.values(formData.scores).reduce((a, b) => a + b, 0) / Object.values(formData.scores).length
+
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* Header */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+          <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700' }}>Hızlı Analiz ve Kayıt</h2>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              onClick={() => setViewMode('list')}
+              style={{
+                padding: '0.5rem',
+                border: `1px solid ${viewMode === 'list' ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                borderRadius: 'var(--radius-sm)',
+                background: viewMode === 'list' ? 'rgba(139, 92, 246, 0.1)' : 'white',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <List size={18} />
+            </button>
+            <button
+              onClick={() => setViewMode('card')}
+              style={{
+                padding: '0.5rem',
+                border: `1px solid ${viewMode === 'card' ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                borderRadius: 'var(--radius-sm)',
+                background: viewMode === 'card' ? 'rgba(139, 92, 246, 0.1)' : 'white',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <Grid size={18} />
+            </button>
+          </div>
+        </div>
+
+        {/* Quick Add Form */}
+        <div
+          id="product-form"
+          style={{
+            padding: '1.5rem',
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-md)',
+            background: 'white',
+            marginBottom: '1.5rem'
+          }}
+        >
+          {editingProduct && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid var(--color-border)' }}>
+              <span style={{ fontWeight: '600', color: 'var(--color-primary)' }}>Düzenleniyor: {editingProduct.product_name}</span>
+              <button
+                onClick={() => {
+                  setEditingProduct(null)
+                  setFormData({
+                    product_name: '',
+                    meta_link: '',
+                    image_url: '',
+                    ad_count: '',
+                    scores: {
+                      innovative: 0,
+                      lightweight: 0,
+                      low_variation: 0,
+                      problem_solving: 0,
+                      visual_sellable: 0
+                    },
+                    notes: ''
+                  })
+                }}
+                style={{
+                  padding: '0.25rem 0.5rem',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'white',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  fontSize: '12px'
+                }}
+              >
+                <X size={14} />
+                İptal
+              </button>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {/* Image URL */}
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '14px', fontWeight: '500' }}>
+                Ürün Görseli URL
+              </label>
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <input
+                  type="text"
+                  value={formData.image_url}
+                  onChange={e => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
+                  placeholder="https://..."
+                  style={{
+                    flex: 1,
+                    padding: '0.65rem 0.75rem',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: '14px'
+                  }}
+                />
+                {formData.image_url && (
+                  <img
+                    src={formData.image_url}
+                    alt="Preview"
+                    style={{
+                      width: '60px',
+                      height: '60px',
+                      objectFit: 'cover',
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--color-border)'
+                    }}
+                    onError={e => {
+                      e.target.style.display = 'none'
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* Product Name */}
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '14px', fontWeight: '500' }}>
+                Ürün Adı *
+              </label>
+              <input
+                type="text"
+                value={formData.product_name}
+                onChange={e => setFormData(prev => ({ ...prev, product_name: e.target.value }))}
+                placeholder="Ürün adını girin"
+                style={{
+                  width: '100%',
+                  padding: '0.65rem 0.75rem',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: '14px'
+                }}
+              />
+            </div>
+
+            {/* Meta Link */}
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '14px', fontWeight: '500' }}>
+                Meta Linki
+              </label>
+              <input
+                type="text"
+                value={formData.meta_link}
+                onChange={e => setFormData(prev => ({ ...prev, meta_link: e.target.value }))}
+                placeholder="https://www.facebook.com/ads/library/..."
+                style={{
+                  width: '100%',
+                  padding: '0.65rem 0.75rem',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: '14px'
+                }}
+              />
+            </div>
+
+            {/* Ad Count */}
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '14px', fontWeight: '500' }}>
+                Reklam Sayısı
+              </label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="number"
+                  value={formData.ad_count}
+                  onChange={e => setFormData(prev => ({ ...prev, ad_count: e.target.value }))}
+                  placeholder="0"
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem 0.75rem',
+                    border: `2px solid ${hasBrandingSignal ? 'var(--color-success)' : 'var(--color-border)'}`,
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: '14px',
+                    transition: 'border var(--transition-fast)'
+                  }}
+                />
+                {hasBrandingSignal && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: '-10px',
+                      right: '10px',
+                      padding: '0.25rem 0.5rem',
+                      background: 'var(--color-success)',
+                      color: 'white',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '11px',
+                      fontWeight: '700'
+                    }}
+                  >
+                    🔥 Markalaşma Sinyali
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Star Ratings */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {CRITERIA.map(criterion => (
+                <StarRating
+                  key={criterion.key}
+                  label={criterion.label}
+                  value={formData.scores[criterion.key]}
+                  onChange={value => handleScoreChange(criterion.key, value)}
+                />
+              ))}
+            </div>
+
+            {/* Potential Score */}
+            {potentialScore > 0 && (
+              <div
+                style={{
+                  padding: '1rem',
+                  background: 'var(--color-background)',
+                  borderRadius: 'var(--radius-md)',
+                  textAlign: 'center'
+                }}
+              >
+                <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>
+                  Potansiyel Skoru
+                </div>
+                <div
+                  style={{
+                    fontSize: '2rem',
+                    fontWeight: '700',
+                    color: potentialScore >= 4 ? 'var(--color-success)' : potentialScore >= 3 ? 'var(--color-warning)' : 'var(--color-error)'
+                  }}
+                >
+                  {potentialScore.toFixed(1)}/5
+                </div>
+              </div>
+            )}
+
+            {/* Notes */}
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '14px', fontWeight: '500' }}>
+                Notlar (Opsiyonel)
+              </label>
+              <textarea
+                value={formData.notes}
+                onChange={e => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                placeholder="Ek notlar..."
+                rows={3}
+                style={{
+                  width: '100%',
+                  padding: '0.65rem 0.75rem',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: '14px',
+                  resize: 'vertical',
+                  fontFamily: 'inherit'
+                }}
+              />
+            </div>
+
+            {/* Save Button */}
+            <button
+              onClick={handleSave}
+              disabled={saving || !formData.product_name.trim()}
+              className="primary"
+              style={{
+                padding: '0.75rem 1.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                fontWeight: '600',
+                fontSize: '15px',
+                background: 'linear-gradient(135deg, var(--color-primary), var(--color-accent))',
+                boxShadow: 'var(--shadow-glow)'
+              }}
+            >
+              <Save size={18} />
+              {editingProduct ? 'Güncelle' : 'Kaydet'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Products List */}
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>
+            Yükleniyor...
+          </div>
+        ) : products.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>
+            Henüz ürün eklenmedi
+          </div>
+        ) : viewMode === 'card' ? (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+            {products.map(product => (
+              <ProductCard key={product.id} product={product} onEdit={handleEdit} />
+            ))}
+          </div>
+        ) : (
+          <ProductList products={products} onEdit={handleEdit} />
+        )}
+      </div>
+    </div>
+  )
+}
+
