@@ -6,6 +6,39 @@
 
   const TARGET_BUTTONS = ['Shop Now', 'Şimdi alışveriş yap'];
   let isFiltering = false;
+  let isCheckingAdvertisers = false;
+  
+  // Cache için localStorage kullan
+  function getCacheKey(advertiser, country, dateRange) {
+    return `panela_${advertiser}_${country}_${dateRange.start}_${dateRange.end}`;
+  }
+  
+  function getCachedResult(key) {
+    try {
+      const cached = localStorage.getItem(key);
+      if (cached) {
+        const data = JSON.parse(cached);
+        // 1 saat içindeyse cache'i kullan
+        if (Date.now() - data.timestamp < 3600000) {
+          return data.result;
+        }
+      }
+    } catch (e) {
+      console.error('[Panela] Cache okuma hatası:', e);
+    }
+    return null;
+  }
+  
+  function setCachedResult(key, result) {
+    try {
+      localStorage.setItem(key, JSON.stringify({
+        result,
+        timestamp: Date.now()
+      }));
+    } catch (e) {
+      console.error('[Panela] Cache yazma hatası:', e);
+    }
+  }
 
   // Reklam kartını kontrol et - hedef butonları içeriyor mu?
   function hasTargetButton(adCard) {
@@ -165,6 +198,279 @@
       }, 500);
     });
   }
+
+  // ============================================
+  // ADVERTISER KONTROL SİSTEMİ
+  // ============================================
+
+  // Advertiser linklerini bul
+  function findAdvertiserLinks(adCard) {
+    const links = adCard.querySelectorAll('a[href*="facebook.com/"]');
+    const advertisers = [];
+    
+    links.forEach(link => {
+      const href = link.getAttribute('href');
+      if (href && href.includes('facebook.com/') && !href.includes('/ads/library')) {
+        // URL'den advertiser username'ini çıkar
+        const match = href.match(/facebook\.com\/([^\/\?]+)/);
+        if (match && match[1] && match[1] !== 'www' && match[1] !== 'ads') {
+          advertisers.push({
+            username: match[1],
+            url: href,
+            card: adCard
+          });
+        }
+      }
+    });
+    
+    return advertisers;
+  }
+
+  // URL'den tarih aralığı ve ülke bilgisini al
+  function getCurrentSearchParams() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const country = urlParams.get('country') || 'GB';
+    const startDate = urlParams.get('start_date[min]') || '';
+    const endDate = urlParams.get('start_date[max]') || '';
+    
+    return {
+      country,
+      dateRange: {
+        start: startDate,
+        end: endDate
+      }
+    };
+  }
+
+  // Badge ekle
+  function addBadge(adCard, count, url) {
+    // Zaten badge varsa ekleme
+    if (adCard.querySelector('.panela-badge')) return;
+    
+    const badge = document.createElement('div');
+    badge.className = 'panela-badge';
+    badge.style.cssText = `
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.75rem;
+      color: white;
+      cursor: pointer;
+      z-index: 1000;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      transition: transform 0.2s;
+    `;
+    
+    if (count >= 25) {
+      // 25+ için renkli badge
+      badge.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+      badge.textContent = '25+';
+      badge.title = `${count} reklam bulundu - Tıkla ve gör`;
+      badge.onclick = (e) => {
+        e.stopPropagation();
+        window.open(url, '_blank');
+      };
+    } else {
+      // 25 altı için gri badge
+      badge.style.background = '#94a3b8';
+      badge.textContent = count > 0 ? count : '?';
+      badge.title = `${count} reklam bulundu`;
+    }
+    
+    badge.onmouseenter = () => {
+      badge.style.transform = 'scale(1.1)';
+    };
+    badge.onmouseleave = () => {
+      badge.style.transform = 'scale(1)';
+    };
+    
+    // Reklam kartına pozisyon relative ekle
+    const cardStyle = window.getComputedStyle(adCard);
+    if (cardStyle.position === 'static') {
+      adCard.style.position = 'relative';
+    }
+    
+    adCard.appendChild(badge);
+  }
+
+  // Advertiser kontrol et
+  async function checkAdvertiser(advertiser, params) {
+    // Cache kontrolü
+    const cacheKey = getCacheKey(advertiser.username, params.country, params.dateRange);
+    const cached = getCachedResult(cacheKey);
+    if (cached) {
+      return cached;
+    }
+    
+    try {
+      // Meta Ads Library URL'ini oluştur
+      const url = buildAdsLibraryUrl(advertiser.username, params.country, params.dateRange);
+      
+      // Fetch ile sayfayı al (CORS bypass için content script içinde yapıyoruz)
+      const response = await fetch(url, {
+        method: 'GET',
+        credentials: 'include',
+        mode: 'cors'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
+      const html = await response.text();
+      const count = parseResultCount(html);
+      
+      const result = {
+        advertiser: advertiser.username,
+        count: count,
+        url: url
+      };
+      
+      // Cache'e kaydet
+      setCachedResult(cacheKey, result);
+      
+      return result;
+    } catch (error) {
+      console.error('[Panela] Advertiser kontrol hatası:', error);
+      // Hata durumunda null döndür
+      return null;
+    }
+  }
+  
+  // Meta Ads Library URL oluştur
+  function buildAdsLibraryUrl(advertiser, country, dateRange) {
+    const baseUrl = 'https://www.facebook.com/ads/library/';
+    const params = new URLSearchParams({
+      active_status: 'active',
+      ad_type: 'all',
+      country: country || 'GB',
+      is_targeted_country: 'false',
+      media_type: 'all',
+      search_type: 'advertiser',
+      advertiser_name: advertiser
+    });
+    
+    if (dateRange && dateRange.start && dateRange.end) {
+      params.append('start_date[min]', dateRange.start);
+      params.append('start_date[max]', dateRange.end);
+    }
+    
+    return baseUrl + '?' + params.toString();
+  }
+  
+  // HTML'den sonuç sayısını parse et
+  function parseResultCount(html) {
+    // "~300 sonuç" veya "300 results" gibi metni bul
+    const patterns = [
+      /~?(\d+)\s+sonuç/i,
+      /(\d+)\s+results?/i,
+      /aria-level="3"[^>]*>~?(\d+)/i
+    ];
+    
+    for (const pattern of patterns) {
+      const match = html.match(pattern);
+      if (match) {
+        return parseInt(match[1], 10);
+      }
+    }
+    
+    return 0;
+  }
+
+  // Sayfadaki tüm reklamları kontrol et
+  async function checkAllAdvertisers() {
+    if (isCheckingAdvertisers) return;
+    isCheckingAdvertisers = true;
+    
+    try {
+      const params = getCurrentSearchParams();
+      const adCards = document.querySelectorAll('[role="article"]:not([style*="display: none"])');
+      
+      let checked = 0;
+      let highCount = 0;
+      let lowCount = 0;
+      
+      for (const card of adCards) {
+        const advertisers = findAdvertiserLinks(card);
+        
+        for (const advertiser of advertisers) {
+          const result = await checkAdvertiser(advertiser, params);
+          
+          if (result) {
+            checked++;
+            const count = result.count || 0;
+            
+            if (count >= 25) {
+              highCount++;
+              addBadge(card, count, result.url);
+            } else if (count > 0) {
+              lowCount++;
+              addBadge(card, count, result.url);
+            }
+          }
+          
+          // Rate limiting - her kontrol arasında kısa bekleme
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+      }
+      
+      return {
+        success: true,
+        checked,
+        highCount,
+        lowCount
+      };
+    } catch (error) {
+      console.error('[Panela] Kontrol hatası:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    } finally {
+      isCheckingAdvertisers = false;
+    }
+  }
+
+  // Popup'tan gelen mesajları dinle
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'checkAdvertisers') {
+      checkAllAdvertisers().then(result => {
+        sendResponse(result);
+      });
+      return true; // Async response
+    }
+  });
+
+  // Scroll ile yeni reklamlar geldiğinde otomatik kontrol
+  let lastCheckedCount = 0;
+  function autoCheckNewAds() {
+    const currentAds = document.querySelectorAll('[role="article"]:not([style*="display: none"])').length;
+    
+    if (currentAds > lastCheckedCount) {
+      // Yeni reklamlar var, kontrol et
+      setTimeout(() => {
+        checkAllAdvertisers();
+        lastCheckedCount = currentAds;
+      }, 2000);
+    }
+  }
+
+  // Scroll observer'ı güncelle
+  const originalObserver = setupObserver();
+  const scrollObserver = new MutationObserver(() => {
+    autoCheckNewAds();
+  });
+  scrollObserver.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
 
   // Başlat
   init();

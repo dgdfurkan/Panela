@@ -183,6 +183,37 @@ div[style*="justify-content:flex-end"] {
   margin-right: 0 !important;
 }
 
+/* Badge stilleri */
+.panela-badge {
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-weight: 700 !important;
+  font-size: 0.75rem !important;
+  color: white !important;
+  cursor: pointer !important;
+  z-index: 1000 !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;
+  transition: transform 0.2s !important;
+  pointer-events: auto !important;
+}
+
+.panela-badge:hover {
+  transform: scale(1.15) !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+}
+
+/* Reklam kartlarının pozisyonunu relative yap (badge için) */
+[role="article"]:not([style*="display: none"]) {
+  position: relative !important;
+}
+
 /* Responsive tasarım */
 @media (max-width: 768px) {
   body > div[role="main"] > div,
@@ -194,5 +225,11 @@ div[style*="justify-content:flex-end"] {
   .xuk3077.x78zum5.xdt5ytf.xozqiw3.x2lwn1j.xeuugli.x1iyjqo2.xavht8x {
     flex-direction: column !important;
     align-items: flex-start !important;
+  }
+  
+  .panela-badge {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 0.65rem !important;
   }
 }
