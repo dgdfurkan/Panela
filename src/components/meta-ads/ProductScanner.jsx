@@ -24,10 +24,13 @@ export default function ProductScanner({ userId }) {
   const [formData, setFormData] = useState({
     product_name: '',
     meta_link: '',
+    proof_link: '',
     trendyol_link: '',
     amazon_link: '',
     image_url: '',
     ad_count: '',
+    country_code: '',
+    search_keyword: '',
     scores: {
       innovative: 0,
       lightweight: 0,
@@ -89,6 +92,25 @@ export default function ProductScanner({ userId }) {
     }
   }
 
+  // Prefill from last search stored by KeywordLauncher
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('meta_last_search')
+      if (!raw) return
+      const parsed = JSON.parse(raw)
+      if (parsed?.keyword) {
+        setFormData(prev => ({
+          ...prev,
+          search_keyword: parsed.keyword,
+          country_code: parsed.country_code || prev.country_code,
+          meta_link: parsed.url || prev.meta_link
+        }))
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, [])
+
   const loadCommentsMeta = async () => {
     if (!userId) return
     try {
@@ -131,10 +153,13 @@ export default function ProductScanner({ userId }) {
         user_id: userId,
         product_name: formData.product_name.trim() || null,
         meta_link: formData.meta_link.trim() || null,
+        proof_link: formData.proof_link.trim() || null,
         trendyol_link: formData.trendyol_link.trim() || null,
         amazon_link: formData.amazon_link.trim() || null,
         image_url: formData.image_url.trim() || null,
         ad_count: formData.ad_count ? parseInt(formData.ad_count) : null,
+        country_code: formData.country_code.trim() || null,
+        search_keyword: formData.search_keyword.trim() || null,
         scores,
         potential_score: parseFloat((isFinite(potential_score) ? potential_score : 0).toFixed(2)),
         notes: formData.notes.trim() || null
@@ -149,10 +174,13 @@ export default function ProductScanner({ userId }) {
       setFormData({
         product_name: '',
         meta_link: '',
+        proof_link: '',
         trendyol_link: '',
         amazon_link: '',
         image_url: '',
         ad_count: '',
+        country_code: '',
+        search_keyword: '',
         scores: {
           innovative: 0,
           lightweight: 0,
@@ -310,10 +338,13 @@ export default function ProductScanner({ userId }) {
       await handleUpdateProduct({
         product_name: selectedProduct.product_name || null,
         meta_link: selectedProduct.meta_link || null,
+        proof_link: selectedProduct.proof_link || null,
         trendyol_link: selectedProduct.trendyol_link || null,
         amazon_link: selectedProduct.amazon_link || null,
         image_url: selectedProduct.image_url || null,
         ad_count: selectedProduct.ad_count ?? null,
+        country_code: selectedProduct.country_code || null,
+        search_keyword: selectedProduct.search_keyword || null,
         notes: selectedProduct.notes || null,
         scores: selectedProduct.scores,
         potential_score: selectedProduct.potential_score
@@ -439,6 +470,40 @@ export default function ProductScanner({ userId }) {
                   style={{ width: '100%', padding: '0.55rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: '10px' }}
                 />
               </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div>
+                <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Ülke Kodu (US/CA/GB/AU/NZ)</label>
+                <input
+                  type="text"
+                  value={selectedProduct.country_code || ''}
+                  onChange={e => handleFieldChange('country_code', e.target.value)}
+                  disabled={!isOwner}
+                  style={{ width: '100%', padding: '0.55rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: '10px' }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Anahtar Kelime</label>
+                <input
+                  type="text"
+                  value={selectedProduct.search_keyword || ''}
+                  onChange={e => handleFieldChange('search_keyword', e.target.value)}
+                  disabled={!isOwner}
+                  style={{ width: '100%', padding: '0.55rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: '10px' }}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Reklam Sayısı Kanıt Linki</label>
+              <input
+                type="text"
+                value={selectedProduct.proof_link || ''}
+                onChange={e => handleFieldChange('proof_link', e.target.value)}
+                disabled={!isOwner}
+                style={{ width: '100%', padding: '0.55rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: '10px' }}
+              />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
@@ -610,7 +675,7 @@ export default function ProductScanner({ userId }) {
             borderRadius: 'var(--radius-md)',
             background: 'white',
             marginBottom: '0.75rem',
-            maxHeight: '35vh',
+            maxHeight: '38vh',
             overflowY: 'auto'
           }}
         >
@@ -713,14 +778,49 @@ export default function ProductScanner({ userId }) {
               ))}
             </div>
 
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500' }}>Not</label>
-              <textarea
-                value={formData.notes}
-                onChange={e => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                rows={3}
-                style={{ width: '100%', padding: '0.55rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', fontSize: '13px', resize: 'vertical' }}
-              />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500' }}>Ülke Kodu (US/CA/GB/AU/NZ)</label>
+                <input
+                  type="text"
+                  value={formData.country_code}
+                  onChange={e => setFormData(prev => ({ ...prev, country_code: e.target.value }))}
+                  placeholder="US"
+                  style={{ width: '100%', padding: '0.5rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', fontSize: '13px' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500' }}>Anahtar Kelime</label>
+                <input
+                  type="text"
+                  value={formData.search_keyword}
+                  onChange={e => setFormData(prev => ({ ...prev, search_keyword: e.target.value }))}
+                  placeholder="örn: free shipping"
+                  style={{ width: '100%', padding: '0.5rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', fontSize: '13px' }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500' }}>Reklam Sayısı Kanıt Linki</label>
+                <input
+                  type="text"
+                  value={formData.proof_link}
+                  onChange={e => setFormData(prev => ({ ...prev, proof_link: e.target.value }))}
+                  placeholder="Kanıt linki (Ads Library vb.)"
+                  style={{ width: '100%', padding: '0.5rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', fontSize: '13px' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500' }}>Not</label>
+                <textarea
+                  value={formData.notes}
+                  onChange={e => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                  rows={2}
+                  style={{ width: '100%', padding: '0.55rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', fontSize: '13px', resize: 'vertical' }}
+                />
+              </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', alignItems: 'end' }}>

@@ -122,12 +122,22 @@ export default function ProductList({ products, onEdit, currentUserId, unreadCou
                   )
                 })()}
               </div>
-              <div style={{ display: 'flex', gap: '1rem', fontSize: '13px', color: 'var(--color-text-muted)' }}>
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', fontSize: '13px', color: 'var(--color-text-muted)' }}>
                 {createdAt && <span>{createdAt}</span>}
                 <span>Reklam: {product.ad_count ?? '-'}</span>
                 {product.ad_count > 30 && (
                   <span style={{ color: 'var(--color-success)', fontWeight: '600' }}>
                     🔥 Markalaşma Sinyali
+                  </span>
+                )}
+                {product.country_code && (
+                  <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', background: 'rgba(59,130,246,0.08)', padding: '0.2rem 0.4rem', borderRadius: '8px' }}>
+                    {product.country_code}
+                  </span>
+                )}
+                {product.search_keyword && (
+                  <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', background: 'rgba(16,185,129,0.08)', padding: '0.2rem 0.4rem', borderRadius: '8px' }}>
+                    {product.search_keyword}
                   </span>
                 )}
                 <span>Skor: <strong style={{ color: getScoreColor(product.potential_score) }}>{product.potential_score?.toFixed(1) || '0.0'}/5</strong></span>

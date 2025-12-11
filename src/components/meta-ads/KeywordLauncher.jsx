@@ -137,6 +137,18 @@ export default function KeywordLauncher({ userId }) {
       url += `&start_date[max]=${endDate}`
     }
     
+    // Persist last search for ProductScanner autofill
+    try {
+      localStorage.setItem('meta_last_search', JSON.stringify({
+        keyword,
+        country_code: countryCode,
+        url,
+        ts: Date.now()
+      }))
+    } catch (e) {
+      // ignore storage errors
+    }
+
     // Open in new tab
     window.open(url, '_blank')
 

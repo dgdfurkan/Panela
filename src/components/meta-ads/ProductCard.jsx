@@ -140,7 +140,7 @@ export default function ProductCard({ product, onEdit, currentUserId, unreadCoun
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '13px', color: 'var(--color-text-muted)' }}>
               {createdAt && <span>{createdAt}</span>}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '14px', flexWrap: 'wrap' }}>
               <span style={{ color: 'var(--color-text-muted)' }}>Reklam Sayısı:</span>
               <span style={{ fontWeight: '600' }}>{product.ad_count ?? '-'}</span>
               {product.ad_count > 30 && (
@@ -155,6 +155,16 @@ export default function ProductCard({ product, onEdit, currentUserId, unreadCoun
                   }}
                 >
                   🔥 Markalaşma Sinyali
+                </span>
+              )}
+              {product.country_code && (
+                <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', background: 'rgba(59,130,246,0.08)', padding: '0.2rem 0.4rem', borderRadius: '8px' }}>
+                  {product.country_code}
+                </span>
+              )}
+              {product.search_keyword && (
+                <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', background: 'rgba(16,185,129,0.08)', padding: '0.2rem 0.4rem', borderRadius: '8px' }}>
+                  {product.search_keyword}
                 </span>
               )}
             </div>
