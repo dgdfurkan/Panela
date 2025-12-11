@@ -1,7 +1,18 @@
 const GRAPH_API_VERSION = 'v19.0'
 const GRAPH_BASE = `https://graph.facebook.com/${GRAPH_API_VERSION}`
-const PROXY_URL = import.meta.env.VITE_META_PROXY_URL || ''
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+
+function getProxyUrl() {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const override = localStorage.getItem('meta_proxy_override')
+      if (override) return override
+    }
+  } catch (e) {
+    // ignore storage errors
+  }
+  return import.meta.env.VITE_META_PROXY_URL || ''
+}
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
@@ -88,6 +99,7 @@ export async function searchAdsArchive(opts) {
   const url = `${GRAPH_BASE}/ads_archive?${params.toString()}`
 
   // Proxy kullan (token’ı client’a sızdırmamak için)
+  const PROXY_URL = getProxyUrl()
   if (PROXY_URL) {
     const res = await fetch(PROXY_URL, {
       method: 'POST',
@@ -136,6 +148,7 @@ export async function countPageAds({ page_id, since, until, accessToken, limit =
 
   const url = `${GRAPH_BASE}/ads_archive?${params.toString()}`
 
+  const PROXY_URL = getProxyUrl()
   if (PROXY_URL) {
     const res = await fetch(PROXY_URL, {
       method: 'POST',

@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { Play, X, Loader2, ExternalLink, CheckCircle2, Shield } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Play, X, Loader2, ExternalLink, CheckCircle2, Shield, Link2 } from 'lucide-react'
 import { detectCtaHit, searchAdsArchive, countPageAds } from '../../lib/metaAdsClient'
 
 const CTA_HINT = /shop\s*now|şimdi\s*alışveriş\s*yap/i
@@ -16,8 +16,10 @@ const fourteenDaysAgo = () => {
 
 export default function AutoMetaScanner({ onPrefill }) {
   const hasEnvToken = Boolean(import.meta.env.VITE_META_TOKEN)
-  const hasProxy = Boolean(import.meta.env.VITE_META_PROXY_URL)
+  const envProxy = import.meta.env.VITE_META_PROXY_URL || ''
   const [token, setToken] = useState('')
+  const [proxyOverride, setProxyOverride] = useState('')
+  const hasProxy = Boolean(proxyOverride || envProxy)
   const [countries, setCountries] = useState(DEFAULT_COUNTRIES.join(','))
   const [keywords, setKeywords] = useState('')
   const [mediaType, setMediaType] = useState('ALL')
@@ -143,6 +145,25 @@ export default function AutoMetaScanner({ onPrefill }) {
     }
   }
 
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('meta_proxy_override')
+      if (saved) setProxyOverride(saved)
+    } catch (e) {
+      // ignore
+    }
+  }, [])
+
+  const handleProxySave = (val) => {
+    setProxyOverride(val)
+    try {
+      if (val) localStorage.setItem('meta_proxy_override', val)
+      else localStorage.removeItem('meta_proxy_override')
+    } catch (e) {
+      // ignore
+    }
+  }
+
   return (
     <div className="glass-panel" style={{ padding: '1.25rem', borderRadius: '16px', background: 'white', border: '1px solid var(--color-border)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '1rem' }}>
@@ -227,6 +248,20 @@ export default function AutoMetaScanner({ onPrefill }) {
             <input value={token} onChange={e => setToken(e.target.value)} placeholder="Prod’da proxy kullan" />
           </div>
         )}
+        <div className="glass-panel" style={{ padding: '0.85rem', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
+          <label className="eyebrow" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <Link2 size={14} />
+            Proxy URL (isteğe bağlı)
+          </label>
+          <input
+            value={proxyOverride}
+            onChange={e => handleProxySave(e.target.value)}
+            placeholder={envProxy || 'https://<ref>.functions.supabase.co/meta-ads-proxy'}
+          />
+          <small style={{ color: 'var(--color-text-muted)' }}>
+            Boş bırakırsan env’deki `VITE_META_PROXY_URL` kullanılır.
+          </small>
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem' }}>
