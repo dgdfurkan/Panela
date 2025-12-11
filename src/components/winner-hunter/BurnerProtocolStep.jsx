@@ -44,95 +44,139 @@ export default function BurnerProtocolStep({ onComplete, initialData = {} }) {
   }
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-      <div className="glass-panel">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: 'var(--radius-md)',
-            background: 'linear-gradient(135deg, var(--color-primary), var(--color-accent))',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontWeight: '700',
-            fontSize: '20px'
-          }}>
-            1
+    <>
+      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+        <div className="glass-panel" style={{ padding: '2rem', borderRadius: 'var(--radius-xl)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: 'var(--radius-md)',
+              background: 'linear-gradient(135deg, var(--color-primary), var(--color-accent))',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontWeight: '700',
+              fontSize: '20px'
+            }}>
+              1
+            </div>
+            <div style={{ flex: 1 }}>
+              <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '700', marginBottom: '0.5rem' }}>
+                Hazırlık Protokolü
+              </h2>
+              <p style={{ margin: 0, color: 'var(--color-text-muted)', fontSize: '14px' }}>
+                Hazırlık ve Algoritma Eğitimi
+              </p>
+            </div>
+            <MarkQuoteTooltip quoteKey="niche" />
           </div>
-          <div style={{ flex: 1 }}>
-            <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '700', marginBottom: '0.5rem' }}>
-              Hazırlık Protokolü
-            </h2>
-            <p style={{ margin: 0, color: 'var(--color-text-muted)', fontSize: '14px' }}>
-              Hazırlık ve Algoritma Eğitimi
+
+          <div style={{ marginBottom: '2rem' }}>
+            <p style={{ color: 'var(--color-text-muted)', fontSize: '15px', lineHeight: '1.6', marginBottom: '1.5rem' }}>
+              Ürün aramaya başlamadan önce bu adımları tamamladığından emin ol. Her madde kritik!
             </p>
-          </div>
-          <MarkQuoteTooltip quoteKey="niche" />
-        </div>
 
-        <div style={{ marginBottom: '2rem' }}>
-          <p style={{ color: 'var(--color-text-muted)', fontSize: '15px', lineHeight: '1.6', marginBottom: '1.5rem' }}>
-            Ürün aramaya başlamadan önce bu adımları tamamladığından emin ol. Her madde kritik!
-          </p>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {checklistItems.map(item => {
-              const isChecked = checkedItems[item.id] === true
-              return (
-                <div
-                  key={item.id}
-                  onClick={() => handleToggle(item.id)}
-                  className="glass-panel"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '1rem',
-                    padding: '1rem',
-                    border: `2px solid ${isChecked ? 'var(--color-success)' : 'var(--color-border)'}`,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  {isChecked ? (
-                    <CheckCircle size={24} color="var(--color-success)" />
-                  ) : (
-                    <Circle size={24} color="var(--color-text-muted)" />
-                  )}
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: '500', fontSize: '15px' }}>
-                      {item.label}
-                    </div>
-                    {item.tooltip && (
-                      <div style={{ color: 'var(--color-text-muted)', fontSize: '13px', marginTop: '4px' }}>
-                        {item.tooltip}
-                      </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {checklistItems.map(item => {
+                const isChecked = checkedItems[item.id] === true
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => handleToggle(item.id)}
+                    className="checklist-item"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '1rem',
+                      padding: '1rem',
+                      border: `2px solid ${isChecked ? 'var(--color-success)' : 'var(--color-border)'}`,
+                      borderRadius: 'var(--radius-md)',
+                      background: isChecked ? 'rgba(16, 185, 129, 0.05)' : 'white',
+                      cursor: 'pointer',
+                      transition: 'all var(--transition-fast)'
+                    }}
+                  >
+                    {isChecked ? (
+                      <CheckCircle size={24} color="var(--color-success)" />
+                    ) : (
+                      <Circle size={24} color="var(--color-text-muted)" />
                     )}
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: '500', fontSize: '15px' }}>
+                        {item.label}
+                      </div>
+                      {item.tooltip && (
+                        <div style={{ color: 'var(--color-text-muted)', fontSize: '13px', marginTop: '4px' }}>
+                          {item.tooltip}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
+
+          {!allChecked && (
+            <div className="toast error" style={{ marginBottom: '1.5rem' }}>
+              <AlertCircle size={18} />
+              <span>Tüm maddeleri tamamlamadan ava başlayamazsın!</span>
+            </div>
+          )}
+
+          <button
+            onClick={handleStartHunt}
+            disabled={!allChecked}
+            className={allChecked ? 'primary' : 'ghost'}
+            style={{ width: '100%' }}
+          >
+            {allChecked ? '🎯 Ava Başla' : 'Tüm Maddeleri Tamamla'}
+          </button>
         </div>
-
-        {!allChecked && (
-          <div className="toast error" style={{ marginBottom: '1.5rem' }}>
-            <AlertCircle size={18} />
-            <span>Tüm maddeleri tamamlamadan ava başlayamazsın!</span>
-          </div>
-        )}
-
-        <button
-          onClick={handleStartHunt}
-          disabled={!allChecked}
-          className={allChecked ? 'primary-btn' : 'ghost-btn'}
-          style={{ width: '100%' }}
-        >
-          {allChecked ? '🎯 Ava Başla' : 'Tüm Maddeleri Tamamla'}
-        </button>
       </div>
-    </div>
+
+      <style>{`
+        .checklist-item:hover {
+          border-color: var(--color-primary) !important;
+          box-shadow: var(--shadow-sm);
+        }
+        .ghost {
+          padding: 0.65rem 1.1rem;
+          border-radius: var(--radius-md);
+          border: 1px solid var(--color-border);
+          background: white;
+          font-weight: 600;
+          color: var(--color-text-main);
+          cursor: pointer;
+          transition: all var(--transition-fast);
+        }
+        .ghost:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
+        .primary {
+          padding: 0.65rem 1.1rem;
+          border-radius: var(--radius-md);
+          border: none;
+          background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+          color: white;
+          font-weight: 600;
+          cursor: pointer;
+          box-shadow: var(--shadow-sm);
+          transition: all var(--transition-fast);
+        }
+        .primary:hover {
+          box-shadow: var(--shadow-md);
+          transform: translateY(-1px);
+        }
+        .primary:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+          transform: none;
+        }
+      `}</style>
+    </>
   )
 }
-
