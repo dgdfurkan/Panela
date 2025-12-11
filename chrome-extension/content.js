@@ -203,12 +203,30 @@
   // ADVERTISER KONTROL SİSTEMİ
   // ============================================
 
-  // Advertiser linklerini bul - Daha geniş ve agresif arama
+  // Advertiser linklerini bul - Sadece geçerli advertiser'ları döndür
   function findAdvertiserLinks(adCard) {
     // Tüm linkleri bul (href attribute'u olan tüm a elementleri)
     const allLinks = adCard.querySelectorAll('a[href]');
     const advertisers = [];
     const foundUsernames = new Set();
+    
+    // Geçersiz username'ler listesi (genişletilmiş)
+    const invalidUsernames = new Set([
+      'www', 'ads', 'login', 'help', 'privacy', 'terms', 'about', 'pages', 'groups', 
+      'events', 'watch', 'marketplace', 'games', 'profile.php', 'policies', 'language',
+      'l.php', 'sharer', 'share', 'dialog', 'plugins', 'settings', 'business',
+      'developers', 'legal', 'careers', 'newsroom', 'code', 'research', 'ai',
+      'connect', 'mobile', 'live', 'gaming', 'safety', 'wellbeing', 'community',
+      'fundraisers', 'blood', 'crisis', 'support', 'cookies', 'data', 'transparency'
+    ]);
+    
+    // Geçersiz path'ler
+    const excludedPaths = [
+      '/ads/library', '/login', '/help', '/privacy', '/terms', '/about', 
+      '/pages', '/groups', '/events', '/watch', '/marketplace', '/games',
+      '/policies', '/language', '/l.php', '/sharer', '/share', '/dialog',
+      '/plugins', '/settings', '/business', '/developers', '/legal'
+    ];
     
     allLinks.forEach(link => {
       let href = link.getAttribute('href');
@@ -221,38 +239,46 @@
       
       // Facebook sayfa linklerini bul
       if (href.includes('facebook.com/')) {
-        // Ads library, login, help gibi sayfaları filtrele
-        const excluded = ['/ads/library', '/login', '/help', '/privacy', '/terms', '/about', '/pages', '/groups', '/events', '/watch', '/marketplace', '/games'];
-        const isExcluded = excluded.some(ex => href.includes(ex));
+        // Geçersiz path'leri filtrele
+        const isExcluded = excludedPaths.some(ex => href.includes(ex));
+        if (isExcluded) return;
         
-        if (!isExcluded) {
-          // URL'den advertiser username'ini çıkar
-          let match = href.match(/facebook\.com\/([^\/\?&#]+)/);
-          if (match && match[1]) {
-            const username = match[1];
-            
-            // Geçersiz username'leri filtrele
-            const invalid = ['www', 'ads', 'login', 'help', 'privacy', 'terms', 'about', 'pages', 'groups', 'events', 'watch', 'marketplace', 'games', 'profile.php'];
-            
-            // Username uzunluğu kontrolü (çok kısa veya çok uzun olmasın)
-            if (username.length >= 3 && username.length <= 50 && 
-                !invalid.includes(username.toLowerCase()) && 
-                !foundUsernames.has(username) &&
-                !username.match(/^\d+$/)) { // Sadece sayılardan oluşan username'leri atla
-              
-              foundUsernames.add(username);
-              advertisers.push({
-                username: username,
-                url: href.startsWith('http') ? href : `https://${href}`,
-                card: adCard
-              });
-              
-              console.log(`[Panela] Advertiser bulundu: ${username} - ${href}`);
-            }
-          }
+        // l.php gibi tracking linklerini filtrele
+        if (href.includes('l.php') || href.includes('l.facebook.com')) return;
+        
+        // URL'den advertiser username'ini çıkar
+        let match = href.match(/facebook\.com\/([^\/\?&#]+)/);
+        if (match && match[1]) {
+          const username = match[1].toLowerCase();
+          
+          // Geçersiz username kontrolü
+          if (invalidUsernames.has(username)) return;
+          
+          // Username uzunluğu kontrolü (çok kısa veya çok uzun olmasın)
+          if (username.length < 3 || username.length > 50) return;
+          
+          // Sadece sayılardan oluşan username'leri atla
+          if (username.match(/^\d+$/)) return;
+          
+          // Nokta ile başlayan veya biten username'leri atla
+          if (username.startsWith('.') || username.endsWith('.')) return;
+          
+          // Zaten eklenmişse atla
+          if (foundUsernames.has(username)) return;
+          
+          foundUsernames.add(username);
+          advertisers.push({
+            username: username,
+            url: href.startsWith('http') ? href : `https://${href}`,
+            card: adCard,
+            priority: calculatePriority(username, link) // Öncelik skoru
+          });
         }
       }
     });
+    
+    // Önceliğe göre sırala (yüksek öncelik önce)
+    advertisers.sort((a, b) => b.priority - a.priority);
     
     // Eğer link bulunamadıysa, text içinde de ara
     if (advertisers.length === 0) {
@@ -260,19 +286,53 @@
       // "facebook.com/username" pattern'ini ara
       const textMatch = cardText.match(/facebook\.com\/([a-zA-Z0-9._-]+)/);
       if (textMatch && textMatch[1]) {
-        const username = textMatch[1];
-        if (username.length >= 3 && username.length <= 50) {
+        const username = textMatch[1].toLowerCase();
+        if (username.length >= 3 && username.length <= 50 && !invalidUsernames.has(username)) {
           advertisers.push({
             username: username,
             url: `https://www.facebook.com/${username}`,
-            card: adCard
+            card: adCard,
+            priority: 1
           });
-          console.log(`[Panela] Text'ten advertiser bulundu: ${username}`);
         }
       }
     }
     
+    // Sadece en yüksek öncelikli advertiser'ları logla
+    if (advertisers.length > 0) {
+      console.log(`[Panela] ${advertisers.length} advertiser bulundu:`, advertisers.map(a => a.username).join(', '));
+    }
+    
     return advertisers;
+  }
+  
+  // Advertiser öncelik skoru hesapla (daha iyi advertiser'ları öne çıkar)
+  function calculatePriority(username, linkElement) {
+    let priority = 0;
+    
+    // Link metninde username geçiyorsa öncelik artar
+    const linkText = (linkElement.textContent || '').toLowerCase();
+    if (linkText.includes(username)) {
+      priority += 10;
+    }
+    
+    // Link görünür ve tıklanabilir görünüyorsa öncelik artar
+    const style = window.getComputedStyle(linkElement);
+    if (style.display !== 'none' && style.visibility !== 'hidden') {
+      priority += 5;
+    }
+    
+    // Username uzunluğu (çok kısa veya çok uzun olmayanlar)
+    if (username.length >= 4 && username.length <= 20) {
+      priority += 3;
+    }
+    
+    // Nokta içermeyen username'ler (daha güvenilir)
+    if (!username.includes('.')) {
+      priority += 2;
+    }
+    
+    return priority;
   }
 
   // URL'den tarih aralığı ve ülke bilgisini al
@@ -543,9 +603,9 @@
           continue;
         }
         
-        // İlk advertiser'ı kullan (genelde bir kartta bir advertiser olur)
+        // En yüksek öncelikli advertiser'ı kullan (zaten sıralanmış)
         const advertiser = advertisers[0];
-        console.log(`[Panela] Kart ${i + 1}: Advertiser bulundu: ${advertiser.username}`);
+        console.log(`[Panela] Kart ${i + 1}: Advertiser seçildi: ${advertiser.username} (öncelik: ${advertiser.priority})`);
         
         // Advertiser'ı kontrol et - ASYNC BEKLE (sonucu beklemeden 0 dememeli)
         try {
