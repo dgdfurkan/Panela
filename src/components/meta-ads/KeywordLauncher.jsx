@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Check, RotateCcw, History, ExternalLink } from 'lucide-react'
+import { Check, RotateCcw, History, ExternalLink, Calendar, X } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { parseKeywordsFromFile, ensureKeywordsInDatabase } from '../../lib/keywordsLoader'
 import KeywordInput from './KeywordInput'
@@ -19,6 +19,10 @@ export default function KeywordLauncher({ userId }) {
   const [clickedCombos, setClickedCombos] = useState(new Set())
   const [otherUserCombos, setOtherUserCombos] = useState(new Set())
   const [historyModalOpen, setHistoryModalOpen] = useState(false)
+  
+  // Date range state
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
 
   useEffect(() => {
     if (userId) {
@@ -89,7 +93,22 @@ export default function KeywordLauncher({ userId }) {
     const combo = `${keyword}|${countryCode}`
     
     // Create Meta Ads Library URL
-    const url = `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=${countryCode}&q=${encodeURIComponent(keyword)}&search_type=keyword_unordered&media_type=all`
+    let url = `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=${countryCode}&q=${encodeURIComponent(keyword)}&search_type=keyword_unordered&media_type=all`
+    
+    // Add date range if provided
+    if (startDate) {
+      // Convert YYYY-MM-DD to timestamp (Unix timestamp in seconds)
+      const startTimestamp = Math.floor(new Date(startDate).getTime() / 1000)
+      url += `&start_date=${startTimestamp}`
+    }
+    if (endDate) {
+      // Convert YYYY-MM-DD to timestamp (Unix timestamp in seconds)
+      // Set to end of day (23:59:59)
+      const endDateObj = new Date(endDate)
+      endDateObj.setHours(23, 59, 59, 999)
+      const endTimestamp = Math.floor(endDateObj.getTime() / 1000)
+      url += `&end_date=${endTimestamp}`
+    }
     
     // Open in new tab
     window.open(url, '_blank')
@@ -199,6 +218,106 @@ export default function KeywordLauncher({ userId }) {
             Geçmiş
           </button>
         </div>
+        
+        {/* Date Range Selector */}
+        <div
+          style={{
+            padding: '1rem',
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-md)',
+            background: 'white',
+            marginBottom: '1rem'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+            <Calendar size={18} color="var(--color-primary)" />
+            <label style={{ fontSize: '14px', fontWeight: '600', color: 'var(--color-text-main)' }}>
+              Tarih Aralığı (Opsiyonel)
+            </label>
+          </div>
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-end' }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>
+                Başlangıç
+              </label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={e => setStartDate(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.5rem 0.75rem',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: '14px',
+                  background: 'white'
+                }}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>
+                Bitiş
+              </label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={e => setEndDate(e.target.value)}
+                min={startDate || undefined}
+                style={{
+                  width: '100%',
+                  padding: '0.5rem 0.75rem',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: '14px',
+                  background: 'white'
+                }}
+              />
+            </div>
+            {(startDate || endDate) && (
+              <button
+                onClick={() => {
+                  setStartDate('')
+                  setEndDate('')
+                }}
+                style={{
+                  padding: '0.5rem 0.75rem',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'white',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  color: 'var(--color-text-muted)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  height: 'fit-content'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = 'var(--color-error)'
+                  e.currentTarget.style.color = 'var(--color-error)'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = 'var(--color-border)'
+                  e.currentTarget.style.color = 'var(--color-text-muted)'
+                }}
+              >
+                <X size={14} />
+                Temizle
+              </button>
+            )}
+          </div>
+          {(startDate || endDate) && (
+            <div style={{ marginTop: '0.5rem', fontSize: '12px', color: 'var(--color-primary)', fontWeight: '500' }}>
+              {startDate && endDate
+                ? `Aralık: ${new Date(startDate).toLocaleDateString('tr-TR')} - ${new Date(endDate).toLocaleDateString('tr-TR')}`
+                : startDate
+                ? `Başlangıç: ${new Date(startDate).toLocaleDateString('tr-TR')}`
+                : `Bitiş: ${new Date(endDate).toLocaleDateString('tr-TR')}`}
+            </div>
+          )}
+        </div>
+        
         <KeywordInput onAdd={handleAddKeywords} />
       </div>
 
