@@ -306,9 +306,12 @@ export default function Research() {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'transparent',
+          background: 'rgba(0, 0, 0, 0.5)',
           zIndex: 1100,
-          pointerEvents: 'auto'
+          pointerEvents: 'auto',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
         }}
         onClick={async () => {
           setSelectedProduct(null)
@@ -316,11 +319,8 @@ export default function Research() {
         }}
       >
         <div
+          data-modal-container
           style={{
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
             background: 'white',
             borderRadius: '16px',
             width: 'min(95vw, 1000px)',
@@ -345,7 +345,7 @@ export default function Research() {
             overflowY: 'auto',
             overflowX: 'hidden',
             minHeight: 0,
-            maxHeight: '85vh'
+            height: '100%'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
@@ -525,7 +525,7 @@ export default function Research() {
             display: 'flex', 
             flexDirection: 'column', 
             minHeight: 0,
-            maxHeight: '85vh',
+            height: '100%',
             overflow: 'hidden'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', flexShrink: 0 }}>
@@ -886,6 +886,25 @@ export default function Research() {
           }
           .page-container > div > div:last-child > div:last-child {
             height: 600px !important;
+          }
+        }
+        
+        /* Modal responsive styles */
+        @media (max-width: 768px) {
+          [data-modal-container] {
+            grid-template-columns: 1fr !important;
+            grid-template-rows: auto auto !important;
+            height: min(90vh, 600px) !important;
+            max-height: 90vh !important;
+            width: min(95vw, 100%) !important;
+          }
+          [data-modal-container] > div:first-child {
+            border-right: none !important;
+            border-bottom: 1px solid var(--color-border) !important;
+            max-height: 50% !important;
+          }
+          [data-modal-container] > div:last-child {
+            max-height: 50% !important;
           }
         }
       `}</style>
