@@ -71,8 +71,8 @@ export async function searchAdsArchive(opts) {
   const params = new URLSearchParams()
   params.set('search_type', 'KEYWORD_UNORDERED')
   params.set('ad_type', 'ALL')
-  params.set('ad_active_status', ad_active_status.toLowerCase())
-  params.set('media_type', media_type.toLowerCase())
+  params.set('ad_active_status', ad_active_status.toUpperCase())
+  params.set('media_type', media_type.toUpperCase())
   params.set('limit', String(limit))
   params.set('fields', [
     'ad_snapshot_url',
