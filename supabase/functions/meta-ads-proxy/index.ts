@@ -7,26 +7,25 @@ import type { ServeHandler } from 'https://deno.land/std@0.177.0/http/server.ts'
 
 const GRAPH_VERSION = 'v19.0'
 const GRAPH_BASE = `https://graph.facebook.com/${GRAPH_VERSION}`
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey, X-Client-Info, X-Requested-With',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
+}
 
 const handler: ServeHandler = async (req) => {
   // CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', {
       status: 204,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS'
-      }
+      headers: CORS_HEADERS
     })
   }
 
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'POST only' }), {
       status: 405,
-      headers: {
-        'Access-Control-Allow-Origin': '*'
-      }
+      headers: CORS_HEADERS
     })
   }
 
@@ -34,9 +33,7 @@ const handler: ServeHandler = async (req) => {
   if (!token) {
     return new Response(JSON.stringify({ error: 'META_ADS_TOKEN missing' }), {
       status: 500,
-      headers: {
-        'Access-Control-Allow-Origin': '*'
-      }
+      headers: CORS_HEADERS
     })
   }
 
@@ -75,8 +72,7 @@ const handler: ServeHandler = async (req) => {
     status,
     headers: {
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': '*'
+      ...CORS_HEADERS
     }
   })
 }
