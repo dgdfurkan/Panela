@@ -117,6 +117,15 @@ const handler: ServeHandler = async (req) => {
       })
     }
 
+    // Authorization kontrolü - Supabase anon key kontrolü (opsiyonel, public function için)
+    // Not: Supabase Edge Function'ları varsayılan olarak anon key gerektirir
+    // Ama biz public bir proxy yapıyoruz, bu yüzden authorization kontrolünü esnek tutuyoruz
+    const authHeader = req.headers.get('authorization')
+    const apiKeyHeader = req.headers.get('apikey')
+    
+    // Eğer authorization header yoksa ve Supabase anon key de yoksa, yine de devam et
+    // (Public function olarak çalışacak)
+
     // Debug endpoint (opsiyonel)
     const urlPath = new URL(req.url).pathname
     if (urlPath.includes('/debug') && req.method === 'GET') {
