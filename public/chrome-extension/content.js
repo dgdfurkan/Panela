@@ -143,16 +143,58 @@
     return observer;
   }
 
+  // Header'ı scroll'da gizle/göster
+  function setupScrollHide() {
+    let lastScrollTop = 0;
+    let scrollTimeout;
+    const headerSelector = '.x6s0dn4.x9f619.x78zum5.x2lah0s.x5yr21d.xdj266r.x11t971q.xat24cr.xvc5jky.xr8eajr.x1dr75xp.xz9dl7a.xp48ta0.xsag5q8.xtssl2i.x1n2onr6.xh8yej3.x10s2t04.x13tfk3b.x2i0hdy.x1jkuegs';
+    
+    window.addEventListener('scroll', () => {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const header = document.querySelector(headerSelector);
+        
+        if (!header) return;
+        
+        // Scroll threshold - 50px'den fazla scroll yapıldıysa
+        if (scrollTop > 50) {
+          if (scrollTop > lastScrollTop) {
+            // Aşağı scroll - gizle
+            header.classList.remove('panela-header-visible');
+            header.classList.add('panela-header-hidden');
+          } else {
+            // Yukarı scroll - göster
+            header.classList.remove('panela-header-hidden');
+            header.classList.add('panela-header-visible');
+          }
+        } else {
+          // En üstte - her zaman göster
+          header.classList.remove('panela-header-hidden');
+          header.classList.add('panela-header-visible');
+        }
+        
+        lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+      }, 10); // Throttle
+    }, { passive: true });
+  }
+
   // Sayfa yüklendiğinde filtrelemeyi başlat
   function init() {
     // Sayfa tamamen yüklendiğinde bekle
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(filterAds, 1000);
+        setTimeout(() => {
+          filterAds();
+          setupScrollHide();
+        }, 1000);
         setupObserver();
       });
     } else {
-      setTimeout(filterAds, 1000);
+      setTimeout(() => {
+        filterAds();
+        setupScrollHide();
+      }, 1000);
       setupObserver();
     }
 
@@ -163,7 +205,7 @@
       scrollTimeout = setTimeout(() => {
         filterAds();
       }, 500);
-    });
+    }, { passive: true });
   }
 
   // Başlat
