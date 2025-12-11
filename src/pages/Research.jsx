@@ -305,7 +305,10 @@ export default function Research() {
           padding: '1rem',
           zIndex: 1100
         }}
-        onClick={() => setSelectedProduct(null)}
+        onClick={async () => {
+          setSelectedProduct(null)
+          await loadUnreadCounts() // Modal kapandığında badge'leri güncelle
+        }}
       >
         <div
           style={{
