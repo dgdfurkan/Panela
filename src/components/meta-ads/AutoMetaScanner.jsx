@@ -166,30 +166,68 @@ export default function AutoMetaScanner({ onPrefill }) {
 
   return (
     <div className="glass-panel" style={{ padding: '1.25rem', borderRadius: '16px', background: 'white', border: '1px solid var(--color-border)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '1rem' }}>
-        <div>
-          <div className="eyebrow">Otomatik Meta Tarayıcı</div>
-          <h3 style={{ margin: '0.25rem 0', fontSize: '1.25rem' }}>CTA ve 30+ reklam taraması</h3>
-          <p style={{ margin: 0, color: 'var(--color-text-muted)', fontSize: '13px' }}>
-            Ülke/keyword kombinasyonlarını sırayla tarar, “Shop now/Şimdi alışveriş yap” CTA’sı olan ve son 14 günde 30+ reklamı olan sayfaları listeler.
+      <div
+        style={{
+          marginBottom: '1rem',
+          padding: '1rem',
+          borderRadius: '18px',
+          background: 'linear-gradient(135deg, #0f172a, #111827 35%, #1e293b)',
+          border: '1px solid rgba(99,102,241,0.35)',
+          boxShadow: '0 20px 50px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.04)',
+          color: 'white',
+          display: 'grid',
+          gridTemplateColumns: '1fr auto',
+          gap: '1rem',
+          alignItems: 'center'
+        }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <span style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', padding: '0.25rem 0.5rem', borderRadius: '10px', fontSize: '12px', letterSpacing: '0.3px' }}>
+              Otomatik Meta Tarayıcı
+            </span>
+            <span style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.45)', color: '#34d399', padding: '0.25rem 0.5rem', borderRadius: '10px', fontSize: '12px', fontWeight: 700 }}>
+              CTA + 30+ reklam filtresi
+            </span>
+          </div>
+          <h3 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.3px' }}>
+            14 günde “Shop now/Şimdi alışveriş yap” CTA’sı olan sayfaları yakala
+          </h3>
+          <p style={{ margin: 0, color: 'rgba(255,255,255,0.75)', fontSize: '13.5px', lineHeight: 1.5 }}>
+            Ülke + keyword kombinasyonlarını sırayla tarar; CTA yakalayan ve son 14 günde 30+ reklam verenleri öne çıkarır. Listeyi taslağa tek tıkla aktar.
           </p>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
+            <span style={{ background: 'rgba(59,130,246,0.18)', border: '1px solid rgba(59,130,246,0.5)', color: '#93c5fd', padding: '0.25rem 0.6rem', borderRadius: '999px', fontSize: '12px' }}>Kombine tarama</span>
+            <span style={{ background: 'rgba(147,51,234,0.18)', border: '1px solid rgba(147,51,234,0.5)', color: '#c084fc', padding: '0.25rem 0.6rem', borderRadius: '999px', fontSize: '12px' }}>CTA denetimi</span>
+            <span style={{ background: 'rgba(16,185,129,0.2)', border: '1px solid rgba(16,185,129,0.55)', color: '#6ee7b7', padding: '0.25rem 0.6rem', borderRadius: '999px', fontSize: '12px' }}>30+ branding sinyali</span>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          {hasProxy && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '12px', color: 'var(--color-success)', background: 'rgba(16,185,129,0.1)', padding: '0.35rem 0.6rem', borderRadius: '10px', border: '1px solid rgba(16,185,129,0.3)' }}>
-              <Shield size={14} />
-              Proxy aktif (token gizli)
-            </span>
-          )}
-          {hasEnvToken && !hasProxy && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '12px', color: '#2563eb', background: 'rgba(59,130,246,0.1)', padding: '0.35rem 0.6rem', borderRadius: '10px', border: '1px solid rgba(59,130,246,0.3)' }}>
-              <Shield size={14} />
-              Env token kullanılacak
-            </span>
-          )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            {hasProxy && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '12px', color: '#34d399', background: 'rgba(16,185,129,0.12)', padding: '0.35rem 0.6rem', borderRadius: '12px', border: '1px solid rgba(16,185,129,0.4)' }}>
+                <Shield size={14} />
+                Proxy aktif
+              </span>
+            )}
+            {hasEnvToken && !hasProxy && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '12px', color: '#bfdbfe', background: 'rgba(59,130,246,0.18)', padding: '0.35rem 0.6rem', borderRadius: '12px', border: '1px solid rgba(59,130,246,0.4)' }}>
+                <Shield size={14} />
+                Env token
+              </span>
+            )}
+          </div>
           <button
             onClick={() => { setItems([]); setLog([]); }}
-            style={{ padding: '0.55rem 0.9rem', border: '1px solid var(--color-border)', borderRadius: '10px', background: 'white', fontWeight: '600' }}
+            style={{
+              padding: '0.6rem 1rem',
+              border: '1px solid rgba(255,255,255,0.25)',
+              borderRadius: '12px',
+              background: 'rgba(255,255,255,0.08)',
+              color: 'white',
+              fontWeight: 700,
+              boxShadow: '0 10px 25px rgba(0,0,0,0.25)'
+            }}
           >
             Temizle
           </button>
