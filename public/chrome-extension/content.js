@@ -450,15 +450,19 @@
 
   // Scroll ile yeni reklamlar geldiğinde otomatik kontrol
   let lastCheckedCount = 0;
+  let autoCheckTimeout = null;
+  
   function autoCheckNewAds() {
     const currentAds = document.querySelectorAll('[role="article"]:not([style*="display: none"])').length;
     
-    if (currentAds > lastCheckedCount) {
-      // Yeni reklamlar var, kontrol et
-      setTimeout(() => {
-        checkAllAdvertisers();
-        lastCheckedCount = currentAds;
-      }, 2000);
+    if (currentAds > lastCheckedCount && !isCheckingAdvertisers) {
+      // Yeni reklamlar var, kontrol et (debounce ile)
+      clearTimeout(autoCheckTimeout);
+      autoCheckTimeout = setTimeout(() => {
+        checkAllAdvertisers().then(() => {
+          lastCheckedCount = currentAds;
+        });
+      }, 3000); // 3 saniye bekle (kullanıcı scroll ederken sürekli tetiklenmesin)
     }
   }
 
@@ -471,6 +475,12 @@
     childList: true,
     subtree: true
   });
+  
+  // İlk yüklemede de kontrol et
+  setTimeout(() => {
+    const initialAds = document.querySelectorAll('[role="article"]:not([style*="display: none"])').length;
+    lastCheckedCount = initialAds;
+  }, 2000);
 
   // Başlat
   init();
