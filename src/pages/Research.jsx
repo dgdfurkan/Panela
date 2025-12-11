@@ -44,6 +44,18 @@ export default function Research() {
     }
   }, [user?.id])
 
+  // Modal açıldığında body scroll'unu engelle
+  useEffect(() => {
+    if (selectedProduct) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [selectedProduct])
+
   useEffect(() => {
     if (user?.id) {
       loadProducts()
@@ -103,21 +115,28 @@ export default function Research() {
   const loadUnreadCounts = async () => {
     if (!user?.id) return
     try {
-      const { data } = await supabase
-        .from('comment_reads')
-        .select('comment_id, product_comments!inner(product_id)')
-        .eq('user_id', user.id)
-        .eq('read', false)
+      // Tüm yorumları al
+      const { data: allComments } = await supabase
+        .from('product_comments')
+        .select('id, product_id')
       
+      // Bu kullanıcının okuduğu yorumları al
+      const { data: readComments } = await supabase
+        .from('comment_reads')
+        .select('comment_id')
+        .eq('user_id', user.id)
+      
+      const readSet = new Set(readComments?.map(r => r.comment_id) || [])
       const counts = {}
-      if (data) {
-        data.forEach(item => {
-          const productId = item.product_comments?.product_id
-          if (productId) {
-            counts[productId] = (counts[productId] || 0) + 1
+      
+      if (allComments) {
+        allComments.forEach(comment => {
+          if (!readSet.has(comment.id)) {
+            counts[comment.product_id] = (counts[comment.product_id] || 0) + 1
           }
         })
       }
+      
       setUnreadCounts(counts)
     } catch (error) {
       console.error('Error loading unread counts:', error)
@@ -127,6 +146,7 @@ export default function Research() {
   const handleOpenProduct = async (product) => {
     setSelectedProduct(product)
     await loadProductComments(product.id)
+    await loadUnreadCounts() // Badge'leri güncelle
   }
 
   const loadProductComments = async (productId) => {
@@ -337,7 +357,10 @@ export default function Research() {
                   </button>
                 )}
                 <button
-                  onClick={() => setSelectedProduct(null)}
+                  onClick={async () => {
+                    setSelectedProduct(null)
+                    await loadUnreadCounts() // Modal kapandığında badge'leri güncelle
+                  }}
                   style={{
                     border: '1px solid var(--color-border)',
                     background: 'white',
