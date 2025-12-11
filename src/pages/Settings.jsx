@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Save, Loader2, Monitor, List, Clock, Zap, Plus, Trash2, ShieldCheck } from 'lucide-react'
+import { Save, Loader2, Monitor, List, Clock, Zap, Plus, Trash2, ShieldCheck, Download, ExternalLink } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
 
@@ -211,6 +211,29 @@ export default function Settings() {
     const handleDeleteToken = async (id) => {
         const { error } = await supabase.from('ai_tokens').delete().eq('id', id).eq('user_id', user.id)
         if (!error) setTokens((prev) => prev.filter((t) => t.id !== id))
+    }
+
+    const handleDownloadExtension = async () => {
+        try {
+            // Kullanıcıya kurulum talimatlarını göster
+            const confirmed = window.confirm(
+                'Extension\'ı indirmek için:\n\n' +
+                '1. Chrome\'da chrome://extensions/ adresine gidin\n' +
+                '2. "Geliştirici modu"nu açın\n' +
+                '3. "Paketlenmemiş uzantı yükle" butonuna tıklayın\n' +
+                '4. public/chrome-extension klasörünü seçin\n\n' +
+                'Alternatif olarak, klasörü zip\'leyip Chrome Web Store\'a yükleyebilirsiniz.\n\n' +
+                'GitHub repository\'sinde extension klasörüne gitmek ister misiniz?'
+            )
+            
+            if (confirmed) {
+                // GitHub repository linki (kullanıcı kendi repo URL'ini güncelleyebilir)
+                window.open('https://github.com/dgdfurkan/Panela/tree/main/public/chrome-extension', '_blank')
+            }
+        } catch (error) {
+            console.error('Extension indirme hatası:', error)
+            alert('Extension indirilemedi. Lütfen daha sonra tekrar deneyin.')
+        }
     }
 
     if (loading) {
@@ -471,6 +494,75 @@ export default function Settings() {
                                     </button>
                                 </div>
                             ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Chrome Extension */}
+                <div className="glass-panel settings-card">
+                    <div className="card-header">
+                        <Zap className="text-primary" size={24} />
+                        <h3>Chrome Extension</h3>
+                    </div>
+                    <div className="card-content form-layout">
+                        <p className="setting-desc">
+                            Meta Ads Library'de sadece "Shop Now" ve "Şimdi alışveriş yap" butonları olan reklamları gösteren Chrome eklentisi.
+                            Gereksiz reklamları otomatik olarak filtreler ve sonuçları daha kompakt gösterir.
+                        </p>
+                        
+                        <div className="extension-instructions">
+                            <h4 style={{ marginBottom: '1rem', fontSize: '1rem', fontWeight: '600' }}>Kurulum Adımları:</h4>
+                            <ol style={{ paddingLeft: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', color: 'var(--color-text-main)' }}>
+                                <li>Extension'ı indir ve zip dosyasını aç</li>
+                                <li>Chrome'da <code style={{ background: 'rgba(0,0,0,0.05)', padding: '0.2rem 0.4rem', borderRadius: '4px' }}>chrome://extensions/</code> adresine git</li>
+                                <li>Sağ üstte "Geliştirici modu"nu aç</li>
+                                <li>"Paketlenmemiş uzantı yükle" butonuna tıkla</li>
+                                <li>Açılan klasörü seç (chrome-extension klasörü)</li>
+                                <li>Extension aktif olacak ve Meta Ads Library sayfalarında otomatik çalışacak</li>
+                            </ol>
+                        </div>
+
+                        <button 
+                            className="extension-download-btn" 
+                            onClick={handleDownloadExtension}
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                padding: '0.75rem 1.5rem',
+                                borderRadius: '10px',
+                                border: 'none',
+                                background: 'linear-gradient(135deg, var(--color-primary), var(--color-accent))',
+                                color: 'white',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                fontSize: '0.95rem',
+                                transition: 'transform 0.2s, box-shadow 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.target.style.transform = 'translateY(-2px)'
+                                e.target.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.3)'
+                            }}
+                            onMouseLeave={(e) => {
+                                e.target.style.transform = 'translateY(0)'
+                                e.target.style.boxShadow = 'none'
+                            }}
+                        >
+                            <Download size={18} />
+                            Extension'ı İndir
+                        </button>
+
+                        <div style={{ 
+                            marginTop: '1rem', 
+                            padding: '1rem', 
+                            background: 'rgba(139, 92, 246, 0.05)', 
+                            borderRadius: '8px',
+                            border: '1px solid rgba(139, 92, 246, 0.1)'
+                        }}>
+                            <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
+                                <strong>Not:</strong> Extension sadece Meta Ads Library sayfalarında çalışır. 
+                                Sayfayı yenilediğinizde otomatik olarak filtreleme aktif olur.
+                            </p>
                         </div>
                     </div>
                 </div>

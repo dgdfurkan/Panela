@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Panela Ads Library Filter",
+  "version": "1.0.0",
+  "description": "Meta Ads Library'de sadece 'Shop Now' ve 'Şimdi alışveriş yap' butonları olan reklamları gösterir",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://www.facebook.com/ads/library/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://www.facebook.com/ads/library/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "Panela Ads Library Filter"
+  }
+}
