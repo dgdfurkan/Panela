@@ -1,7 +1,7 @@
 import { useAuth } from '../context/AuthContext'
 import KeywordLauncher from '../components/meta-ads/KeywordLauncher'
 import ProductScanner from '../components/meta-ads/ProductScanner'
-import { Search, Zap, Rocket } from 'lucide-react'
+import { Search, Zap, Rocket, Package } from 'lucide-react'
 import AutoMetaScanner from '../components/meta-ads/AutoMetaScanner'
 import { useState, useEffect } from 'react'
 import ProductCard from '../components/meta-ads/ProductCard'
@@ -9,7 +9,7 @@ import { supabase } from '../lib/supabaseClient'
 
 export default function Research() {
   const { user } = useAuth()
-  const [activeTab, setActiveTab] = useState('classic') // classic | auto
+  const [activeTab, setActiveTab] = useState('classic') // classic | auto | products
   const [products, setProducts] = useState([])
   const [productsLoading, setProductsLoading] = useState(true)
   const [unreadCounts, setUnreadCounts] = useState({})
@@ -129,11 +129,29 @@ export default function Research() {
             <Rocket size={16} />
             Otomatik Meta Tarayıcı
           </button>
+          <button
+            onClick={() => setActiveTab('products')}
+            className="primary"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.65rem 1rem',
+              background: activeTab === 'products' ? 'linear-gradient(135deg, #10b981, #059669)' : 'white',
+              color: activeTab === 'products' ? 'white' : 'var(--color-text-main)',
+              border: activeTab === 'products' ? 'none' : '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-md)',
+              boxShadow: activeTab === 'products' ? 'var(--shadow-glow)' : 'none'
+            }}
+          >
+            <Package size={16} />
+            Ürünler
+          </button>
         </div>
 
-        {/* Products Grid - Tab butonlarının altında */}
-        {activeTab === 'classic' && (
-          <div style={{ marginBottom: '1.5rem' }}>
+        {/* Content based on active tab */}
+        {activeTab === 'products' ? (
+          <div>
             {productsLoading ? (
               <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>Yükleniyor...</div>
             ) : products.length === 0 ? (
@@ -152,9 +170,7 @@ export default function Research() {
               </div>
             )}
           </div>
-        )}
-
-        {activeTab === 'auto' ? (
+        ) : activeTab === 'auto' ? (
           <AutoMetaScanner />
         ) : (
           <div
