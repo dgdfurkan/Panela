@@ -9,8 +9,9 @@ const GRAPH_VERSION = 'v19.0'
 const GRAPH_BASE = `https://graph.facebook.com/${GRAPH_VERSION}`
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey, X-Client-Info, X-Requested-With',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
+  'Access-Control-Allow-Headers': 'content-type, authorization, apikey, x-client-info, x-requested-with',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Max-Age': '86400'
 }
 
 const handler: ServeHandler = async (req) => {
