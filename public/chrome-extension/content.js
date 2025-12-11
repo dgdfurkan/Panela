@@ -318,19 +318,24 @@
     `;
     
     if (count >= 25) {
-      // 25+ için renkli badge
+      // 25+ için renkli badge (yeşil gradient)
       badge.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-      badge.textContent = '25+';
+      badge.textContent = count >= 100 ? '100+' : count >= 50 ? '50+' : '25+';
       badge.title = `${count} reklam bulundu - Tıkla ve gör`;
+      badge.style.cursor = 'pointer';
       badge.onclick = (e) => {
         e.stopPropagation();
-        window.open(url, '_blank');
+        e.preventDefault();
+        if (url) {
+          window.open(url, '_blank');
+        }
       };
     } else {
-      // 25 altı için gri badge
+      // 25 altı için gri badge (tıklanamaz)
       badge.style.background = '#94a3b8';
-      badge.textContent = count > 0 ? count : '?';
+      badge.textContent = count > 0 ? count.toString() : '?';
       badge.title = `${count} reklam bulundu`;
+      badge.style.cursor = 'default';
     }
     
     badge.onmouseenter = () => {
