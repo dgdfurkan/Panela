@@ -66,65 +66,53 @@ body > div[role="main"] > div > div {
 }
 
 /* ============================================
-   KOMPAKT ALANLAR - İYİCE DARALTMA
+   KOMPAKT ALANLAR - İYİCE DARALTMA (ULTRA KOMPAKT)
    ============================================ */
 
-/* 1. Filtreler bölümü - ÇOK KOMPAKT */
+/* 1. Filtreler bölümü - ULTRA KOMPAKT */
 .x2izyaf.x78zum5.xl56j7k.xh8yej3[data-cursor-element-id*="cursor-el"],
 div.x2izyaf.x78zum5.xl56j7k.xh8yej3 {
   height: auto !important;
-  min-height: 28px !important;
-  max-height: 35px !important;
-  padding: 0.25rem 0.5rem !important;
-  margin: 0.15rem 0 !important;
+  min-height: 22px !important;
+  max-height: 28px !important;
+  padding: 0.15rem 0.35rem !important;
+  margin: 0.1rem 0 !important;
   overflow: hidden !important;
 }
 
-/* 2. Filtreler içindeki elementleri yan yana diz - ÇOK KOMPAKT */
+/* 2. Filtreler içindeki elementleri yan yana diz - ULTRA KOMPAKT */
 .xuk3077.x78zum5.xdt5ytf.xozqiw3.x2lwn1j.xeuugli.x1iyjqo2.xavht8x,
 div.xuk3077.x78zum5.xdt5ytf.xozqiw3.x2lwn1j.xeuugli.x1iyjqo2.xavht8x {
   display: flex !important;
   flex-direction: row !important;
-  flex-wrap: wrap !important;
+  flex-wrap: nowrap !important;
   align-items: center !important;
-  gap: 0.35rem !important;
+  gap: 0.25rem !important;
   height: auto !important;
-  min-height: 28px !important;
-  max-height: 35px !important;
-  padding: 0.25rem 0.5rem !important;
+  min-height: 22px !important;
+  max-height: 28px !important;
+  padding: 0.15rem 0.35rem !important;
   margin: 0 !important;
   overflow: hidden !important;
 }
 
-/* Filtreler içindeki her bir filtre öğesini ÇOK KOMPAKT yap */
+/* Filtreler içindeki her bir filtre öğesini ULTRA KOMPAKT yap */
 .xuk3077.x78zum5.xdt5ytf.xozqiw3.x2lwn1j.xeuugli.x1iyjqo2.xavht8x > *,
 div.xuk3077.x78zum5.xdt5ytf.xozqiw3.x2lwn1j.xeuugli.x1iyjqo2.xavht8x > * {
   margin: 0 !important;
-  padding: 0.15rem 0.35rem !important;
-  font-size: 0.75rem !important;
-  line-height: 1.1 !important;
+  padding: 0.1rem 0.25rem !important;
+  font-size: 0.7rem !important;
+  line-height: 1.0 !important;
   height: auto !important;
+  white-space: nowrap !important;
 }
 
-/* 3. HeroPlaceholder bölümü - ÇOK DARALT */
+/* 3. HeroPlaceholder bölümü - ULTRA DARALT */
 .xyamay9.xp48ta0.x1l90r2v.xtssl2i[data-cursor-element-id*="cursor-el"],
 div.xyamay9.xp48ta0.x1l90r2v.xtssl2i {
   height: auto !important;
-  min-height: 20px !important;
-  max-height: 28px !important;
-  padding: 0.25rem 0.5rem !important;
-  margin: 0.15rem 0 !important;
-  font-size: 0.8rem !important;
-  line-height: 1.2 !important;
-  overflow: hidden !important;
-}
-
-/* 4. "Yayınlandığı tarih" bölümü - ÇOK DARALT */
-.xdbano7[data-cursor-element-id*="cursor-el"],
-div.xdbano7 {
-  height: auto !important;
-  min-height: 18px !important;
-  max-height: 24px !important;
+  min-height: 16px !important;
+  max-height: 22px !important;
   padding: 0.15rem 0.35rem !important;
   margin: 0.1rem 0 !important;
   font-size: 0.75rem !important;
@@ -132,27 +120,40 @@ div.xdbano7 {
   overflow: hidden !important;
 }
 
-/* 5. Üst arama barı - ÇOK DARALT */
-.x1cy8zhl.x78zum5.xdt5ytf.xozqiw3.x2lwn1j.xeuugli.x1iyjqo2.x1kxxb1g.xyamay9.xp48ta0.x1l90r2v.xtssl2i,
-div.x1cy8zhl.x78zum5.xdt5ytf.xozqiw3.x2lwn1j.xeuugli.x1iyjqo2.x1kxxb1g {
+/* 4. "Yayınlandığı tarih" bölümü - ULTRA DARALT */
+.xdbano7[data-cursor-element-id*="cursor-el"],
+div.xdbano7 {
   height: auto !important;
-  min-height: 32px !important;
-  max-height: 40px !important;
-  padding: 0.35rem 0.5rem !important;
-  margin: 0.15rem 0 !important;
+  min-height: 14px !important;
+  max-height: 20px !important;
+  padding: 0.1rem 0.25rem !important;
+  margin: 0.05rem 0 !important;
+  font-size: 0.7rem !important;
+  line-height: 1.0 !important;
   overflow: hidden !important;
 }
 
-/* Üst arama barı içindeki elementleri ÇOK KOMPAKT yap */
+/* 5. Üst arama barı - ULTRA DARALT */
+.x1cy8zhl.x78zum5.xdt5ytf.xozqiw3.x2lwn1j.xeuugli.x1iyjqo2.x1kxxb1g.xyamay9.xp48ta0.x1l90r2v.xtssl2i,
+div.x1cy8zhl.x78zum5.xdt5ytf.xozqiw3.x2lwn1j.xeuugli.x1iyjqo2.x1kxxb1g {
+  height: auto !important;
+  min-height: 26px !important;
+  max-height: 32px !important;
+  padding: 0.2rem 0.4rem !important;
+  margin: 0.1rem 0 !important;
+  overflow: hidden !important;
+}
+
+/* Üst arama barı içindeki elementleri ULTRA KOMPAKT yap */
 .x1cy8zhl.x78zum5.xdt5ytf.xozqiw3.x2lwn1j.xeuugli.x1iyjqo2.x1kxxb1g.xyamay9.xp48ta0.x1l90r2v.xtssl2i > *,
 div.x1cy8zhl.x78zum5.xdt5ytf.xozqiw3.x2lwn1j.xeuugli.x1iyjqo2.x1kxxb1g > * {
-  margin: 0 0.15rem !important;
-  padding: 0.2rem 0.4rem !important;
-  font-size: 0.8rem !important;
+  margin: 0 0.1rem !important;
+  padding: 0.15rem 0.3rem !important;
+  font-size: 0.75rem !important;
   height: auto !important;
 }
 
-/* Genel kompakt ayarlar - Tüm bu alanlardaki gereksiz boşlukları KALDIR */
+/* Genel kompakt ayarlar - Tüm bu alanlardaki gereksiz boşlukları TAMAMEN KALDIR */
 .x2izyaf.x78zum5.xl56j7k.xh8yej3,
 .xdbano7,
 .xyamay9.xp48ta0.x1l90r2v.xtssl2i,
@@ -160,25 +161,26 @@ div.x1cy8zhl.x78zum5.xdt5ytf.xozqiw3.x2lwn1j.xeuugli.x1iyjqo2.x1kxxb1g > * {
 div.x2izyaf.x78zum5.xl56j7k.xh8yej3,
 div.xdbano7,
 div.xyamay9.xp48ta0.x1l90r2v.xtssl2i {
-  margin-top: 0.1rem !important;
-  margin-bottom: 0.1rem !important;
+  margin-top: 0.05rem !important;
+  margin-bottom: 0.05rem !important;
 }
 
-/* Sağ üstteki elementlerin pozisyonunu koru - SAĞ ORTA */
-[style*="position: absolute"][style*="right"],
-[style*="position: fixed"][style*="right"],
-div[style*="right"] {
-  right: auto !important;
-  left: auto !important;
+/* Sağ üstteki elementlerin pozisyonunu KORU - SAĞ ORTA (ta sola gitmesin) */
+div[style*="position: absolute"]:not([style*="left: 0"]):not([style*="left:0"]),
+div[style*="position: fixed"]:not([style*="left: 0"]):not([style*="left:0"]) {
+  /* Sağ üstteki elementleri koru */
 }
 
-/* Sağ üstteki menü/butonları sağ orta konumda tut */
-div[role="banner"] > div,
-header > div,
-div[data-pagelet*="header"],
-div[style*="justify-content: flex-end"] {
+/* Sağ üstteki menü/butonları sağ orta konumda tut - POZİSYONU BOZMA */
+div[role="banner"] > div:last-child,
+header > div:last-child,
+div[data-pagelet*="header"] > div:last-child,
+div[style*="justify-content: flex-end"],
+div[style*="justify-content:flex-end"] {
   justify-content: flex-end !important;
   align-items: center !important;
+  margin-left: auto !important;
+  margin-right: 0 !important;
 }
 
 /* Responsive tasarım */
