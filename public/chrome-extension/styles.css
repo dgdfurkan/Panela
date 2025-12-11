@@ -24,12 +24,6 @@ body > div[role="main"] > div > div {
   padding: 1rem !important;
 }
 
-/* Scroll davranışını bozma - SADECE görsel değişiklikler */
-html, body {
-  overflow: auto !important;
-  scroll-behavior: auto !important;
-}
-
 /* Kompakt görünüm için font boyutlarını ayarla */
 [role="article"]:not([style*="display: none"]) * {
   font-size: 0.9rem !important;
@@ -187,37 +181,6 @@ div[style*="justify-content:flex-end"] {
   align-items: center !important;
   margin-left: auto !important;
   margin-right: 0 !important;
-}
-
-/* ============================================
-   ÜST FİLTRE/BİLGİ ALANLARI - ULTRA KOMPAKT + SCROLL HIDE
-   ============================================ */
-
-/* Üst filtre/bilgi container'ı - ULTRA DARALT */
-div.x8bgqxi.x1n2onr6,
-div.x12peec7.x9f619.x78zum5.xdt5ytf > div.x8bgqxi.x1n2onr6 {
-  transition: transform 0.3s ease-out, opacity 0.3s ease-out !important;
-  will-change: transform, opacity !important;
-}
-
-/* Scroll'da üst alan gizleme - ALAN AÇILSIN (silinmiş gibi) */
-.panela-top-hidden {
-  transform: translateY(-100%) !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  position: relative !important;
-  z-index: 1 !important;
-  height: auto !important;
-  max-height: none !important;
-}
-
-/* Scroll'da üst alan göster */
-.panela-top-visible {
-  transform: translateY(0) !important;
-  opacity: 1 !important;
-  pointer-events: auto !important;
-  height: auto !important;
-  max-height: none !important;
 }
 
 /* Responsive tasarım */
