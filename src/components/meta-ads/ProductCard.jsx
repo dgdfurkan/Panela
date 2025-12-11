@@ -59,7 +59,7 @@ export default function ProductCard({ product, onEdit }) {
               whiteSpace: 'nowrap'
             }}
           >
-            {product.product_name}
+            {product.product_name || 'İsimsiz Ürün'}
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '14px' }}>

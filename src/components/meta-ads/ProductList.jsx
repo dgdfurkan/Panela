@@ -65,7 +65,7 @@ export default function ProductList({ products, onEdit }) {
                   whiteSpace: 'nowrap'
                 }}
               >
-                {product.product_name}
+                {product.product_name || 'İsimsiz Ürün'}
               </h3>
               <div style={{ display: 'flex', gap: '1rem', fontSize: '13px', color: 'var(--color-text-muted)' }}>
                 <span>Reklam: {product.ad_count || 0}</span>

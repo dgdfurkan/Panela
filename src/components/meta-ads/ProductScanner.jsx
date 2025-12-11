@@ -68,8 +68,21 @@ export default function ProductScanner({ userId }) {
   }
 
   const handleSave = async () => {
-    if (!formData.product_name.trim()) {
-      alert('Ürün adı gereklidir')
+    // Validation: Meta Link, Ad Count, and all 5 criteria are required
+    if (!formData.meta_link.trim()) {
+      alert('Meta Linki gereklidir')
+      return
+    }
+
+    if (!formData.ad_count || parseInt(formData.ad_count) < 0) {
+      alert('Reklam Sayısı gereklidir')
+      return
+    }
+
+    // Check if all 5 criteria are filled (must be > 0)
+    const allCriteriaFilled = Object.values(formData.scores).every(score => score > 0)
+    if (!allCriteriaFilled) {
+      alert('Tüm kriterler (İnovatif, Hafif, Varyasyon, Sorun Çözme, Görsel Satış) doldurulmalıdır')
       return
     }
 
@@ -80,13 +93,13 @@ export default function ProductScanner({ userId }) {
 
       const productData = {
         user_id: userId,
-        product_name: formData.product_name,
-        meta_link: formData.meta_link || null,
-        image_url: formData.image_url || null,
-        ad_count: parseInt(formData.ad_count) || 0,
+        product_name: formData.product_name.trim() || null,
+        meta_link: formData.meta_link.trim(),
+        image_url: formData.image_url.trim() || null,
+        ad_count: parseInt(formData.ad_count),
         scores,
         potential_score: parseFloat(potential_score.toFixed(2)),
-        notes: formData.notes || null
+        notes: formData.notes.trim() || null
       }
 
       if (editingProduct) {
@@ -168,9 +181,9 @@ export default function ProductScanner({ userId }) {
   const potentialScore = Object.values(formData.scores).reduce((a, b) => a + b, 0) / Object.values(formData.scores).length
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
-      <div style={{ marginBottom: '1.5rem' }}>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* Header - Fixed */}
+      <div style={{ flexShrink: 0, marginBottom: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
           <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700' }}>Hızlı Analiz ve Kayıt</h2>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -207,7 +220,7 @@ export default function ProductScanner({ userId }) {
           </div>
         </div>
 
-        {/* Quick Add Form */}
+        {/* Quick Add Form - Scrollable */}
         <div
           id="product-form"
           style={{
@@ -215,12 +228,14 @@ export default function ProductScanner({ userId }) {
             border: '1px solid var(--color-border)',
             borderRadius: 'var(--radius-md)',
             background: 'white',
-            marginBottom: '1.5rem'
+            marginBottom: '1rem',
+            maxHeight: '60vh',
+            overflowY: 'auto'
           }}
         >
           {editingProduct && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid var(--color-border)' }}>
-              <span style={{ fontWeight: '600', color: 'var(--color-primary)' }}>Düzenleniyor: {editingProduct.product_name}</span>
+              <span style={{ fontWeight: '600', color: 'var(--color-primary)' }}>Düzenleniyor: {editingProduct.product_name || 'İsimsiz Ürün'}</span>
               <button
                 onClick={() => {
                   setEditingProduct(null)
@@ -299,7 +314,7 @@ export default function ProductScanner({ userId }) {
             {/* Product Name */}
             <div>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '14px', fontWeight: '500' }}>
-                Ürün Adı *
+                Ürün Adı (Opsiyonel)
               </label>
               <input
                 type="text"
@@ -319,17 +334,18 @@ export default function ProductScanner({ userId }) {
             {/* Meta Link */}
             <div>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '14px', fontWeight: '500' }}>
-                Meta Linki
+                Meta Linki *
               </label>
               <input
                 type="text"
                 value={formData.meta_link}
                 onChange={e => setFormData(prev => ({ ...prev, meta_link: e.target.value }))}
                 placeholder="https://www.facebook.com/ads/library/..."
+                required
                 style={{
                   width: '100%',
                   padding: '0.65rem 0.75rem',
-                  border: '1px solid var(--color-border)',
+                  border: `1px solid ${!formData.meta_link.trim() ? 'var(--color-error)' : 'var(--color-border)'}`,
                   borderRadius: 'var(--radius-md)',
                   fontSize: '14px'
                 }}
@@ -339,7 +355,7 @@ export default function ProductScanner({ userId }) {
             {/* Ad Count */}
             <div>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '14px', fontWeight: '500' }}>
-                Reklam Sayısı
+                Reklam Sayısı *
               </label>
               <div style={{ position: 'relative' }}>
                 <input
@@ -347,10 +363,12 @@ export default function ProductScanner({ userId }) {
                   value={formData.ad_count}
                   onChange={e => setFormData(prev => ({ ...prev, ad_count: e.target.value }))}
                   placeholder="0"
+                  required
+                  min="0"
                   style={{
                     width: '100%',
                     padding: '0.65rem 0.75rem',
-                    border: `2px solid ${hasBrandingSignal ? 'var(--color-success)' : 'var(--color-border)'}`,
+                    border: `2px solid ${hasBrandingSignal ? 'var(--color-success)' : (!formData.ad_count || parseInt(formData.ad_count) < 0) ? 'var(--color-error)' : 'var(--color-border)'}`,
                     borderRadius: 'var(--radius-md)',
                     fontSize: '14px',
                     transition: 'border var(--transition-fast)'
@@ -381,7 +399,7 @@ export default function ProductScanner({ userId }) {
               {CRITERIA.map(criterion => (
                 <StarRating
                   key={criterion.key}
-                  label={criterion.label}
+                  label={`${criterion.label} *`}
                   value={formData.scores[criterion.key]}
                   onChange={value => handleScoreChange(criterion.key, value)}
                 />
@@ -438,7 +456,7 @@ export default function ProductScanner({ userId }) {
             {/* Save Button */}
             <button
               onClick={handleSave}
-              disabled={saving || !formData.product_name.trim()}
+              disabled={saving || !formData.meta_link.trim() || !formData.ad_count || !Object.values(formData.scores).every(s => s > 0)}
               className="primary"
               style={{
                 padding: '0.75rem 1.5rem',
@@ -449,7 +467,9 @@ export default function ProductScanner({ userId }) {
                 fontWeight: '600',
                 fontSize: '15px',
                 background: 'linear-gradient(135deg, var(--color-primary), var(--color-accent))',
-                boxShadow: 'var(--shadow-glow)'
+                boxShadow: 'var(--shadow-glow)',
+                opacity: (!formData.meta_link.trim() || !formData.ad_count || !Object.values(formData.scores).every(s => s > 0)) ? 0.5 : 1,
+                cursor: (!formData.meta_link.trim() || !formData.ad_count || !Object.values(formData.scores).every(s => s > 0)) ? 'not-allowed' : 'pointer'
               }}
             >
               <Save size={18} />
@@ -459,8 +479,8 @@ export default function ProductScanner({ userId }) {
         </div>
       </div>
 
-      {/* Products List */}
-      <div style={{ flex: 1, overflowY: 'auto' }}>
+      {/* Products List - Scrollable */}
+      <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
         {loading ? (
           <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>
             Yükleniyor...
