@@ -6,6 +6,7 @@ import AutoMetaScanner from '../components/meta-ads/AutoMetaScanner'
 import { useState, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import ProductCard from '../components/meta-ads/ProductCard'
+import StarRating from '../components/meta-ads/StarRating'
 import { supabase } from '../lib/supabaseClient'
 
 const CRITERIA = [
@@ -456,10 +457,12 @@ export default function Research() {
               {CRITERIA.map(c => {
                 const value = (selectedProduct.scores && selectedProduct.scores[c.key]) || 0
                 return (
-                  <div key={c.key} style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', padding: '0.5rem', border: '1px solid var(--color-border)', borderRadius: '10px', background: 'var(--color-background)' }}>
-                    <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', fontWeight: '700' }}>{c.label}</span>
-                    <span style={{ fontWeight: '700', fontSize: '13px' }}>{value || 0}/5</span>
-                  </div>
+                  <StarRating
+                    key={c.key}
+                    label={c.label}
+                    value={value}
+                    disabled={true}
+                  />
                 )
               })}
             </div>
