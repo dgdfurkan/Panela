@@ -203,22 +203,40 @@
   // ADVERTISER KONTROL SİSTEMİ
   // ============================================
 
-  // Advertiser linklerini bul
+  // Advertiser linklerini bul - Daha geniş arama
   function findAdvertiserLinks(adCard) {
-    const links = adCard.querySelectorAll('a[href*="facebook.com/"]');
+    // Tüm linkleri bul
+    const allLinks = adCard.querySelectorAll('a[href*="facebook.com"]');
     const advertisers = [];
+    const foundUsernames = new Set();
     
-    links.forEach(link => {
+    allLinks.forEach(link => {
       const href = link.getAttribute('href');
-      if (href && href.includes('facebook.com/') && !href.includes('/ads/library')) {
+      if (!href) return;
+      
+      // Facebook sayfa linklerini bul (ads/library hariç)
+      if (href.includes('facebook.com/') && 
+          !href.includes('/ads/library') && 
+          !href.includes('/login') &&
+          !href.includes('/help') &&
+          !href.includes('/privacy') &&
+          !href.includes('/terms')) {
+        
         // URL'den advertiser username'ini çıkar
-        const match = href.match(/facebook\.com\/([^\/\?]+)/);
-        if (match && match[1] && match[1] !== 'www' && match[1] !== 'ads') {
-          advertisers.push({
-            username: match[1],
-            url: href,
-            card: adCard
-          });
+        let match = href.match(/facebook\.com\/([^\/\?&#]+)/);
+        if (match && match[1]) {
+          const username = match[1];
+          
+          // Geçersiz username'leri filtrele
+          const invalid = ['www', 'ads', 'login', 'help', 'privacy', 'terms', 'about', 'pages', 'groups', 'events', 'watch'];
+          if (!invalid.includes(username.toLowerCase()) && !foundUsernames.has(username)) {
+            foundUsernames.add(username);
+            advertisers.push({
+              username: username,
+              url: href.startsWith('http') ? href : `https://${href}`,
+              card: adCard
+            });
+          }
         }
       }
     });
@@ -384,48 +402,108 @@
     return 0;
   }
 
+  // Kontrol durumu
+  let isPaused = false;
+  let currentIndex = 0;
+  let allAdvertisers = [];
+  
   // Sayfadaki tüm reklamları kontrol et
   async function checkAllAdvertisers() {
-    if (isCheckingAdvertisers) return;
-    isCheckingAdvertisers = true;
+    if (isCheckingAdvertisers && !isPaused) return;
+    
+    // Eğer pause edilmişse ve devam ediliyorsa
+    if (isPaused) {
+      isPaused = false;
+    } else {
+      isCheckingAdvertisers = true;
+      currentIndex = 0;
+      allAdvertisers = [];
+    }
     
     try {
       const params = getCurrentSearchParams();
-      const adCards = document.querySelectorAll('[role="article"]:not([style*="display: none"])');
+      
+      // Sadece görünür reklam kartlarını al (Shop Now/Şimdi alışveriş yap olanlar)
+      const adCards = Array.from(document.querySelectorAll('[role="article"]')).filter(card => {
+        return card.style.display !== 'none' && hasTargetButton(card);
+      });
+      
+      console.log(`[Panela] ${adCards.length} reklam kartı bulundu`);
+      
+      // Tüm advertiser'ları topla
+      if (allAdvertisers.length === 0) {
+        adCards.forEach((card, cardIndex) => {
+          const advertisers = findAdvertiserLinks(card);
+          advertisers.forEach(advertiser => {
+            allAdvertisers.push({
+              ...advertiser,
+              cardIndex,
+              card
+            });
+          });
+        });
+      }
+      
+      console.log(`[Panela] ${allAdvertisers.length} advertiser bulundu`);
       
       let checked = 0;
       let highCount = 0;
       let lowCount = 0;
       
-      for (const card of adCards) {
-        const advertisers = findAdvertiserLinks(card);
-        
-        for (const advertiser of advertisers) {
-          const result = await checkAdvertiser(advertiser, params);
-          
-          if (result) {
-            checked++;
-            const count = result.count || 0;
-            
-            if (count >= 25) {
-              highCount++;
-              addBadge(card, count, result.url);
-            } else if (count > 0) {
-              lowCount++;
-              addBadge(card, count, result.url);
-            }
-          }
-          
-          // Rate limiting - her kontrol arasında kısa bekleme
-          await new Promise(resolve => setTimeout(resolve, 200));
+      // Kaldığı yerden devam et
+      for (let i = currentIndex; i < allAdvertisers.length; i++) {
+        if (isPaused) {
+          currentIndex = i;
+          return {
+            success: true,
+            paused: true,
+            checked,
+            highCount,
+            lowCount,
+            total: allAdvertisers.length,
+            current: i
+          };
         }
+        
+        const item = allAdvertisers[i];
+        const result = await checkAdvertiser(item, params);
+        
+        if (result) {
+          checked++;
+          const count = result.count || 0;
+          
+          if (count >= 25) {
+            highCount++;
+            addBadge(item.card, count, result.url);
+          } else if (count > 0) {
+            lowCount++;
+            addBadge(item.card, count, result.url);
+          }
+        }
+        
+        // Progress güncelle
+        const progress = Math.round(((i + 1) / allAdvertisers.length) * 100);
+        chrome.runtime.sendMessage({
+          action: 'updateProgress',
+          progress,
+          current: i + 1,
+          total: allAdvertisers.length
+        }).catch(() => {}); // Popup kapalıysa hata vermesin
+        
+        // Rate limiting - her kontrol arasında kısa bekleme
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
+      
+      // Tamamlandı
+      currentIndex = 0;
+      allAdvertisers = [];
       
       return {
         success: true,
         checked,
         highCount,
-        lowCount
+        lowCount,
+        total: allAdvertisers.length
       };
     } catch (error) {
       console.error('[Panela] Kontrol hatası:', error);
@@ -437,6 +515,18 @@
       isCheckingAdvertisers = false;
     }
   }
+  
+  // Kontrolü durdur
+  function pauseChecking() {
+    isPaused = true;
+  }
+  
+  // Kontrolü devam ettir
+  function resumeChecking() {
+    if (isPaused) {
+      checkAllAdvertisers();
+    }
+  }
 
   // Popup'tan gelen mesajları dinle
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -445,6 +535,28 @@
         sendResponse(result);
       });
       return true; // Async response
+    }
+    
+    if (request.action === 'pauseChecking') {
+      pauseChecking();
+      sendResponse({ success: true });
+      return true;
+    }
+    
+    if (request.action === 'resumeChecking') {
+      resumeChecking();
+      sendResponse({ success: true });
+      return true;
+    }
+    
+    if (request.action === 'getStatus') {
+      sendResponse({
+        isChecking: isCheckingAdvertisers,
+        isPaused: isPaused,
+        current: currentIndex,
+        total: allAdvertisers.length
+      });
+      return true;
     }
   });
 

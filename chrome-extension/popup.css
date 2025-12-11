@@ -85,6 +85,44 @@ body {
   font-size: 1.1rem;
 }
 
+.control-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.control-btn {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.pause-btn {
+  background: #f59e0b;
+  color: white;
+}
+
+.pause-btn:hover {
+  background: #d97706;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.resume-btn {
+  background: #10b981;
+  color: white;
+}
+
+.resume-btn:hover {
+  background: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
 .progress-container {
   display: flex;
   flex-direction: column;
