@@ -1,6 +1,7 @@
 const GRAPH_API_VERSION = 'v19.0'
 const GRAPH_BASE = `https://graph.facebook.com/${GRAPH_API_VERSION}`
 const PROXY_URL = import.meta.env.VITE_META_PROXY_URL || ''
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
@@ -90,7 +91,15 @@ export async function searchAdsArchive(opts) {
   if (PROXY_URL) {
     const res = await fetch(PROXY_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(SUPABASE_ANON_KEY
+          ? {
+              apikey: SUPABASE_ANON_KEY,
+              Authorization: `Bearer ${SUPABASE_ANON_KEY}`
+            }
+          : {})
+      },
       body: JSON.stringify({
         action: 'search',
         query: Object.fromEntries(params),
@@ -130,7 +139,15 @@ export async function countPageAds({ page_id, since, until, accessToken, limit =
   if (PROXY_URL) {
     const res = await fetch(PROXY_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(SUPABASE_ANON_KEY
+          ? {
+              apikey: SUPABASE_ANON_KEY,
+              Authorization: `Bearer ${SUPABASE_ANON_KEY}`
+            }
+          : {})
+      },
       body: JSON.stringify({
         action: 'count',
         query: Object.fromEntries(params)
