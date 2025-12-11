@@ -4,6 +4,7 @@ import ProductScanner from '../components/meta-ads/ProductScanner'
 import { Search, Zap, Rocket, Package, MessageSquare, Trash2, Filter, X } from 'lucide-react'
 import AutoMetaScanner from '../components/meta-ads/AutoMetaScanner'
 import { useState, useEffect, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import ProductCard from '../components/meta-ads/ProductCard'
 import { supabase } from '../lib/supabaseClient'
 
@@ -298,19 +299,18 @@ export default function Research() {
       })
     }
 
-    return (
-      <>
+    return createPortal(
+      <div
+        className="product-modal-overlay"
+        onClick={async () => {
+          setSelectedProduct(null)
+          await loadUnreadCounts() // Modal kapandığında badge'leri güncelle
+        }}
+      >
         <div
-          className="product-modal-overlay"
-          onClick={async () => {
-            setSelectedProduct(null)
-            await loadUnreadCounts() // Modal kapandığında badge'leri güncelle
-          }}
+          className="product-modal-container"
+          onClick={e => e.stopPropagation()}
         >
-          <div
-            className="product-modal-container"
-            onClick={e => e.stopPropagation()}
-          >
           {/* Left: product info */}
           <div style={{ 
             padding: '1.5rem', 
@@ -565,61 +565,67 @@ export default function Research() {
             </div>
           </div>
         </div>
-        </div>
         <style>{`
           .product-modal-overlay {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: 0 !important;
-            width: 100% !important;
-            height: 100% !important;
-            background: transparent !important;
-            z-index: 9999 !important;
-            pointer-events: auto !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            margin: 0 !important;
-            padding: 0 !important;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            animation: fadeIn 0.3s ease-out;
           }
           
           .product-modal-container {
-            position: relative !important;
-            background: white !important;
-            border-radius: 16px !important;
-            width: min(95vw, 1000px) !important;
-            max-width: 1000px !important;
-            height: min(85vh, 700px) !important;
-            max-height: 85vh !important;
-            overflow: hidden !important;
-            display: grid !important;
-            grid-template-columns: 1.2fr 0.8fr !important;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3) !important;
-            pointer-events: auto !important;
-            margin: auto !important;
+            position: relative;
+            background: white;
+            border-radius: 16px;
+            width: min(95vw, 1000px);
+            max-width: 1000px;
+            height: min(85vh, 700px);
+            max-height: 85vh;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            box-shadow: 0 25px 80px -12px rgba(0, 0, 0, 0.4);
+            pointer-events: auto;
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+          }
+          
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          
+          @keyframes slideUp {
+            from { transform: translateY(20px) scale(0.98); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
           }
           
           @media (max-width: 768px) {
             .product-modal-container {
-              grid-template-columns: 1fr !important;
-              grid-template-rows: auto auto !important;
-              height: min(90vh, 600px) !important;
-              max-height: 90vh !important;
-              width: min(95vw, 100%) !important;
+              grid-template-columns: 1fr;
+              grid-template-rows: auto auto;
+              height: min(90vh, 600px);
+              max-height: 90vh;
+              width: min(95vw, 100%);
             }
             .product-modal-container > div:first-child {
-              border-right: none !important;
-              border-bottom: 1px solid var(--color-border) !important;
-              max-height: 50% !important;
+              border-right: none;
+              border-bottom: 1px solid var(--color-border);
+              max-height: 50%;
             }
             .product-modal-container > div:last-child {
-              max-height: 50% !important;
+              max-height: 50%;
             }
           }
         `}</style>
-      </>
+      </div>,
+      document.body
     )
   }
 
