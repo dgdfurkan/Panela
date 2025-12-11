@@ -1,0 +1,74 @@
+/* Panela Ads Library Filter - Styles */
+
+/* Filtrelenmiş reklam kartlarını daha kompakt göster */
+[role="article"]:not([style*="display: none"]) {
+  margin-bottom: 1rem !important;
+  padding: 0.75rem !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  background: white !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Gereksiz boşlukları kaldır */
+[role="article"]:not([style*="display: none"]) > div {
+  padding: 0.5rem !important;
+}
+
+/* Reklam kartlarını grid'de göster */
+body > div[role="main"] > div,
+body > div[role="main"] > div > div {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
+  gap: 1rem !important;
+  padding: 1rem !important;
+}
+
+/* Kompakt görünüm için font boyutlarını ayarla */
+[role="article"]:not([style*="display: none"]) * {
+  font-size: 0.9rem !important;
+  line-height: 1.4 !important;
+}
+
+/* Butonları vurgula */
+[role="article"]:not([style*="display: none"]) button,
+[role="article"]:not([style*="display: none"]) a[role="button"] {
+  background: linear-gradient(135deg, #8B5CF6, #F472B6) !important;
+  color: white !important;
+  padding: 0.5rem 1rem !important;
+  border-radius: 6px !important;
+  font-weight: 600 !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: transform 0.2s !important;
+}
+
+[role="article"]:not([style*="display: none"]) button:hover,
+[role="article"]:not([style*="display: none"]) a[role="button"]:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 8px rgba(139, 92, 246, 0.3) !important;
+}
+
+/* Görselleri optimize et */
+[role="article"]:not([style*="display: none"]) img {
+  max-width: 100% !important;
+  height: auto !important;
+  border-radius: 6px !important;
+  object-fit: cover !important;
+}
+
+/* Gizlenen elementleri tamamen kaldır (performans) */
+[style*="display: none"] {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Responsive tasarım */
+@media (max-width: 768px) {
+  body > div[role="main"] > div,
+  body > div[role="main"] > div > div {
+    grid-template-columns: 1fr !important;
+  }
+}
