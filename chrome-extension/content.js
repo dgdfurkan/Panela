@@ -437,166 +437,199 @@
     return 0;
   }
 
-  // Kontrol durumu
+  // Kontrol durumu - Sıralı kart kontrolü için
   let isPaused = false;
-  let currentIndex = 0;
-  let allAdvertisers = [];
+  let currentCardIndex = 0;
+  let adCardsList = [];
+  let checkedCount = 0;
+  let highCount = 0;
+  let lowCount = 0;
   
-  // Sayfadaki tüm reklamları kontrol et
+  // Sayfadaki tüm reklamları kontrol et - İlk karttan başlayarak sıralı
   async function checkAllAdvertisers() {
-    if (isCheckingAdvertisers && !isPaused) return;
+    if (isCheckingAdvertisers && !isPaused) {
+      console.log('[Panela] Zaten kontrol ediliyor...');
+      return;
+    }
     
     // Eğer pause edilmişse ve devam ediliyorsa
     if (isPaused) {
       isPaused = false;
+      console.log('[Panela] Kontrol devam ediyor...');
     } else {
+      // Yeni kontrol başlat
       isCheckingAdvertisers = true;
-      currentIndex = 0;
-      allAdvertisers = [];
+      currentCardIndex = 0;
+      adCardsList = [];
+      checkedCount = 0;
+      highCount = 0;
+      lowCount = 0;
+      
+      // Progress'i sıfırla
+      chrome.runtime.sendMessage({
+        action: 'updateProgress',
+        checked: 0,
+        highCount: 0,
+        lowCount: 0,
+        total: 0,
+        current: 0
+      }).catch(() => {});
     }
     
     try {
       const params = getCurrentSearchParams();
+      console.log('[Panela] Arama parametreleri:', params);
       
-      // Sadece görünür reklam kartlarını al (Shop Now/Şimdi alışveriş yap olanlar)
-      let adCards = Array.from(document.querySelectorAll('[role="article"]')).filter(card => {
-        return card.style.display !== 'none' && hasTargetButton(card);
-      });
-      
-      console.log(`[Panela] İlk aramada ${adCards.length} reklam kartı bulundu (role="article")`);
-      
-      // Eğer article bulunamazsa, alternatif selector'lar dene
-      if (adCards.length === 0) {
-        // Tüm div'leri kontrol et
-        const allDivs = document.querySelectorAll('div');
-        adCards = Array.from(allDivs).filter(card => {
-          // Görünür mü?
-          if (card.style.display === 'none' || card.offsetHeight === 0) return false;
-          
-          // Reklam içeriği var mı?
-          const hasImage = card.querySelector('img');
-          const hasAdContent = hasImage || card.textContent.length > 100;
-          
-          // Shop Now butonu var mı?
-          const hasButton = hasTargetButton(card);
-          
-          return hasAdContent && hasButton;
+      // Eğer reklam kartları henüz toplanmadıysa, topla
+      if (adCardsList.length === 0) {
+        // Sadece görünür reklam kartlarını al (Shop Now/Şimdi alışveriş yap olanlar)
+        let adCards = Array.from(document.querySelectorAll('[role="article"]')).filter(card => {
+          return card.style.display !== 'none' && hasTargetButton(card);
         });
         
-        console.log(`[Panela] Alternatif aramada ${adCards.length} reklam kartı bulundu`);
-      }
-      
-      console.log(`[Panela] Toplam ${adCards.length} reklam kartı bulundu`);
-      
-      // Debug: İlk 3 kartı incele
-      adCards.slice(0, 3).forEach((card, cardIdx) => {
-        const links = card.querySelectorAll('a[href]');
-        console.log(`[Panela] Kart ${cardIdx}: ${links.length} link bulundu`);
-        links.forEach((link, idx) => {
-          const href = link.getAttribute('href');
-          if (href && href.includes('facebook.com')) {
-            console.log(`[Panela] Kart ${cardIdx} - Link ${idx}: ${href}`);
-          }
-        });
-      });
-      
-      // Tüm advertiser'ları topla
-      if (allAdvertisers.length === 0) {
-        adCards.forEach((card, cardIndex) => {
-          const advertisers = findAdvertiserLinks(card);
-          if (advertisers.length > 0) {
-            console.log(`[Panela] Kart ${cardIndex}: ${advertisers.length} advertiser bulundu`, advertisers.map(a => a.username));
-          }
-          advertisers.forEach(advertiser => {
-            allAdvertisers.push({
-              ...advertiser,
-              cardIndex,
-              card
-            });
+        console.log(`[Panela] İlk aramada ${adCards.length} reklam kartı bulundu (role="article")`);
+        
+        // Eğer article bulunamazsa, alternatif selector'lar dene
+        if (adCards.length === 0) {
+          // Tüm div'leri kontrol et
+          const allDivs = document.querySelectorAll('div');
+          adCards = Array.from(allDivs).filter(card => {
+            // Görünür mü?
+            if (card.style.display === 'none' || card.offsetHeight === 0) return false;
+            
+            // Reklam içeriği var mı?
+            const hasImage = card.querySelector('img');
+            const hasAdContent = hasImage || card.textContent.length > 100;
+            
+            // Shop Now butonu var mı?
+            const hasButton = hasTargetButton(card);
+            
+            return hasAdContent && hasButton;
           });
-        });
+          
+          console.log(`[Panela] Alternatif aramada ${adCards.length} reklam kartı bulundu`);
+        }
+        
+        adCardsList = adCards;
+        console.log(`[Panela] Toplam ${adCardsList.length} reklam kartı bulundu`);
       }
       
-      console.log(`[Panela] Toplam ${allAdvertisers.length} advertiser bulundu:`, allAdvertisers.map(a => a.username));
-      
-      let checked = 0;
-      let highCount = 0;
-      let lowCount = 0;
-      
-      // Kaldığı yerden devam et
-      for (let i = currentIndex; i < allAdvertisers.length; i++) {
+      // İlk karttan başlayarak sırayla kontrol et
+      for (let i = currentCardIndex; i < adCardsList.length; i++) {
+        // Pause kontrolü
         if (isPaused) {
-          currentIndex = i;
+          currentCardIndex = i;
+          console.log(`[Panela] Kontrol duraklatıldı. Kart ${i + 1}/${adCardsList.length}`);
           return {
             success: true,
             paused: true,
-            checked,
+            checked: checkedCount,
             highCount,
             lowCount,
-            total: allAdvertisers.length,
-            current: i
+            total: adCardsList.length,
+            current: i + 1
           };
         }
         
-        const item = allAdvertisers[i];
-        const result = await checkAdvertiser(item, params);
+        const card = adCardsList[i];
+        console.log(`[Panela] Kart ${i + 1}/${adCardsList.length} kontrol ediliyor...`);
         
-        if (result) {
-          checked++;
-          const count = result.count || 0;
-          
-          if (count >= 25) {
-            highCount++;
-            addBadge(item.card, count, result.url);
-          } else if (count > 0) {
-            lowCount++;
-            addBadge(item.card, count, result.url);
-          }
+        // Bu kart için advertiser linklerini bul
+        const advertisers = findAdvertiserLinks(card);
+        
+        if (advertisers.length === 0) {
+          console.log(`[Panela] Kart ${i + 1}: Advertiser bulunamadı`);
+          // Advertiser bulunamadıysa bir sonraki karta geç
+          continue;
         }
         
-        // Progress güncelle
-        const progress = Math.round(((i + 1) / allAdvertisers.length) * 100);
-        chrome.runtime.sendMessage({
-          action: 'updateProgress',
-          progress,
-          current: i + 1,
-          total: allAdvertisers.length
-        }).catch(() => {}); // Popup kapalıysa hata vermesin
+        // İlk advertiser'ı kullan (genelde bir kartta bir advertiser olur)
+        const advertiser = advertisers[0];
+        console.log(`[Panela] Kart ${i + 1}: Advertiser bulundu: ${advertiser.username}`);
         
-        // Rate limiting - her kontrol arasında kısa bekleme
-        await new Promise(resolve => setTimeout(resolve, 300));
+        // Advertiser'ı kontrol et - ASYNC BEKLE (sonucu beklemeden 0 dememeli)
+        try {
+          const result = await checkAdvertiser(advertiser, params);
+          
+          if (result && result.count !== undefined) {
+            checkedCount++;
+            const count = result.count;
+            
+            console.log(`[Panela] Kart ${i + 1}: ${advertiser.username} - ${count} reklam bulundu`);
+            
+            // Badge ekle - 25+ için renkli, 25 altı için gri
+            if (count >= 25) {
+              highCount++;
+              addBadge(card, count, result.url);
+            } else {
+              lowCount++;
+              addBadge(card, count, result.url);
+            }
+            
+            // Progress güncelle
+            chrome.runtime.sendMessage({
+              action: 'updateProgress',
+              checked: checkedCount,
+              highCount,
+              lowCount,
+              total: adCardsList.length,
+              current: i + 1
+            }).catch(() => {});
+          } else {
+            console.warn(`[Panela] Kart ${i + 1}: Sonuç alınamadı`);
+          }
+        } catch (error) {
+          console.error(`[Panela] Kart ${i + 1} kontrol hatası:`, error);
+          // Hata olsa bile devam et
+        }
+        
+        // Her kontrol arasında kısa bir bekleme (rate limiting)
+        await new Promise(resolve => setTimeout(resolve, 800));
       }
       
-      // Tamamlandı
-      currentIndex = 0;
-      allAdvertisers = [];
+      // Tüm kontroller tamamlandı
+      isCheckingAdvertisers = false;
+      console.log(`[Panela] Kontrol tamamlandı! ${checkedCount} sayfa kontrol edildi.`);
+      
+      // Final progress güncelle
+      chrome.runtime.sendMessage({
+        action: 'updateProgress',
+        checked: checkedCount,
+        highCount,
+        lowCount,
+        total: adCardsList.length,
+        current: adCardsList.length
+      }).catch(() => {});
       
       return {
         success: true,
-        checked,
+        checked: checkedCount,
         highCount,
         lowCount,
-        total: allAdvertisers.length
+        total: adCardsList.length
       };
     } catch (error) {
       console.error('[Panela] Kontrol hatası:', error);
+      isCheckingAdvertisers = false;
       return {
         success: false,
         error: error.message
       };
-    } finally {
-      isCheckingAdvertisers = false;
     }
   }
   
   // Kontrolü durdur
   function pauseChecking() {
     isPaused = true;
+    console.log('[Panela] Kontrol duraklatıldı');
   }
   
   // Kontrolü devam ettir
   function resumeChecking() {
     if (isPaused) {
+      console.log('[Panela] Kontrol devam ettiriliyor...');
+      isPaused = false;
+      // Kontrolü devam ettir
       checkAllAdvertisers();
     }
   }
@@ -626,8 +659,11 @@
       sendResponse({
         isChecking: isCheckingAdvertisers,
         isPaused: isPaused,
-        current: currentIndex,
-        total: allAdvertisers.length
+        current: currentCardIndex + 1,
+        total: adCardsList.length,
+        checked: checkedCount,
+        highCount,
+        lowCount
       });
       return true;
     }
