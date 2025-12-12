@@ -1,0 +1,235 @@
+/* Panela Ads Library Filter - Styles */
+
+/* Filtrelenmiş reklam kartlarını daha kompakt göster */
+[role="article"]:not([style*="display: none"]) {
+  margin-bottom: 1rem !important;
+  padding: 0.75rem !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  background: white !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Gereksiz boşlukları kaldır */
+[role="article"]:not([style*="display: none"]) > div {
+  padding: 0.5rem !important;
+}
+
+/* Reklam kartlarını grid'de göster */
+body > div[role="main"] > div,
+body > div[role="main"] > div > div {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
+  gap: 1rem !important;
+  padding: 1rem !important;
+}
+
+/* Kompakt görünüm için font boyutlarını ayarla */
+[role="article"]:not([style*="display: none"]) * {
+  font-size: 0.9rem !important;
+  line-height: 1.4 !important;
+}
+
+/* Butonları vurgula */
+[role="article"]:not([style*="display: none"]) button,
+[role="article"]:not([style*="display: none"]) a[role="button"] {
+  background: linear-gradient(135deg, #8B5CF6, #F472B6) !important;
+  color: white !important;
+  padding: 0.5rem 1rem !important;
+  border-radius: 6px !important;
+  font-weight: 600 !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: transform 0.2s !important;
+}
+
+[role="article"]:not([style*="display: none"]) button:hover,
+[role="article"]:not([style*="display: none"]) a[role="button"]:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 8px rgba(139, 92, 246, 0.3) !important;
+}
+
+/* Görselleri optimize et */
+[role="article"]:not([style*="display: none"]) img {
+  max-width: 100% !important;
+  height: auto !important;
+  border-radius: 6px !important;
+  object-fit: cover !important;
+}
+
+/* Gizlenen elementleri tamamen kaldır (performans) */
+[style*="display: none"] {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* ============================================
+   KOMPAKT ALANLAR - İYİCE DARALTMA (ULTRA KOMPAKT)
+   ============================================ */
+
+/* 1. Filtreler bölümü - ULTRA KOMPAKT */
+.x2izyaf.x78zum5.xl56j7k.xh8yej3[data-cursor-element-id*="cursor-el"],
+div.x2izyaf.x78zum5.xl56j7k.xh8yej3 {
+  height: auto !important;
+  min-height: 22px !important;
+  max-height: 28px !important;
+  padding: 0.15rem 0.35rem !important;
+  margin: 0.1rem 0 !important;
+  overflow: hidden !important;
+}
+
+/* 2. Filtreler içindeki elementleri yan yana diz - ULTRA KOMPAKT */
+.xuk3077.x78zum5.xdt5ytf.xozqiw3.x2lwn1j.xeuugli.x1iyjqo2.xavht8x,
+div.xuk3077.x78zum5.xdt5ytf.xozqiw3.x2lwn1j.xeuugli.x1iyjqo2.xavht8x {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 0.25rem !important;
+  height: auto !important;
+  min-height: 22px !important;
+  max-height: 28px !important;
+  padding: 0.15rem 0.35rem !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Filtreler içindeki her bir filtre öğesini ULTRA KOMPAKT yap */
+.xuk3077.x78zum5.xdt5ytf.xozqiw3.x2lwn1j.xeuugli.x1iyjqo2.xavht8x > *,
+div.xuk3077.x78zum5.xdt5ytf.xozqiw3.x2lwn1j.xeuugli.x1iyjqo2.xavht8x > * {
+  margin: 0 !important;
+  padding: 0.1rem 0.25rem !important;
+  font-size: 0.7rem !important;
+  line-height: 1.0 !important;
+  height: auto !important;
+  white-space: nowrap !important;
+}
+
+/* 3. HeroPlaceholder bölümü - ULTRA DARALT */
+.xyamay9.xp48ta0.x1l90r2v.xtssl2i[data-cursor-element-id*="cursor-el"],
+div.xyamay9.xp48ta0.x1l90r2v.xtssl2i {
+  height: auto !important;
+  min-height: 16px !important;
+  max-height: 22px !important;
+  padding: 0.15rem 0.35rem !important;
+  margin: 0.1rem 0 !important;
+  font-size: 0.75rem !important;
+  line-height: 1.1 !important;
+  overflow: hidden !important;
+}
+
+/* 4. "Yayınlandığı tarih" bölümü - ULTRA DARALT */
+.xdbano7[data-cursor-element-id*="cursor-el"],
+div.xdbano7 {
+  height: auto !important;
+  min-height: 14px !important;
+  max-height: 20px !important;
+  padding: 0.1rem 0.25rem !important;
+  margin: 0.05rem 0 !important;
+  font-size: 0.7rem !important;
+  line-height: 1.0 !important;
+  overflow: hidden !important;
+}
+
+/* 5. Üst arama barı - ULTRA DARALT */
+.x1cy8zhl.x78zum5.xdt5ytf.xozqiw3.x2lwn1j.xeuugli.x1iyjqo2.x1kxxb1g.xyamay9.xp48ta0.x1l90r2v.xtssl2i,
+div.x1cy8zhl.x78zum5.xdt5ytf.xozqiw3.x2lwn1j.xeuugli.x1iyjqo2.x1kxxb1g {
+  height: auto !important;
+  min-height: 26px !important;
+  max-height: 32px !important;
+  padding: 0.2rem 0.4rem !important;
+  margin: 0.1rem 0 !important;
+  overflow: hidden !important;
+}
+
+/* Üst arama barı içindeki elementleri ULTRA KOMPAKT yap */
+.x1cy8zhl.x78zum5.xdt5ytf.xozqiw3.x2lwn1j.xeuugli.x1iyjqo2.x1kxxb1g.xyamay9.xp48ta0.x1l90r2v.xtssl2i > *,
+div.x1cy8zhl.x78zum5.xdt5ytf.xozqiw3.x2lwn1j.xeuugli.x1iyjqo2.x1kxxb1g > * {
+  margin: 0 0.1rem !important;
+  padding: 0.15rem 0.3rem !important;
+  font-size: 0.75rem !important;
+  height: auto !important;
+}
+
+/* Genel kompakt ayarlar - Tüm bu alanlardaki gereksiz boşlukları TAMAMEN KALDIR */
+.x2izyaf.x78zum5.xl56j7k.xh8yej3,
+.xdbano7,
+.xyamay9.xp48ta0.x1l90r2v.xtssl2i,
+.x1cy8zhl.x78zum5.xdt5ytf.xozqiw3.x2lwn1j.xeuugli.x1iyjqo2.x1kxxb1g,
+div.x2izyaf.x78zum5.xl56j7k.xh8yej3,
+div.xdbano7,
+div.xyamay9.xp48ta0.x1l90r2v.xtssl2i {
+  margin-top: 0.05rem !important;
+  margin-bottom: 0.05rem !important;
+}
+
+/* Sağ üstteki elementlerin pozisyonunu KORU - SAĞ ORTA (ta sola gitmesin) */
+div[style*="position: absolute"]:not([style*="left: 0"]):not([style*="left:0"]),
+div[style*="position: fixed"]:not([style*="left: 0"]):not([style*="left:0"]) {
+  /* Sağ üstteki elementleri koru */
+}
+
+/* Sağ üstteki menü/butonları sağ orta konumda tut - POZİSYONU BOZMA */
+div[role="banner"] > div:last-child,
+header > div:last-child,
+div[data-pagelet*="header"] > div:last-child,
+div[style*="justify-content: flex-end"],
+div[style*="justify-content:flex-end"] {
+  justify-content: flex-end !important;
+  align-items: center !important;
+  margin-left: auto !important;
+  margin-right: 0 !important;
+}
+
+/* Badge stilleri */
+.panela-badge {
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-weight: 700 !important;
+  font-size: 0.75rem !important;
+  color: white !important;
+  cursor: pointer !important;
+  z-index: 1000 !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;
+  transition: transform 0.2s !important;
+  pointer-events: auto !important;
+}
+
+.panela-badge:hover {
+  transform: scale(1.15) !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+}
+
+/* Reklam kartlarının pozisyonunu relative yap (badge için) */
+[role="article"]:not([style*="display: none"]) {
+  position: relative !important;
+}
+
+/* Responsive tasarım */
+@media (max-width: 768px) {
+  body > div[role="main"] > div,
+  body > div[role="main"] > div > div {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Mobilde filtreler dikey olabilir */
+  .xuk3077.x78zum5.xdt5ytf.xozqiw3.x2lwn1j.xeuugli.x1iyjqo2.xavht8x {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+  
+  .panela-badge {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 0.65rem !important;
+  }
+}

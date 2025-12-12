@@ -75,64 +75,19 @@ function buildAdsLibraryUrl(advertiser, country, dateRange) {
 
 // HTML'den sonuç sayısını parse et
 function parseResultCount(html) {
-  // Virgüllü/noktalı sayıları handle eden helper
-  function parseNumber(str) {
-    // "50.000" veya "50,000" formatını handle et
-    const cleaned = str.replace(/[.,]/g, '');
-    return parseInt(cleaned, 10) || 0;
-  }
-  
   const patterns = [
-    // aria-label içinde sonuç sayısı
-    /aria-label="[^"]*~?(\d+[.,]?\d*)[^"]*sonuç/i,
-    /aria-label="[^"]*~?(\d+[.,]?\d*)[^"]*results?/i,
-    
-    // Heading role ile
-    /role="heading"[^>]*>~?(\d+[.,]?\d*)\s*sonuç/i,
-    /role="heading"[^>]*>~?(\d+[.,]?\d*)\s*results?/i,
-    
-    // aria-level="3" ile
-    /aria-level="3"[^>]*>~?(\d+[.,]?\d*)/i,
-    
-    // Genel pattern'ler (virgüllü sayılar dahil)
-    />~?(\d+[.,]?\d*)\s+sonuç/i,
-    />~?(\d+[.,]?\d*)\s+results?/i,
-    /~?(\d+[.,]?\d*)\s+sonuç/i,
-    /~?(\d+[.,]?\d*)\s+results?/i,
-    /(\d+[.,]?\d*)\s+reklam/i,
-    
-    // ">50.000 sonuç" formatı
-    />(\d+[.,]?\d*)\s+sonuç/i,
-    />(\d+[.,]?\d*)\s+results?/i,
-    
-    // Basit pattern'ler (fallback)
-    /(\d+)\s+sonuç/i,
+    /aria-level="3"[^>]*>~?(\d+)/i,
+    /~?(\d+)\s+sonuç/i,
     /(\d+)\s+results?/i,
     /(\d+)\s+reklam/i
   ];
   
-  for (let i = 0; i < patterns.length; i++) {
-    const pattern = patterns[i];
+  for (const pattern of patterns) {
     const match = html.match(pattern);
     if (match && match[1]) {
-      const count = parseNumber(match[1]);
-      if (count > 0) {
-        console.log(`[Panela Background] Pattern ${i + 1} eşleşti: "${match[1]}" -> ${count}`);
-        return count;
-      }
+      return parseInt(match[1], 10);
     }
   }
   
-  // Eğer hiçbir pattern eşleşmediyse, HTML'de "sonuç" veya "results" kelimesini ara
-  const resultTextMatch = html.match(/(\d+[.,]?\d*)\s*(sonuç|results?)/i);
-  if (resultTextMatch && resultTextMatch[1]) {
-    const count = parseNumber(resultTextMatch[1]);
-    if (count > 0) {
-      console.log(`[Panela Background] Genel arama eşleşti: "${resultTextMatch[1]}" -> ${count}`);
-      return count;
-    }
-  }
-  
-  console.warn('[Panela Background] Sonuç sayısı bulunamadı. HTML snippet:', html.substring(0, 500));
   return 0;
 }
