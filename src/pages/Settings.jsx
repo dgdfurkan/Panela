@@ -215,20 +215,30 @@ export default function Settings() {
 
     const handleDownloadExtension = async () => {
         try {
+            // GitHub'dan direkt zip indirme linki
+            const zipUrl = 'https://github.com/dgdfurkan/Panela/archive/refs/heads/main.zip'
+            
             // Kullanıcıya kurulum talimatlarını göster
             const confirmed = window.confirm(
                 'Extension\'ı indirmek için:\n\n' +
-                '1. Chrome\'da chrome://extensions/ adresine gidin\n' +
-                '2. "Geliştirici modu"nu açın\n' +
-                '3. "Paketlenmemiş uzantı yükle" butonuna tıklayın\n' +
-                '4. public/chrome-extension klasörünü seçin\n\n' +
-                'Alternatif olarak, klasörü zip\'leyip Chrome Web Store\'a yükleyebilirsiniz.\n\n' +
-                'GitHub repository\'sinde extension klasörüne gitmek ister misiniz?'
+                '1. Aşağıdaki linkten GitHub repository\'sini zip olarak indirin\n' +
+                '2. Zip dosyasını açın ve "Panela-main/public/chrome-extension" klasörünü bulun\n' +
+                '3. Chrome\'da chrome://extensions/ adresine gidin\n' +
+                '4. Sağ üstte "Geliştirici modu"nu açın\n' +
+                '5. "Paketlenmemiş uzantı yükle" butonuna tıklayın\n' +
+                '6. "chrome-extension" klasörünü seçin\n\n' +
+                'Extension aktif olacak ve Meta Ads Library sayfalarında otomatik çalışacak.\n\n' +
+                'GitHub repository\'sini zip olarak indirmek ister misiniz?'
             )
             
             if (confirmed) {
-                // GitHub repository linki (kullanıcı kendi repo URL'ini güncelleyebilir)
-                window.open('https://github.com/dgdfurkan/Panela/tree/main/public/chrome-extension', '_blank')
+                // GitHub repository zip indirme linki
+                window.open(zipUrl, '_blank')
+                
+                // 2 saniye sonra kurulum sayfasını da aç
+                setTimeout(() => {
+                    window.open('https://github.com/dgdfurkan/Panela/tree/main/public/chrome-extension', '_blank')
+                }, 2000)
             }
         } catch (error) {
             console.error('Extension indirme hatası:', error)
@@ -512,14 +522,25 @@ export default function Settings() {
                         
                         <div className="extension-instructions">
                             <h4 style={{ marginBottom: '1rem', fontSize: '1rem', fontWeight: '600' }}>Kurulum Adımları:</h4>
-                            <ol style={{ paddingLeft: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', color: 'var(--color-text-main)' }}>
-                                <li>Extension'ı indir ve zip dosyasını aç</li>
-                                <li>Chrome'da <code style={{ background: 'rgba(0,0,0,0.05)', padding: '0.2rem 0.4rem', borderRadius: '4px' }}>chrome://extensions/</code> adresine git</li>
-                                <li>Sağ üstte "Geliştirici modu"nu aç</li>
-                                <li>"Paketlenmemiş uzantı yükle" butonuna tıkla</li>
-                                <li>Açılan klasörü seç (chrome-extension klasörü)</li>
-                                <li>Extension aktif olacak ve Meta Ads Library sayfalarında otomatik çalışacak</li>
+                            <ol style={{ paddingLeft: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', color: 'var(--color-text-main)', fontSize: '0.9rem' }}>
+                                <li><strong>1.</strong> Aşağıdaki "Extension'ı İndir" butonuna tıkla - GitHub repository zip dosyası indirilecek</li>
+                                <li><strong>2.</strong> Zip dosyasını aç ve <code style={{ background: 'rgba(0,0,0,0.05)', padding: '0.2rem 0.4rem', borderRadius: '4px', fontFamily: 'monospace' }}>Panela-main/public/chrome-extension</code> klasörünü bul</li>
+                                <li><strong>3.</strong> Chrome'da <code style={{ background: 'rgba(0,0,0,0.05)', padding: '0.2rem 0.4rem', borderRadius: '4px', fontFamily: 'monospace' }}>chrome://extensions/</code> adresine git</li>
+                                <li><strong>4.</strong> Sağ üstte <strong>"Geliştirici modu"</strong>nu aç</li>
+                                <li><strong>5.</strong> <strong>"Paketlenmemiş uzantı yükle"</strong> butonuna tıkla</li>
+                                <li><strong>6.</strong> <code style={{ background: 'rgba(0,0,0,0.05)', padding: '0.2rem 0.4rem', borderRadius: '4px', fontFamily: 'monospace' }}>chrome-extension</code> klasörünü seç (içinde manifest.json olan klasör)</li>
+                                <li><strong>7.</strong> Extension aktif olacak! Meta Ads Library sayfalarında otomatik çalışır</li>
                             </ol>
+                            <div style={{ 
+                                marginTop: '1rem', 
+                                padding: '0.75rem', 
+                                background: 'rgba(255, 193, 7, 0.1)', 
+                                borderRadius: '6px',
+                                border: '1px solid rgba(255, 193, 7, 0.2)',
+                                fontSize: '0.85rem'
+                            }}>
+                                <strong>⚠️ Önemli:</strong> Zip dosyasını açtıktan sonra <code style={{ background: 'rgba(0,0,0,0.1)', padding: '0.1rem 0.3rem', borderRadius: '3px' }}>chrome-extension</code> klasörünü seçtiğinden emin ol. Tüm dosyalar (manifest.json, content.js, popup.html vb.) bu klasörün içinde olmalı.
+                            </div>
                         </div>
 
                         <button 
