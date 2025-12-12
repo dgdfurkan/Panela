@@ -171,17 +171,11 @@
         }
       });
 
-      // Minimum reklam kontrolü: Eğer hiç uygun reklam bulunamadıysa, filtrelemeyi geri al
+      // Minimum reklam kontrolü: Eğer hiç uygun reklam bulunamadıysa, sadece uyarı ver
+      // Filtrelemeyi geri alma - sadece uygun reklamları göster, diğerlerini gizle
       if (filteredCount === 0 && removedCount > 0) {
-        console.warn('[Panela Filter] Hiç uygun reklam bulunamadı, filtreleme geri alınıyor');
-        // Tüm reklamları geri göster (korunan container'lar hariç)
-        adContainers.forEach(container => {
-          if (!protectedContainers.has(container)) {
-            container.style.display = '';
-            container.style.visibility = 'visible';
-          }
-        });
-        removedCount = 0; // Sayacı sıfırla
+        console.warn('[Panela Filter] Hiç uygun reklam bulunamadı. Sadece "Shop Now" ve "Şimdi alışveriş yap" butonları olan reklamlar gösterilecek.');
+        // Filtrelemeyi geri alma - diğer reklamlar gizli kalacak (beyaz ekran olabilir ama doğru davranış)
       }
 
       // Eğer hiç reklam bulunamadıysa ve hiçbir şey gizlenmediyse, geniş arama yapma
@@ -196,19 +190,45 @@
       }
     } catch (error) {
       console.error('[Panela Filter] Hata:', error);
-      // Hata durumunda tüm reklamları göster (sayfayı bozma)
-      try {
-        const allHidden = document.querySelectorAll('[style*="display: none"]');
-        allHidden.forEach(el => {
-          if (el.querySelector('img') || el.querySelector('a[href*="/ads/library"]')) {
-            el.style.display = '';
-          }
-        });
-      } catch (recoveryError) {
-        console.error('[Panela Filter] Kurtarma hatası:', recoveryError);
-      }
+      // Hata durumunda filtrelemeyi durdur ama reklamları geri gösterme
+      // (Kullanıcı manuel olarak filtrelemeyi tekrar başlatabilir)
     } finally {
       isFiltering = false;
+    }
+  }
+
+  // Manuel filtreleme - popup'tan çağrılabilir
+  function manualFilter() {
+    console.log('[Panela Filter] Manuel filtreleme başlatıldı');
+    
+    // Önce mevcut reklamları filtrele
+    filterAds();
+    
+    // "Daha fazlasını gör" butonlarını bul ve tıkla
+    const seeMoreButtons = Array.from(document.querySelectorAll('button, a[role="button"], span[role="button"], a')).filter(btn => {
+      return isSeeMoreButton(btn) && window.getComputedStyle(btn).display !== 'none';
+    });
+    
+    if (seeMoreButtons.length > 0) {
+      console.log(`[Panela Filter] ${seeMoreButtons.length} "daha fazlasını gör" butonu bulundu, tıklanıyor...`);
+      
+      seeMoreButtons.forEach((button, index) => {
+        setTimeout(() => {
+          try {
+            button.click();
+            console.log(`[Panela Filter] "Daha fazlasını gör" butonu ${index + 1} tıklandı`);
+            
+            // Yeni reklamlar yüklendikten sonra filtrele
+            setTimeout(() => {
+              filterAds();
+            }, 2500);
+          } catch (error) {
+            console.error('[Panela Filter] Buton tıklama hatası:', error);
+          }
+        }, index * 500); // Her butonu 500ms arayla tıkla
+      });
+    } else {
+      console.log('[Panela Filter] "Daha fazlasını gör" butonu bulunamadı');
     }
   }
 
@@ -911,6 +931,12 @@
         highCount,
         lowCount
       });
+      return true;
+    }
+    
+    if (request.action === 'manualFilter') {
+      manualFilter();
+      sendResponse({ success: true });
       return true;
     }
   });
