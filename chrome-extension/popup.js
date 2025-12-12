@@ -1,5 +1,6 @@
 // Popup Script
 document.addEventListener('DOMContentLoaded', () => {
+  const filterButton = document.getElementById('filterButton');
   const checkButton = document.getElementById('checkButton');
   const checkButtonText = document.getElementById('checkButtonText');
   const pauseButton = document.getElementById('pauseButton');
@@ -56,6 +57,51 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  // Filtreleme butonu
+  filterButton.addEventListener('click', async () => {
+    try {
+      // Aktif tab'ı al
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      currentTab = tab;
+      
+      if (!tab.url.includes('facebook.com/ads/library')) {
+        alert('Bu özellik sadece Meta Ads Library sayfalarında çalışır.');
+        return;
+      }
+
+      // Butonu devre dışı bırak
+      filterButton.disabled = true;
+      filterButton.textContent = 'Filtreleniyor...';
+
+      // Content script'e manuel filtreleme mesajı gönder
+      chrome.tabs.sendMessage(tab.id, { action: 'manualFilter' }, (response) => {
+        if (chrome.runtime.lastError) {
+          console.error('Error:', chrome.runtime.lastError);
+          alert('Sayfa yüklenmedi. Lütfen sayfayı yenileyin.');
+          filterButton.disabled = false;
+          filterButton.innerHTML = '<span class="btn-icon">🔍</span><span>Reklamları Filtrele</span>';
+          return;
+        }
+
+        if (response && response.success) {
+          filterButton.textContent = 'Filtrelendi!';
+          setTimeout(() => {
+            filterButton.disabled = false;
+            filterButton.innerHTML = '<span class="btn-icon">🔍</span><span>Reklamları Filtrele</span>';
+          }, 2000);
+        } else {
+          filterButton.disabled = false;
+          filterButton.innerHTML = '<span class="btn-icon">🔍</span><span>Reklamları Filtrele</span>';
+        }
+      });
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Bir hata oluştu: ' + error.message);
+      filterButton.disabled = false;
+      filterButton.innerHTML = '<span class="btn-icon">🔍</span><span>Reklamları Filtrele</span>';
+    }
+  });
 
   // Başlat
   checkButton.addEventListener('click', async () => {
