@@ -521,18 +521,28 @@ export default function Settings() {
                         </p>
                         
                         <div className="extension-instructions">
-                            <h4 style={{ marginBottom: '1rem', fontSize: '1rem', fontWeight: '600' }}>Kurulum Adımları:</h4>
+                            <h4 style={{ marginBottom: '1rem', fontSize: '1rem', fontWeight: '600' }}>Kurulum Adımları (Windows, macOS, Linux):</h4>
                             <ol style={{ paddingLeft: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', color: 'var(--color-text-main)', fontSize: '0.9rem' }}>
                                 <li><strong>1.</strong> Aşağıdaki "Extension'ı İndir" butonuna tıkla - GitHub repository zip dosyası indirilecek</li>
-                                <li><strong>2.</strong> Zip dosyasını aç ve <code style={{ background: 'rgba(0,0,0,0.05)', padding: '0.2rem 0.4rem', borderRadius: '4px', fontFamily: 'monospace' }}>Panela-main/public/chrome-extension</code> klasörünü bul</li>
-                                <li><strong>3.</strong> Chrome'da <code style={{ background: 'rgba(0,0,0,0.05)', padding: '0.2rem 0.4rem', borderRadius: '4px', fontFamily: 'monospace' }}>chrome://extensions/</code> adresine git</li>
-                                <li><strong>4.</strong> Sağ üstte <strong>"Geliştirici modu"</strong>nu aç</li>
-                                <li><strong>5.</strong> <strong>"Paketlenmemiş uzantı yükle"</strong> butonuna tıkla</li>
+                                <li><strong>2.</strong> Zip dosyasını aç (Windows: sağ tık → "Extract All", macOS: çift tık, Linux: unzip komutu) ve <code style={{ background: 'rgba(0,0,0,0.05)', padding: '0.2rem 0.4rem', borderRadius: '4px', fontFamily: 'monospace' }}>Panela-main/public/chrome-extension</code> klasörünü bul</li>
+                                <li><strong>3.</strong> Chrome veya Edge tarayıcısında <code style={{ background: 'rgba(0,0,0,0.05)', padding: '0.2rem 0.4rem', borderRadius: '4px', fontFamily: 'monospace' }}>chrome://extensions/</code> veya <code style={{ background: 'rgba(0,0,0,0.05)', padding: '0.2rem 0.4rem', borderRadius: '4px', fontFamily: 'monospace' }}>edge://extensions/</code> adresine git</li>
+                                <li><strong>4.</strong> Sağ üstte <strong>"Geliştirici modu"</strong> veya <strong>"Developer mode"</strong> açık olduğundan emin ol</li>
+                                <li><strong>5.</strong> <strong>"Paketlenmemiş uzantı yükle"</strong> veya <strong>"Load unpacked"</strong> butonuna tıkla</li>
                                 <li><strong>6.</strong> <code style={{ background: 'rgba(0,0,0,0.05)', padding: '0.2rem 0.4rem', borderRadius: '4px', fontFamily: 'monospace' }}>chrome-extension</code> klasörünü seç (içinde manifest.json olan klasör)</li>
                                 <li><strong>7.</strong> Extension aktif olacak! Meta Ads Library sayfalarında otomatik çalışır</li>
                             </ol>
                             <div style={{ 
                                 marginTop: '1rem', 
+                                padding: '0.75rem', 
+                                background: 'rgba(16, 185, 129, 0.1)', 
+                                borderRadius: '6px',
+                                border: '1px solid rgba(16, 185, 129, 0.2)',
+                                fontSize: '0.85rem'
+                            }}>
+                                <strong>✅ Platform Desteği:</strong> Bu extension Windows, macOS ve Linux'ta çalışır. Chrome, Edge, Brave, Opera gibi Chromium tabanlı tüm tarayıcılarda çalışır.
+                            </div>
+                            <div style={{ 
+                                marginTop: '0.75rem', 
                                 padding: '0.75rem', 
                                 background: 'rgba(255, 193, 7, 0.1)', 
                                 borderRadius: '6px',
