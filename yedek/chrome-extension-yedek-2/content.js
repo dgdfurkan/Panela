@@ -346,133 +346,35 @@
     };
   }
 
-  // 3 nokta menüsünü bul
-  function findMenuButton(adCard) {
-    // Farklı selector'ları dene
-    const selectors = [
-      'button[aria-label*="Daha fazla"]',
-      'button[aria-label*="More"]',
-      'button[aria-label*="menu"]',
-      'button[aria-label*="Menu"]',
-      '[role="button"][aria-label*="Daha fazla"]',
-      '[role="button"][aria-label*="More"]',
-      '[role="button"][aria-label*="menu"]',
-      // SVG içinde 3 nokta pattern'i olan button'lar
-      'button:has(svg[viewBox*="0 0 20 20"])',
-      'button:has(svg circle)',
-      // Son çare: sağ üstteki button'ları kontrol et
-      'button[type="button"]'
-    ];
-    
-    for (const selector of selectors) {
-      try {
-        const buttons = adCard.querySelectorAll(selector);
-        for (const button of buttons) {
-          // Button'un içeriğini kontrol et (3 nokta icon'u olabilir)
-          const buttonText = (button.textContent || '').trim();
-          const ariaLabel = (button.getAttribute('aria-label') || '').toLowerCase();
-          const hasSvg = button.querySelector('svg');
-          
-          // Eğer button görünürse ve muhtemelen menü butonuysa
-          const style = window.getComputedStyle(button);
-          if (style.display !== 'none' && style.visibility !== 'hidden') {
-            // aria-label'da "more", "menu", "daha fazla" gibi kelimeler varsa
-            if (ariaLabel.includes('more') || 
-                ariaLabel.includes('menu') || 
-                ariaLabel.includes('daha fazla') ||
-                ariaLabel.includes('fazla') ||
-                (hasSvg && buttonText === '')) {
-              return button;
-            }
-          }
-        }
-      } catch (e) {
-        // Selector desteklenmiyorsa devam et
-        continue;
-      }
-    }
-    
-    // Fallback: Sağ üstteki ilk button'u bul
-    const allButtons = adCard.querySelectorAll('button[type="button"]');
-    for (const button of allButtons) {
-      const rect = button.getBoundingClientRect();
-      const cardRect = adCard.getBoundingClientRect();
-      
-      // Button kartın sağ üst kısmındaysa
-      if (rect.top < cardRect.top + 50 && rect.right > cardRect.right - 50) {
-        const style = window.getComputedStyle(button);
-        if (style.display !== 'none' && style.visibility !== 'hidden') {
-          return button;
-        }
-      }
-    }
-    
-    return null;
-  }
-
   // Badge ekle
   function addBadge(adCard, count, url) {
     // Zaten badge varsa ekleme
     if (adCard.querySelector('.panela-badge')) return;
     
-    // 3 nokta menüsünü bul
-    const menuButton = findMenuButton(adCard);
-    
     const badge = document.createElement('div');
     badge.className = 'panela-badge';
-    
-    // Menü butonu bulunduysa, onun yanına ekle
-    if (menuButton) {
-      const menuRect = menuButton.getBoundingClientRect();
-      const cardRect = adCard.getBoundingClientRect();
-      
-      // Menünün sağına göre pozisyon hesapla
-      const rightOffset = cardRect.right - menuRect.right;
-      const topOffset = menuRect.top - cardRect.top;
-      
-      badge.style.cssText = `
-        position: absolute;
-        top: ${topOffset}px;
-        right: ${rightOffset - 40}px;
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 0.75rem;
-        color: white;
-        cursor: pointer;
-        z-index: 1000;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        transition: transform 0.2s;
-      `;
-    } else {
-      // Fallback: Sağ üst köşe
-      badge.style.cssText = `
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 0.75rem;
-        color: white;
-        cursor: pointer;
-        z-index: 1000;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        transition: transform 0.2s;
-      `;
-    }
+    badge.style.cssText = `
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.75rem;
+      color: white;
+      cursor: pointer;
+      z-index: 1000;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      transition: transform 0.2s;
+    `;
     
     if (count >= 25) {
-      // 25+ için soft yeşil badge
-      badge.style.background = '#86efac';
+      // 25+ için renkli badge (yeşil gradient)
+      badge.style.background = 'linear-gradient(135deg, #10b981, #059669)';
       badge.textContent = count >= 100 ? '100+' : count >= 50 ? '50+' : '25+';
       badge.title = `${count} reklam bulundu - Tıkla ve gör`;
       badge.style.cursor = 'pointer';
