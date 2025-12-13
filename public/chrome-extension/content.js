@@ -7,8 +7,6 @@
   const TARGET_BUTTONS = ['Shop Now', 'Şimdi alışveriş yap'];
   let isFiltering = false;
   let isCheckingAdvertisers = false;
-  let lastSeeMoreClickTime = 0;
-  const SEE_MORE_DELAY = 3000; // 3 saniye bekle
   
   // Cache için localStorage kullan
   function getCacheKey(advertiser, country, dateRange) {
@@ -42,48 +40,8 @@
     }
   }
 
-  // "Daha fazlasını gör" butonunu tespit et
-  function isSeeMoreButton(element) {
-    if (!element) return false;
-    
-    const text = (element.textContent || '').toLowerCase();
-    const ariaLabel = (element.getAttribute('aria-label') || '').toLowerCase();
-    const title = (element.getAttribute('title') || '').toLowerCase();
-    
-    const combinedText = `${text} ${ariaLabel} ${title}`;
-    
-    return combinedText.includes('daha fazlasını gör') || 
-           combinedText.includes('see more') ||
-           combinedText.includes('daha fazla') ||
-           combinedText.includes('more results') ||
-           combinedText.includes('load more');
-  }
-
-  // Element veya child'larında "daha fazlasını gör" butonu var mı?
-  function containsSeeMoreButton(container) {
-    if (!container) return false;
-    
-    // Container'ın kendisi "daha fazlasını gör" butonu mu?
-    if (isSeeMoreButton(container)) return true;
-    
-    // Container içinde "daha fazlasını gör" butonu var mı?
-    const seeMoreButtons = container.querySelectorAll('button, a[role="button"], span[role="button"], a');
-    for (const button of seeMoreButtons) {
-      if (isSeeMoreButton(button)) {
-        return true;
-      }
-    }
-    
-    return false;
-  }
-
   // Reklam kartını kontrol et - hedef butonları içeriyor mu?
   function hasTargetButton(adCard) {
-    // "Daha fazlasını gör" butonu değilse kontrol et
-    if (isSeeMoreButton(adCard) || containsSeeMoreButton(adCard)) {
-      return false;
-    }
-    
     // Tüm button ve link elementlerini bul
     const buttons = adCard.querySelectorAll('button, a[role="button"], span[role="button"]');
     const links = adCard.querySelectorAll('a');
@@ -91,9 +49,6 @@
     const allClickableElements = [...buttons, ...links];
     
     for (const element of allClickableElements) {
-      // "Daha fazlasını gör" butonunu atla
-      if (isSeeMoreButton(element)) continue;
-      
       const text = element.textContent?.trim() || '';
       const ariaLabel = element.getAttribute('aria-label') || '';
       const title = element.getAttribute('title') || '';
@@ -106,6 +61,42 @@
           return true;
         }
       }
+    }
+    
+    return false;
+  }
+
+  // "Daha fazlasını gör" butonunu kontrol et ve koru
+  function isLoadMoreButton(element) {
+    if (!element) return false;
+    
+    const text = (element.textContent || '').toLowerCase();
+    const ariaLabel = (element.getAttribute('aria-label') || '').toLowerCase();
+    const loadMoreKeywords = ['daha fazla', 'see more', 'load more', 'show more', 'daha fazlasını gör', 'daha fazlası'];
+    
+    return loadMoreKeywords.some(keyword => text.includes(keyword) || ariaLabel.includes(keyword));
+  }
+
+  // Element veya parent'larından biri "daha fazlasını gör" butonu mu?
+  function containsLoadMoreButton(element) {
+    if (!element) return false;
+    
+    // Kendisi buton mu?
+    if (isLoadMoreButton(element)) return true;
+    
+    // İçinde buton var mı?
+    const buttons = element.querySelectorAll('button, a[role="button"]');
+    for (const btn of buttons) {
+      if (isLoadMoreButton(btn)) return true;
+    }
+    
+    // Parent'larında buton var mı?
+    let parent = element.parentElement;
+    let depth = 0;
+    while (parent && depth < 3) {
+      if (isLoadMoreButton(parent)) return true;
+      parent = parent.parentElement;
+      depth++;
     }
     
     return false;
@@ -125,25 +116,50 @@
         adContainers = document.querySelectorAll('[data-pagelet*="AdCard"], [data-pagelet*="ad"]');
       }
       
-      // Hala bulunamazsa, genel kart yapısını ara (ama daha dikkatli)
+      // Hala bulunamazsa, genel kart yapısını ara
       if (adContainers.length === 0) {
         // Meta Ads Library'de reklamlar genellikle belirli bir yapıda
         const mainContainer = document.querySelector('[role="main"]') || document.body;
-        // Sadece makul container'ları al, çok geniş arama yapma
-        adContainers = mainContainer.querySelectorAll('div[data-pagelet]');
+        adContainers = mainContainer.querySelectorAll('div[style*="position"] > div, div[data-pagelet]');
+      }
+      
+      // Önce hedef buton sayısını kontrol et (güvenli filtreleme)
+      let targetButtonCount = 0;
+      const containersArray = Array.from(adContainers);
+      
+      containersArray.forEach(container => {
+        // "Daha fazlasını gör" butonunu içeriyorsa sayma
+        if (containsLoadMoreButton(container)) {
+          return;
+        }
+        
+        const hasImage = container.querySelector('img');
+        const hasLink = container.querySelector('a[href*="/ads/library"]');
+        const hasAdContent = hasImage || hasLink || container.textContent.length > 100;
+        
+        if (hasAdContent && hasTargetButton(container)) {
+          targetButtonCount++;
+        }
+      });
+      
+      // Eğer hiç hedef buton yoksa, hiçbir şeyi gizleme (güvenli mod)
+      if (targetButtonCount === 0) {
+        console.log('[Panela Filter] Hedef buton bulunamadı, filtreleme atlandı (güvenli mod)');
+        isFiltering = false;
+        return;
       }
       
       let filteredCount = 0;
       let removedCount = 0;
-      const protectedContainers = new Set(); // Korunan container'lar
+      const hiddenAds = []; // Minimum görünürlük için
 
-      adContainers.forEach(container => {
-        // "Daha fazlasını gör" butonunu ve parent'ını koru
-        if (containsSeeMoreButton(container)) {
+      containersArray.forEach(container => {
+        // "Daha fazlasını gör" butonunu asla gizleme
+        if (containsLoadMoreButton(container)) {
+          // Butonu ve parent container'ını göster
           container.style.display = '';
           container.style.visibility = 'visible';
-          protectedContainers.add(container);
-          return; // Bu container'ı filtreleme
+          return;
         }
         
         // Container'ın bir reklam kartı olup olmadığını kontrol et
@@ -151,7 +167,7 @@
         const hasLink = container.querySelector('a[href*="/ads/library"]');
         const hasAdContent = hasImage || hasLink || container.textContent.length > 100;
         
-        // Zaten gizlenmişse ve hedef butonu yoksa atla
+        // Zaten gizlenmişse atla
         if (container.style.display === 'none' && !hasTargetButton(container)) {
           return;
         }
@@ -163,7 +179,8 @@
             container.style.visibility = 'visible';
             filteredCount++;
           } else {
-            // Hedef butonu yok, gizle
+            // Hedef butonu yok, gizle (ama kaydet - minimum görünürlük için)
+            hiddenAds.push(container);
             container.style.display = 'none';
             container.style.visibility = 'hidden';
             removedCount++;
@@ -171,18 +188,43 @@
         }
       });
 
-      // Minimum reklam kontrolü: Eğer hiç uygun reklam bulunamadıysa, sadece uyarı ver
-      // Filtrelemeyi geri alma - sadece uygun reklamları göster, diğerlerini gizle
-      if (filteredCount === 0 && removedCount > 0) {
-        console.warn('[Panela Filter] Hiç uygun reklam bulunamadı. Sadece "Shop Now" ve "Şimdi alışveriş yap" butonları olan reklamlar gösterilecek.');
-        // Filtrelemeyi geri alma - diğer reklamlar gizli kalacak (beyaz ekran olabilir ama doğru davranış)
+      // Minimum görünürlük garantisi - eğer tüm reklamlar gizlenmişse
+      if (filteredCount === 0 && removedCount > 0 && hiddenAds.length > 0) {
+        console.warn('[Panela Filter] Tüm reklamlar gizlendi, minimum görünürlük garantisi aktif');
+        // Son 2 gizlenen reklamı geri göster
+        const adsToShow = hiddenAds.slice(-2);
+        adsToShow.forEach(ad => {
+          ad.style.display = '';
+          ad.style.visibility = 'visible';
+          filteredCount++;
+          removedCount--;
+        });
       }
 
-      // Eğer hiç reklam bulunamadıysa ve hiçbir şey gizlenmediyse, geniş arama yapma
-      // (Bu durumda sayfa henüz yüklenmemiş olabilir veya gerçekten reklam yoktur)
-      if (filteredCount === 0 && removedCount === 0 && adContainers.length === 0) {
-        // Sayfa henüz yüklenmemiş olabilir, sessizce bekle
-        return;
+      // Eğer hiç reklam bulunamadıysa, daha geniş bir arama yap (sadece hedef buton varsa)
+      if (filteredCount === 0 && removedCount === 0 && targetButtonCount === 0) {
+        // Tüm div'leri kontrol et (son çare) - ama sadece hedef buton varsa
+        const allDivs = document.querySelectorAll('div');
+        allDivs.forEach(div => {
+          // "Daha fazlasını gör" butonunu içeriyorsa atla
+          if (containsLoadMoreButton(div)) {
+            return;
+          }
+          
+          // Sadece görünür ve yeterince büyük div'leri kontrol et
+          if (div.offsetHeight > 200 && div.offsetWidth > 200) {
+            if (hasTargetButton(div)) {
+              div.style.display = '';
+              filteredCount++;
+            } else if (div.querySelector('img') && div.textContent.length > 50) {
+              // Reklam benzeri içerik varsa gizle (ama sadece hedef buton bulunduysa)
+              if (targetButtonCount > 0) {
+                div.style.display = 'none';
+                removedCount++;
+              }
+            }
+          }
+        });
       }
 
       if (filteredCount > 0 || removedCount > 0) {
@@ -190,60 +232,9 @@
       }
     } catch (error) {
       console.error('[Panela Filter] Hata:', error);
-      // Hata durumunda filtrelemeyi durdur ama reklamları geri gösterme
-      // (Kullanıcı manuel olarak filtrelemeyi tekrar başlatabilir)
     } finally {
       isFiltering = false;
     }
-  }
-
-  // Manuel filtreleme - popup'tan çağrılabilir
-  function manualFilter() {
-    console.log('[Panela Filter] Manuel filtreleme başlatıldı');
-    
-    // Önce mevcut reklamları filtrele
-    filterAds();
-    
-    // "Daha fazlasını gör" butonlarını bul ve tıkla
-    const seeMoreButtons = Array.from(document.querySelectorAll('button, a[role="button"], span[role="button"], a')).filter(btn => {
-      return isSeeMoreButton(btn) && window.getComputedStyle(btn).display !== 'none';
-    });
-    
-    if (seeMoreButtons.length > 0) {
-      console.log(`[Panela Filter] ${seeMoreButtons.length} "daha fazlasını gör" butonu bulundu, tıklanıyor...`);
-      
-      seeMoreButtons.forEach((button, index) => {
-        setTimeout(() => {
-          try {
-            button.click();
-            console.log(`[Panela Filter] "Daha fazlasını gör" butonu ${index + 1} tıklandı`);
-            
-            // Yeni reklamlar yüklendikten sonra filtrele
-            setTimeout(() => {
-              filterAds();
-            }, 2500);
-          } catch (error) {
-            console.error('[Panela Filter] Buton tıklama hatası:', error);
-          }
-        }, index * 500); // Her butonu 500ms arayla tıkla
-      });
-    } else {
-      console.log('[Panela Filter] "Daha fazlasını gör" butonu bulunamadı');
-    }
-  }
-
-  // "Daha fazlasını gör" butonu tıklanmasını dinle
-  function setupSeeMoreButtonListener() {
-    // Tıklama event'lerini dinle
-    document.addEventListener('click', (e) => {
-      const target = e.target;
-      const button = target.closest('button, a[role="button"], span[role="button"], a');
-      
-      if (button && isSeeMoreButton(button)) {
-        lastSeeMoreClickTime = Date.now();
-        console.log('[Panela Filter] "Daha fazlasını gör" butonuna tıklandı, filtreleme geciktiriliyor');
-      }
-    }, true); // Capture phase'de dinle
   }
 
   // MutationObserver ile yeni reklamlar yüklendiğinde otomatik filtrele
@@ -259,15 +250,11 @@
       });
 
       if (shouldFilter) {
-        // "Daha fazlasını gör" butonuna yakın zamanda tıklandıysa bekle
-        const timeSinceClick = Date.now() - lastSeeMoreClickTime;
-        const delay = timeSinceClick < SEE_MORE_DELAY ? SEE_MORE_DELAY - timeSinceClick : 300;
-        
-        // Debounce ile filtreleme
+        // Debounce ile filtreleme - içerik tamamen yüklenene kadar bekle (1.5 saniye)
         clearTimeout(window.panelaFilterTimeout);
         window.panelaFilterTimeout = setTimeout(() => {
           filterAds();
-        }, delay);
+        }, 1500);
       }
     });
 
@@ -281,34 +268,54 @@
     return observer;
   }
 
+  // "Daha fazlasını gör" butonuna tıklama dinleyicisi
+  function setupLoadMoreListener() {
+    // Capture phase'de dinle (bubble'dan önce)
+    document.addEventListener('click', (e) => {
+      const target = e.target;
+      
+      // Butonun kendisi veya parent'ı "daha fazlasını gör" butonu mu?
+      if (isLoadMoreButton(target) || 
+          target.closest('button[aria-label*="more"]') ||
+          target.closest('button[aria-label*="Daha fazla"]') ||
+          containsLoadMoreButton(target)) {
+        
+        console.log('[Panela Filter] "Daha fazlasını gör" butonuna tıklandı, içerik yüklenene kadar bekleniyor...');
+        
+        // İçerik yüklenene kadar daha uzun bekle (2.5 saniye)
+        clearTimeout(window.panelaFilterTimeout);
+        clearTimeout(window.panelaLoadMoreTimeout);
+        
+        window.panelaLoadMoreTimeout = setTimeout(() => {
+          console.log('[Panela Filter] İçerik yüklendi, filtreleme başlatılıyor...');
+          filterAds();
+        }, 2500);
+      }
+    }, true); // Capture phase
+  }
+
   // Sayfa yüklendiğinde filtrelemeyi başlat
   function init() {
-    // "Daha fazlasını gör" butonu listener'ını kur
-    setupSeeMoreButtonListener();
-    
     // Sayfa tamamen yüklendiğinde bekle
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(filterAds, 1000);
+        setTimeout(filterAds, 1500); // İlk yüklemede daha uzun bekle
         setupObserver();
+        setupLoadMoreListener();
       });
     } else {
-      setTimeout(filterAds, 1000);
+      setTimeout(filterAds, 1500); // İlk yüklemede daha uzun bekle
       setupObserver();
+      setupLoadMoreListener();
     }
 
-    // Scroll ile yeni içerik yüklendiğinde de filtrele (ama gecikme ile)
+    // Scroll ile yeni içerik yüklendiğinde de filtrele (daha uzun bekleme)
     let scrollTimeout;
     window.addEventListener('scroll', () => {
       clearTimeout(scrollTimeout);
-      
-      // "Daha fazlasını gör" butonuna yakın zamanda tıklandıysa daha uzun bekle
-      const timeSinceClick = Date.now() - lastSeeMoreClickTime;
-      const delay = timeSinceClick < SEE_MORE_DELAY ? 1500 : 500;
-      
       scrollTimeout = setTimeout(() => {
         filterAds();
-      }, delay);
+      }, 1000); // Scroll'da 1 saniye bekle
     });
   }
 
@@ -931,12 +938,6 @@
         highCount,
         lowCount
       });
-      return true;
-    }
-    
-    if (request.action === 'manualFilter') {
-      manualFilter();
-      sendResponse({ success: true });
       return true;
     }
   });
