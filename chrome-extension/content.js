@@ -40,13 +40,20 @@
     }
   }
 
-  // Reklam kartını kontrol et - hedef butonları içeriyor mu?
+  // Reklam kartını kontrol et - SADECE hedef butonları içeriyor mu? (diğer butonlar varsa false)
   function hasTargetButton(adCard) {
     // Tüm button ve link elementlerini bul
     const buttons = adCard.querySelectorAll('button, a[role="button"], span[role="button"]');
     const links = adCard.querySelectorAll('a');
     
     const allClickableElements = [...buttons, ...links];
+    
+    let hasTarget = false;
+    const unwantedButtons = [
+      'daha fazla bilgi', 'daha fazla bilgi al', 'learn more', 'learn more about',
+      'read more', 'devamını oku', 'detaylar', 'details', 'more info',
+      'hakkında', 'about', 'keşfet', 'discover', 'incele', 'review'
+    ];
     
     for (const element of allClickableElements) {
       const text = element.textContent?.trim() || '';
@@ -55,15 +62,23 @@
       
       const combinedText = `${text} ${ariaLabel} ${title}`.toLowerCase();
       
+      // İstenmeyen butonları kontrol et - eğer varsa false döndür
+      for (const unwanted of unwantedButtons) {
+        if (combinedText.includes(unwanted)) {
+          return false; // İstenmeyen buton varsa, hedef buton olsa bile false
+        }
+      }
+      
       // Hedef buton metinlerini kontrol et
       for (const target of TARGET_BUTTONS) {
         if (combinedText.includes(target.toLowerCase())) {
-          return true;
+          hasTarget = true;
+          break;
         }
       }
     }
     
-    return false;
+    return hasTarget;
   }
 
   // "Daha fazlasını gör" butonunu kontrol et ve koru
@@ -190,9 +205,9 @@
 
       // Minimum görünürlük garantisi - eğer tüm reklamlar gizlenmişse
       if (filteredCount === 0 && removedCount > 0 && hiddenAds.length > 0) {
-        console.warn('[Panela Filter] Tüm reklamlar gizlendi, minimum görünürlük garantisi aktif');
-        // Son 2 gizlenen reklamı geri göster
-        const adsToShow = hiddenAds.slice(-2);
+        console.warn('[Panela Filter] Hedef buton bulunamadı, minimum görünürlük garantisi aktif - 1 reklam gösteriliyor');
+        // Sadece son 1 gizlenen reklamı geri göster (beyaz ekran önleme)
+        const adsToShow = hiddenAds.slice(-1);
         adsToShow.forEach(ad => {
           ad.style.display = '';
           ad.style.visibility = 'visible';
@@ -200,11 +215,20 @@
           removedCount--;
         });
       }
+      
+      // Eğer hiç hedef buton yoksa ve hiçbir şey gizlenmemişse, sadece 1 reklamı gizleme
+      if (targetButtonCount === 0 && removedCount === 0 && containersArray.length > 0) {
+        console.log('[Panela Filter] Hedef buton yok, hiçbir reklam gizlenmeyecek (güvenli mod)');
+        isFiltering = false;
+        return;
+      }
 
       // Eğer hiç reklam bulunamadıysa, daha geniş bir arama yap (sadece hedef buton varsa)
-      if (filteredCount === 0 && removedCount === 0 && targetButtonCount === 0) {
+      if (filteredCount === 0 && removedCount === 0 && targetButtonCount > 0) {
         // Tüm div'leri kontrol et (son çare) - ama sadece hedef buton varsa
         const allDivs = document.querySelectorAll('div');
+        const fallbackHiddenAds = [];
+        
         allDivs.forEach(div => {
           // "Daha fazlasını gör" butonunu içeriyorsa atla
           if (containsLoadMoreButton(div)) {
@@ -219,12 +243,25 @@
             } else if (div.querySelector('img') && div.textContent.length > 50) {
               // Reklam benzeri içerik varsa gizle (ama sadece hedef buton bulunduysa)
               if (targetButtonCount > 0) {
+                fallbackHiddenAds.push(div);
                 div.style.display = 'none';
                 removedCount++;
               }
             }
           }
         });
+        
+        // Fallback'te de minimum görünürlük garantisi
+        if (filteredCount === 0 && removedCount > 0 && fallbackHiddenAds.length > 0) {
+          console.warn('[Panela Filter] Fallback: Hedef buton bulunamadı, minimum görünürlük garantisi aktif - 1 reklam gösteriliyor');
+          const adsToShow = fallbackHiddenAds.slice(-1);
+          adsToShow.forEach(ad => {
+            ad.style.display = '';
+            ad.style.visibility = 'visible';
+            filteredCount++;
+            removedCount--;
+          });
+        }
       }
 
       if (filteredCount > 0 || removedCount > 0) {
