@@ -98,18 +98,33 @@ export default function ProductScanner({ userId, onProductsChange }) {
   const handleSave = async () => {
     setSaving(true)
     try {
+      // Ürün adı zorunlu - kontrol et
+      const productName = formData.product_name.trim()
+      if (!productName) {
+        alert('Lütfen ürün adını girin')
+        setSaving(false)
+        return
+      }
+
+      // user_id kontrolü
+      if (!userId) {
+        alert('Kullanıcı bilgisi bulunamadı. Lütfen tekrar giriş yapın.')
+        setSaving(false)
+        return
+      }
+
       const scores = formData.scores
       const potential_score = Object.values(scores).reduce((a, b) => a + b, 0) / Object.values(scores).length
 
       const productData = {
         user_id: userId,
-        product_name: formData.product_name.trim() || null,
+        product_name: productName, // Zorunlu alan, null olamaz
         meta_link: formData.meta_link.trim() || null,
         proof_link: formData.proof_link.trim() || null,
         trendyol_link: formData.trendyol_link.trim() || null,
         amazon_link: formData.amazon_link.trim() || null,
         image_url: formData.image_url.trim() || null,
-        ad_count: formData.ad_count ? parseInt(formData.ad_count) : null,
+        ad_count: formData.ad_count ? parseInt(formData.ad_count) : 0, // Default 0
         country_code: formData.country_code.trim() || null,
         search_keyword: formData.search_keyword.trim() || null,
         scores,
@@ -117,11 +132,19 @@ export default function ProductScanner({ userId, onProductsChange }) {
         notes: formData.notes.trim() || null
       }
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('discovered_products')
         .insert([productData])
+        .select() // Response'u al
 
-      if (error) throw error
+      if (error) {
+        console.error('Supabase error:', error)
+        throw error
+      }
+
+      if (!data || data.length === 0) {
+        throw new Error('Ürün kaydedildi ama yanıt alınamadı')
+      }
 
       setFormData({
         product_name: '',
@@ -142,10 +165,35 @@ export default function ProductScanner({ userId, onProductsChange }) {
         },
         notes: ''
       })
+      // Başarılı kayıt sonrası formu temizle
+      setFormData({
+        product_name: '',
+        meta_link: '',
+        proof_link: '',
+        trendyol_link: '',
+        amazon_link: '',
+        image_url: '',
+        ad_count: '',
+        country_code: '',
+        search_keyword: '',
+        scores: {
+          innovative: 0,
+          lightweight: 0,
+          low_variation: 0,
+          problem_solving: 0,
+          visual_sellable: 0
+        },
+        notes: ''
+      })
+      
       if (onProductsChange) onProductsChange()
+      
+      // Başarı mesajı
+      console.log('Ürün başarıyla kaydedildi:', data[0])
     } catch (error) {
       console.error('Error saving product:', error)
-      alert('Ürün kaydedilirken hata oluştu')
+      const errorMessage = error.message || 'Ürün kaydedilirken hata oluştu'
+      alert(`Ürün kaydedilemedi: ${errorMessage}`)
     } finally {
       setSaving(false)
     }
