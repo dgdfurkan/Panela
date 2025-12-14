@@ -280,16 +280,9 @@ export default function Research() {
       })
 
       // Excel verisi hazırla - eksik veriler boş bırakılacak
-      // Köprüler için görünen metin olarak product_name kullanacağız
       const excelData = sortedProducts.map(product => {
         // Satış sayfası: trendyol_link varsa onu kullan, yoksa amazon_link
-        const salesPageUrl = product.trendyol_link || product.amazon_link || ''
-        // Görünen metin olarak product_name kullan
-        const salesPageDisplay = salesPageUrl ? (product.product_name || salesPageUrl) : ''
-        
-        // Meta linki için de aynı mantık
-        const metaLinkUrl = product.meta_link || ''
-        const metaLinkDisplay = metaLinkUrl ? (product.product_name || metaLinkUrl) : ''
+        const salesPage = product.trendyol_link || product.amazon_link || ''
         
         // Tarih ve saat formatı: DD.MM.YYYY HH:MM
         const createdAtFormatted = product.created_at
@@ -304,8 +297,8 @@ export default function Research() {
         
         return {
           'Adı': product.product_name || '',
-          'Satış Sayfası': salesPageDisplay,
-          'Meta Linki': metaLinkDisplay,
+          'Satış Sayfası': salesPage,
+          'Meta Linki': product.meta_link || '',
           'Reklam Sayısı': product.ad_count ?? '',
           'Ürün Fiyatı': '', // Tabloda yok, boş bırakılacak
           'Eklenme Tarihi': createdAtFormatted
@@ -316,37 +309,26 @@ export default function Research() {
       const wb = XLSX.utils.book_new()
       const ws = XLSX.utils.json_to_sheet(excelData)
 
-      // Köprüleri ekle - HYPERLINK formülü ile
-      // Görünen metin product_name, link URL
+      // Köprüleri ekle (xlsx kütüphanesi link property'si ile) - ESKİ ÇALIŞAN VERSİYON
       const range = XLSX.utils.decode_range(ws['!ref'] || 'A1')
       
       // Satış Sayfası sütunu (B sütunu, index 1)
       for (let row = 1; row <= range.e.r; row++) {
-        const product = sortedProducts[row - 1] // row 1 = index 0
-        const salesPageUrl = product?.trendyol_link || product?.amazon_link || ''
-        if (salesPageUrl) {
-          const cellAddress = XLSX.utils.encode_cell({ r: row, c: 1 })
-          const displayText = product?.product_name || salesPageUrl
-          // HYPERLINK formülü kullan
-          ws[cellAddress] = {
-            f: `HYPERLINK("${salesPageUrl}","${displayText}")`,
-            t: 'n' // formula type
-          }
+        const cellAddress = XLSX.utils.encode_cell({ r: row, c: 1 })
+        const cell = ws[cellAddress]
+        if (cell && cell.v && typeof cell.v === 'string' && cell.v.startsWith('http')) {
+          // Link property'si ekle (çalışan versiyon)
+          cell.l = { Target: cell.v, Tooltip: cell.v }
         }
       }
 
       // Meta Linki sütunu (C sütunu, index 2)
       for (let row = 1; row <= range.e.r; row++) {
-        const product = sortedProducts[row - 1] // row 1 = index 0
-        const metaLinkUrl = product?.meta_link || ''
-        if (metaLinkUrl) {
-          const cellAddress = XLSX.utils.encode_cell({ r: row, c: 2 })
-          const displayText = product?.product_name || metaLinkUrl
-          // HYPERLINK formülü kullan
-          ws[cellAddress] = {
-            f: `HYPERLINK("${metaLinkUrl}","${displayText}")`,
-            t: 'n' // formula type
-          }
+        const cellAddress = XLSX.utils.encode_cell({ r: row, c: 2 })
+        const cell = ws[cellAddress]
+        if (cell && cell.v && typeof cell.v === 'string' && cell.v.startsWith('http')) {
+          // Link property'si ekle (çalışan versiyon)
+          cell.l = { Target: cell.v, Tooltip: cell.v }
         }
       }
 
@@ -372,9 +354,9 @@ export default function Research() {
       }
 
       // Zebra striping: Tek satırlar açık gök mavisi, çift satırlar beyaz
+      // xlsx'te fill için doğru format: fill.patternType ve fill.fgColor
       for (let row = 1; row <= range.e.r; row++) {
         const isOddRow = row % 2 === 1 // Tek satırlar (1, 3, 5...)
-        const rowColor = isOddRow ? 'E3F2FD' : 'FFFFFF' // Açık gök mavisi / Beyaz
         
         for (let col = 0; col <= range.e.c; col++) {
           const cellAddress = XLSX.utils.encode_cell({ r: row, c: col })
@@ -382,14 +364,26 @@ export default function Research() {
             // Eğer hücre yoksa oluştur
             ws[cellAddress] = { t: 's', v: '' }
           }
-          // Mevcut stili koru, sadece fill ekle
+          
+          // Stil objesi oluştur veya mevcut stili al
           if (!ws[cellAddress].s) {
             ws[cellAddress].s = {}
           }
-          if (!ws[cellAddress].s.fill) {
-            ws[cellAddress].s.fill = {}
+          
+          // Tek satırlar için açık gök mavisi, çift satırlar için beyaz
+          if (isOddRow) {
+            // Açık gök mavisi: #E3F2FD -> RGB: 227, 242, 253
+            ws[cellAddress].s.fill = {
+              patternType: 'solid',
+              fgColor: { rgb: 'E3F2FD' }
+            }
+          } else {
+            // Beyaz: #FFFFFF
+            ws[cellAddress].s.fill = {
+              patternType: 'solid',
+              fgColor: { rgb: 'FFFFFF' }
+            }
           }
-          ws[cellAddress].s.fill.fgColor = { rgb: rowColor }
         }
       }
 
