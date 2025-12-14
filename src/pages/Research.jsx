@@ -442,6 +442,26 @@ export default function Research() {
       })
     }
 
+    // Link kopyala ve aç fonksiyonu
+    const handleLinkClick = async (url) => {
+      if (!url || !url.trim()) return
+      
+      try {
+        // Linki kopyala
+        await navigator.clipboard.writeText(url.trim())
+        
+        // Yeni sekmede aç
+        window.open(url.trim(), '_blank', 'noopener,noreferrer')
+        
+        // Kısa bir feedback göster (opsiyonel)
+        console.log('Link kopyalandı ve açıldı:', url.trim())
+      } catch (error) {
+        console.error('Link kopyalama/açma hatası:', error)
+        // Fallback: Sadece aç
+        window.open(url.trim(), '_blank', 'noopener,noreferrer')
+      }
+    }
+
     return createPortal(
       <div
         className="product-modal-overlay"
@@ -570,7 +590,19 @@ export default function Research() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <div>
-                <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Meta Link</label>
+                <label 
+                  onClick={() => handleLinkClick(selectedProduct.meta_link)}
+                  style={{ 
+                    fontSize: '12px', 
+                    color: selectedProduct.meta_link ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                    cursor: selectedProduct.meta_link ? 'pointer' : 'default',
+                    textDecoration: selectedProduct.meta_link ? 'underline' : 'none',
+                    userSelect: 'none'
+                  }}
+                  title={selectedProduct.meta_link ? 'Tıkla: Linki kopyala ve aç' : ''}
+                >
+                  Meta Link {selectedProduct.meta_link && '🔗'}
+                </label>
                 <input
                   type="text"
                   value={selectedProduct.meta_link || ''}
@@ -580,7 +612,19 @@ export default function Research() {
                 />
               </div>
               <div>
-                <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Ürün Satış Linki (Görsel URL)</label>
+                <label 
+                  onClick={() => handleLinkClick(selectedProduct.image_url)}
+                  style={{ 
+                    fontSize: '12px', 
+                    color: selectedProduct.image_url ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                    cursor: selectedProduct.image_url ? 'pointer' : 'default',
+                    textDecoration: selectedProduct.image_url ? 'underline' : 'none',
+                    userSelect: 'none'
+                  }}
+                  title={selectedProduct.image_url ? 'Tıkla: Linki kopyala ve aç' : ''}
+                >
+                  Ürün Satış Linki (Görsel URL) {selectedProduct.image_url && '🔗'}
+                </label>
                 <input
                   type="text"
                   value={selectedProduct.image_url || ''}
@@ -590,7 +634,19 @@ export default function Research() {
                 />
               </div>
               <div>
-                <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Trendyol Link</label>
+                <label 
+                  onClick={() => handleLinkClick(selectedProduct.trendyol_link)}
+                  style={{ 
+                    fontSize: '12px', 
+                    color: selectedProduct.trendyol_link ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                    cursor: selectedProduct.trendyol_link ? 'pointer' : 'default',
+                    textDecoration: selectedProduct.trendyol_link ? 'underline' : 'none',
+                    userSelect: 'none'
+                  }}
+                  title={selectedProduct.trendyol_link ? 'Tıkla: Linki kopyala ve aç' : ''}
+                >
+                  Trendyol Link {selectedProduct.trendyol_link && '🔗'}
+                </label>
                 <input
                   type="text"
                   value={selectedProduct.trendyol_link || ''}
@@ -600,7 +656,19 @@ export default function Research() {
                 />
               </div>
               <div>
-                <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Amazon Link</label>
+                <label 
+                  onClick={() => handleLinkClick(selectedProduct.amazon_link)}
+                  style={{ 
+                    fontSize: '12px', 
+                    color: selectedProduct.amazon_link ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                    cursor: selectedProduct.amazon_link ? 'pointer' : 'default',
+                    textDecoration: selectedProduct.amazon_link ? 'underline' : 'none',
+                    userSelect: 'none'
+                  }}
+                  title={selectedProduct.amazon_link ? 'Tıkla: Linki kopyala ve aç' : ''}
+                >
+                  Amazon Link {selectedProduct.amazon_link && '🔗'}
+                </label>
                 <input
                   type="text"
                   value={selectedProduct.amazon_link || ''}
@@ -645,7 +713,19 @@ export default function Research() {
             </div>
 
             <div>
-              <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Reklam Sayısı Kanıt Linki</label>
+              <label 
+                onClick={() => handleLinkClick(selectedProduct.proof_link)}
+                style={{ 
+                  fontSize: '12px', 
+                  color: selectedProduct.proof_link ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                  cursor: selectedProduct.proof_link ? 'pointer' : 'default',
+                  textDecoration: selectedProduct.proof_link ? 'underline' : 'none',
+                  userSelect: 'none'
+                }}
+                title={selectedProduct.proof_link ? 'Tıkla: Linki kopyala ve aç' : ''}
+              >
+                Reklam Sayısı Kanıt Linki {selectedProduct.proof_link && '🔗'}
+              </label>
               <input
                 type="text"
                 value={selectedProduct.proof_link || ''}
