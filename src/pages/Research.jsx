@@ -1,7 +1,7 @@
 import { useAuth } from '../context/AuthContext'
 import KeywordLauncher from '../components/meta-ads/KeywordLauncher'
 import ProductScanner from '../components/meta-ads/ProductScanner'
-import { Search, Zap, Rocket, Package, MessageSquare, Trash2, Filter, X, FileSpreadsheet } from 'lucide-react'
+import { Search, Zap, Rocket, Package, MessageSquare, Trash2, Filter, X, FileSpreadsheet, ExternalLink } from 'lucide-react'
 import AutoMetaScanner from '../components/meta-ads/AutoMetaScanner'
 import { useState, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
@@ -518,6 +518,56 @@ export default function Research() {
               </div>
             </div>
 
+            {/* Linkler - Görsel gösterim */}
+            {(selectedProduct.meta_link || selectedProduct.image_url || selectedProduct.trendyol_link || selectedProduct.amazon_link) && (
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', fontSize: '12px', padding: '0.75rem', background: 'var(--color-background)', borderRadius: '10px', border: '1px solid var(--color-border)' }}>
+                {selectedProduct.meta_link && (
+                  <a
+                    href={selectedProduct.meta_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', color: 'var(--color-primary)', textDecoration: 'none', fontWeight: '600' }}
+                  >
+                    <ExternalLink size={14} />
+                    Meta
+                  </a>
+                )}
+                {selectedProduct.image_url && (
+                  <a
+                    href={selectedProduct.image_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', color: 'var(--color-primary)', textDecoration: 'none', fontWeight: '600' }}
+                  >
+                    <ExternalLink size={14} />
+                    Ürün Satış Linki
+                  </a>
+                )}
+                {selectedProduct.trendyol_link && (
+                  <a
+                    href={selectedProduct.trendyol_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', color: 'var(--color-primary)', textDecoration: 'none', fontWeight: '600' }}
+                  >
+                    <ExternalLink size={14} />
+                    Trendyol
+                  </a>
+                )}
+                {selectedProduct.amazon_link && (
+                  <a
+                    href={selectedProduct.amazon_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', color: 'var(--color-primary)', textDecoration: 'none', fontWeight: '600' }}
+                  >
+                    <ExternalLink size={14} />
+                    Amazon
+                  </a>
+                )}
+              </div>
+            )}
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <div>
                 <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Meta Link</label>
@@ -525,6 +575,16 @@ export default function Research() {
                   type="text"
                   value={selectedProduct.meta_link || ''}
                   onChange={e => handleFieldChange('meta_link', e.target.value)}
+                  disabled={!isOwner}
+                  style={{ width: '100%', padding: '0.55rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: '10px' }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Ürün Satış Linki (Görsel URL)</label>
+                <input
+                  type="text"
+                  value={selectedProduct.image_url || ''}
+                  onChange={e => handleFieldChange('image_url', e.target.value)}
                   disabled={!isOwner}
                   style={{ width: '100%', padding: '0.55rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: '10px' }}
                 />
