@@ -193,6 +193,18 @@ export default function ProductCard({ product, onEdit, currentUserId, unreadCoun
                   Meta
                 </a>
               )}
+              {product.image_url && (
+                <a
+                  href={product.image_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', color: 'var(--color-primary)', textDecoration: 'none' }}
+                >
+                  <ExternalLink size={14} />
+                  Ürün Satış Linki
+                </a>
+              )}
               {product.trendyol_link && (
                 <a
                   href={product.trendyol_link}

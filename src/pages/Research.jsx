@@ -281,8 +281,8 @@ export default function Research() {
 
       // Excel verisi hazırla - eksik veriler boş bırakılacak
       const excelData = sortedProducts.map(product => {
-        // Satış sayfası: trendyol_link varsa onu kullan, yoksa amazon_link
-        const salesPage = product.trendyol_link || product.amazon_link || ''
+        // Satış sayfası: image_url (Görsel URL - hızlı analiz ve kayıt kısmındaki)
+        const salesPage = product.image_url || ''
         
         // Tarih ve saat formatı: DD.MM.YYYY HH:MM
         const createdAtFormatted = product.created_at
