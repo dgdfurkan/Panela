@@ -297,7 +297,7 @@ export default function Research() {
       const wb = XLSX.utils.book_new()
       const ws = XLSX.utils.json_to_sheet(excelData)
 
-      // Köprüleri ekle (HYPERLINK fonksiyonu ile)
+      // Köprüleri ekle (xlsx kütüphanesi link property'si ile)
       const range = XLSX.utils.decode_range(ws['!ref'] || 'A1')
       
       // Satış Sayfası sütunu (B sütunu, index 1)
@@ -305,11 +305,8 @@ export default function Research() {
         const cellAddress = XLSX.utils.encode_cell({ r: row, c: 1 })
         const cell = ws[cellAddress]
         if (cell && cell.v && typeof cell.v === 'string' && cell.v.startsWith('http')) {
-          // HYPERLINK formülü ekle
-          ws[cellAddress] = {
-            f: `HYPERLINK("${cell.v}","${cell.v}")`,
-            t: 'n' // number type (formula)
-          }
+          // Link property'si ekle
+          cell.l = { Target: cell.v, Tooltip: cell.v }
         }
       }
 
@@ -318,11 +315,8 @@ export default function Research() {
         const cellAddress = XLSX.utils.encode_cell({ r: row, c: 2 })
         const cell = ws[cellAddress]
         if (cell && cell.v && typeof cell.v === 'string' && cell.v.startsWith('http')) {
-          // HYPERLINK formülü ekle
-          ws[cellAddress] = {
-            f: `HYPERLINK("${cell.v}","${cell.v}")`,
-            t: 'n' // number type (formula)
-          }
+          // Link property'si ekle
+          cell.l = { Target: cell.v, Tooltip: cell.v }
         }
       }
 
