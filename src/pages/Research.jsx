@@ -280,16 +280,35 @@ export default function Research() {
       })
 
       // Excel verisi hazırla - eksik veriler boş bırakılacak
+      // Köprüler için görünen metin olarak product_name kullanacağız
       const excelData = sortedProducts.map(product => {
         // Satış sayfası: trendyol_link varsa onu kullan, yoksa amazon_link
-        const salesPage = product.trendyol_link || product.amazon_link || ''
+        const salesPageUrl = product.trendyol_link || product.amazon_link || ''
+        // Görünen metin olarak product_name kullan
+        const salesPageDisplay = salesPageUrl ? (product.product_name || salesPageUrl) : ''
+        
+        // Meta linki için de aynı mantık
+        const metaLinkUrl = product.meta_link || ''
+        const metaLinkDisplay = metaLinkUrl ? (product.product_name || metaLinkUrl) : ''
+        
+        // Tarih ve saat formatı: DD.MM.YYYY HH:MM
+        const createdAtFormatted = product.created_at
+          ? new Date(product.created_at).toLocaleString('tr-TR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })
+          : ''
         
         return {
           'Adı': product.product_name || '',
-          'Satış Sayfası': salesPage,
-          'Meta Linki': product.meta_link || '',
+          'Satış Sayfası': salesPageDisplay,
+          'Meta Linki': metaLinkDisplay,
           'Reklam Sayısı': product.ad_count ?? '',
-          'Ürün Fiyatı': '' // Tabloda yok, boş bırakılacak
+          'Ürün Fiyatı': '', // Tabloda yok, boş bırakılacak
+          'Eklenme Tarihi': createdAtFormatted
         }
       })
 
@@ -297,36 +316,48 @@ export default function Research() {
       const wb = XLSX.utils.book_new()
       const ws = XLSX.utils.json_to_sheet(excelData)
 
-      // Köprüleri ekle (xlsx kütüphanesi link property'si ile)
+      // Köprüleri ekle - HYPERLINK formülü ile
+      // Görünen metin product_name, link URL
       const range = XLSX.utils.decode_range(ws['!ref'] || 'A1')
       
       // Satış Sayfası sütunu (B sütunu, index 1)
       for (let row = 1; row <= range.e.r; row++) {
-        const cellAddress = XLSX.utils.encode_cell({ r: row, c: 1 })
-        const cell = ws[cellAddress]
-        if (cell && cell.v && typeof cell.v === 'string' && cell.v.startsWith('http')) {
-          // Link property'si ekle
-          cell.l = { Target: cell.v, Tooltip: cell.v }
+        const product = sortedProducts[row - 1] // row 1 = index 0
+        const salesPageUrl = product?.trendyol_link || product?.amazon_link || ''
+        if (salesPageUrl) {
+          const cellAddress = XLSX.utils.encode_cell({ r: row, c: 1 })
+          const displayText = product?.product_name || salesPageUrl
+          // HYPERLINK formülü kullan
+          ws[cellAddress] = {
+            f: `HYPERLINK("${salesPageUrl}","${displayText}")`,
+            t: 'n' // formula type
+          }
         }
       }
 
       // Meta Linki sütunu (C sütunu, index 2)
       for (let row = 1; row <= range.e.r; row++) {
-        const cellAddress = XLSX.utils.encode_cell({ r: row, c: 2 })
-        const cell = ws[cellAddress]
-        if (cell && cell.v && typeof cell.v === 'string' && cell.v.startsWith('http')) {
-          // Link property'si ekle
-          cell.l = { Target: cell.v, Tooltip: cell.v }
+        const product = sortedProducts[row - 1] // row 1 = index 0
+        const metaLinkUrl = product?.meta_link || ''
+        if (metaLinkUrl) {
+          const cellAddress = XLSX.utils.encode_cell({ r: row, c: 2 })
+          const displayText = product?.product_name || metaLinkUrl
+          // HYPERLINK formülü kullan
+          ws[cellAddress] = {
+            f: `HYPERLINK("${metaLinkUrl}","${displayText}")`,
+            t: 'n' // formula type
+          }
         }
       }
 
-      // Sütun genişliklerini ayarla (çok uzun olmasın)
+      // Sütun genişliklerini ayarla (%50 artırılmış)
       ws['!cols'] = [
-        { wch: 30 }, // Adı
-        { wch: 40 }, // Satış Sayfası
-        { wch: 50 }, // Meta Linki
-        { wch: 15 }, // Reklam Sayısı
-        { wch: 15 }  // Ürün Fiyatı
+        { wch: 45 }, // Adı (30 * 1.5)
+        { wch: 60 }, // Satış Sayfası (40 * 1.5)
+        { wch: 75 }, // Meta Linki (50 * 1.5)
+        { wch: 22 }, // Reklam Sayısı (15 * 1.5)
+        { wch: 22 }, // Ürün Fiyatı (15 * 1.5)
+        { wch: 20 }  // Eklenme Tarihi
       ]
 
       // Header stilleri (kalın)
@@ -337,6 +368,28 @@ export default function Research() {
         ws[cellAddress].s = {
           font: { bold: true },
           fill: { fgColor: { rgb: 'E7E6E6' } } // Açık gri arka plan
+        }
+      }
+
+      // Zebra striping: Tek satırlar açık gök mavisi, çift satırlar beyaz
+      for (let row = 1; row <= range.e.r; row++) {
+        const isOddRow = row % 2 === 1 // Tek satırlar (1, 3, 5...)
+        const rowColor = isOddRow ? 'E3F2FD' : 'FFFFFF' // Açık gök mavisi / Beyaz
+        
+        for (let col = 0; col <= range.e.c; col++) {
+          const cellAddress = XLSX.utils.encode_cell({ r: row, c: col })
+          if (!ws[cellAddress]) {
+            // Eğer hücre yoksa oluştur
+            ws[cellAddress] = { t: 's', v: '' }
+          }
+          // Mevcut stili koru, sadece fill ekle
+          if (!ws[cellAddress].s) {
+            ws[cellAddress].s = {}
+          }
+          if (!ws[cellAddress].s.fill) {
+            ws[cellAddress].s.fill = {}
+          }
+          ws[cellAddress].s.fill.fgColor = { rgb: rowColor }
         }
       }
 
