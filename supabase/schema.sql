@@ -675,3 +675,24 @@ create policy "open view comment_reads" on comment_reads for select using (true)
 create policy "open insert comment_reads" on comment_reads for insert with check (true);
 create policy "open update comment_reads" on comment_reads for update using (true);
 create policy "open delete comment_reads" on comment_reads for delete using (true);
+
+-- Product Views Table (Yeni Ürün Görme Takibi)
+create table if not exists public.product_views (
+  id uuid default uuid_generate_v4() primary key,
+  product_id uuid not null references public.discovered_products(id) on delete cascade,
+  user_id uuid not null references public.app_users(id),
+  first_seen_at timestamptz default timezone('utc'::text, now()),
+  unique (product_id, user_id)
+);
+
+alter table public.product_views enable row level security;
+
+drop policy if exists "open view product_views" on product_views;
+drop policy if exists "open insert product_views" on product_views;
+drop policy if exists "open update product_views" on product_views;
+drop policy if exists "open delete product_views" on product_views;
+
+create policy "open view product_views" on product_views for select using (true);
+create policy "open insert product_views" on product_views for insert with check (true);
+create policy "open update product_views" on product_views for update using (true);
+create policy "open delete product_views" on product_views for delete using (true);

@@ -1,6 +1,6 @@
 import { ExternalLink, User, MessageSquare } from 'lucide-react'
 
-export default function ProductCard({ product, onEdit, currentUserId, unreadCount = 0 }) {
+export default function ProductCard({ product, onEdit, currentUserId, unreadCount = 0, isNew = false, firstSeenAt = null }) {
   const scores = typeof product.scores === 'string' 
     ? JSON.parse(product.scores) 
     : product.scores || {}
@@ -28,23 +28,56 @@ export default function ProductCard({ product, onEdit, currentUserId, unreadCoun
     <div
       style={{
         padding: '1.25rem',
-        border: '1px solid var(--color-border)',
+        border: isNew ? '2px solid rgba(139, 92, 246, 0.3)' : '1px solid var(--color-border)',
         borderRadius: 'var(--radius-md)',
-        background: 'white',
+        background: isNew 
+          ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.02), rgba(99, 102, 241, 0.02))'
+          : 'white',
         transition: 'all var(--transition-fast)',
         cursor: 'pointer',
-        position: 'relative'
+        position: 'relative',
+        boxShadow: isNew 
+          ? '0 0 0 1px rgba(139, 92, 246, 0.1), 0 4px 12px rgba(139, 92, 246, 0.15)'
+          : 'none',
+        animation: isNew ? 'pulseGlow 2s ease-in-out infinite' : 'none'
       }}
       onMouseEnter={e => {
-        e.currentTarget.style.borderColor = 'var(--color-primary)'
-        e.currentTarget.style.boxShadow = 'var(--shadow-md)'
+        if (!isNew) {
+          e.currentTarget.style.borderColor = 'var(--color-primary)'
+          e.currentTarget.style.boxShadow = 'var(--shadow-md)'
+        }
       }}
       onMouseLeave={e => {
-        e.currentTarget.style.borderColor = 'var(--color-border)'
-        e.currentTarget.style.boxShadow = 'none'
+        if (!isNew) {
+          e.currentTarget.style.borderColor = 'var(--color-border)'
+          e.currentTarget.style.boxShadow = 'none'
+        }
       }}
       onClick={onEdit}
     >
+      {isNew && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '8px',
+            left: '8px',
+            background: 'linear-gradient(135deg, #8b5cf6, #6366f1)',
+            color: 'white',
+            borderRadius: '8px',
+            padding: '0.25rem 0.5rem',
+            fontSize: '10px',
+            fontWeight: '700',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.25rem',
+            boxShadow: '0 2px 8px rgba(139, 92, 246, 0.4)',
+            zIndex: 10,
+            animation: 'pulse 2s ease-in-out infinite'
+          }}
+        >
+          YENİ
+        </div>
+      )}
       {unreadCount > 0 && (
         <div
           style={{
@@ -60,7 +93,8 @@ export default function ProductCard({ product, onEdit, currentUserId, unreadCoun
             display: 'inline-flex',
             alignItems: 'center',
             gap: '0.25rem',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.12)'
+            boxShadow: '0 2px 6px rgba(0,0,0,0.12)',
+            zIndex: 10
           }}
         >
           <MessageSquare size={12} />
@@ -233,6 +267,26 @@ export default function ProductCard({ product, onEdit, currentUserId, unreadCoun
           </div>
         </div>
       </div>
+      <style>{`
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.8;
+            transform: scale(1.05);
+          }
+        }
+        @keyframes pulseGlow {
+          0%, 100% {
+            box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.1), 0 4px 12px rgba(139, 92, 246, 0.15);
+          }
+          50% {
+            box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.2), 0 4px 16px rgba(139, 92, 246, 0.25);
+          }
+        }
+      `}</style>
     </div>
   )
 }

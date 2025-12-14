@@ -25,6 +25,7 @@ export default function Research() {
   const [productsLoading, setProductsLoading] = useState(true)
   const [unreadCounts, setUnreadCounts] = useState({})
   const [allUsers, setAllUsers] = useState([])
+  const [productViews, setProductViews] = useState({}) // product_id -> first_seen_at
   
   // Filters
   const [filterUser, setFilterUser] = useState('all')
@@ -47,6 +48,7 @@ export default function Research() {
       loadUsers()
       loadProducts()
       loadUnreadCounts()
+      loadProductViews()
       migrateProofLinksToMetaLinks()
     }
   }, [user?.id])
@@ -242,11 +244,77 @@ export default function Research() {
     }
   }
 
+  const loadProductViews = async () => {
+    if (!user?.id) return
+    try {
+      const { data, error } = await supabase
+        .from('product_views')
+        .select('product_id, first_seen_at')
+        .eq('user_id', user.id)
+      
+      if (error) throw error
+      
+      const viewsMap = {}
+      if (data) {
+        data.forEach(view => {
+          viewsMap[view.product_id] = view.first_seen_at
+        })
+      }
+      
+      setProductViews(viewsMap)
+    } catch (error) {
+      console.error('Error loading product views:', error)
+    }
+  }
+
+  const markProductAsSeen = async (productId) => {
+    if (!user?.id || !productId) return
+    
+    // Eğer zaten görüldüyse, tekrar kayıt oluşturma (unique constraint sayesinde)
+    if (productViews[productId]) {
+      return
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('product_views')
+        .insert({
+          product_id: productId,
+          user_id: user.id,
+          first_seen_at: new Date().toISOString()
+        })
+        .select('first_seen_at')
+        .single()
+      
+      if (error) {
+        // Unique constraint hatası olabilir (başka bir sekmede zaten görüldü işaretlenmiş olabilir)
+        if (error.code === '23505') {
+          // Zaten var, tekrar yükle
+          await loadProductViews()
+          return
+        }
+        throw error
+      }
+      
+      // State'i güncelle
+      setProductViews(prev => ({
+        ...prev,
+        [productId]: data.first_seen_at
+      }))
+    } catch (error) {
+      console.error('Error marking product as seen:', error)
+    }
+  }
+
   const handleOpenProduct = async (product, event) => {
     // Modal her zaman ekranın tam ortasında açılacak
     setSelectedProduct(product)
     await loadProductComments(product.id)
     await loadUnreadCounts() // Badge'leri güncelle
+    // Ürünü "görüldü" olarak işaretle (sadece kendi ürünü değilse)
+    if (product.user_id !== user?.id) {
+      await markProductAsSeen(product.id)
+    }
   }
 
   const loadProductComments = async (productId) => {
@@ -589,6 +657,17 @@ export default function Research() {
                 <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
                   Ekleyen: {userInfo.username || userInfo.full_name || 'Bilinmeyen'}
                 </div>
+                {productViews[selectedProduct.id] && (
+                  <div style={{ fontSize: '11px', color: 'var(--color-primary)', marginTop: '0.25rem', fontWeight: '500' }}>
+                    İlk görüldü: {new Date(productViews[selectedProduct.id]).toLocaleString('tr-TR', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </div>
+                )}
                 {createdAtText && (
                   <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
                     Eklenme: {createdAtText}
@@ -1299,15 +1378,23 @@ export default function Research() {
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
-                {products.map(product => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    onEdit={() => handleOpenProduct(product)}
-                    currentUserId={user?.id}
-                    unreadCount={unreadCounts[product.id] || 0}
-                  />
-                ))}
+                {products.map(product => {
+                  // Ürün yeni mi? (kendi ürünü değilse ve daha önce görülmemişse)
+                  const isNew = product.user_id !== user?.id && !productViews[product.id]
+                  const firstSeenAt = productViews[product.id] || null
+                  
+                  return (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      onEdit={() => handleOpenProduct(product)}
+                      currentUserId={user?.id}
+                      unreadCount={unreadCounts[product.id] || 0}
+                      isNew={isNew}
+                      firstSeenAt={firstSeenAt}
+                    />
+                  )
+                })}
               </div>
             )}
           </div>
