@@ -38,6 +38,9 @@ export default function Research() {
   const [comments, setComments] = useState([])
   const [commentsLoading, setCommentsLoading] = useState(false)
   const [newComment, setNewComment] = useState('')
+  
+  // Textarea ref (otomatik genişleme için)
+  const notesTextareaRef = useRef(null)
 
   useEffect(() => {
     if (user?.id) {
@@ -419,9 +422,6 @@ export default function Research() {
         })
       : ''
 
-    // Textarea için ref (otomatik genişleme için)
-    const notesTextareaRef = useRef(null)
-
     const handleFieldChange = (key, value) => {
       if (!isOwner) return
       setSelectedProduct(prev => ({ ...prev, [key]: value }))
@@ -435,11 +435,11 @@ export default function Research() {
 
     // Modal açıldığında veya notes değiştiğinde yüksekliği ayarla
     useEffect(() => {
-      if (notesTextareaRef.current && selectedProduct.notes) {
+      if (notesTextareaRef.current && selectedProduct?.notes) {
         notesTextareaRef.current.style.height = 'auto'
         notesTextareaRef.current.style.height = `${notesTextareaRef.current.scrollHeight}px`
       }
-    }, [selectedProduct.notes])
+    }, [selectedProduct?.notes])
 
     const handleSaveModal = async () => {
       if (!isOwner) return
