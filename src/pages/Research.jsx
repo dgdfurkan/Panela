@@ -3,7 +3,7 @@ import KeywordLauncher from '../components/meta-ads/KeywordLauncher'
 import ProductScanner from '../components/meta-ads/ProductScanner'
 import { Search, Zap, Rocket, Package, MessageSquare, Trash2, Filter, X, FileSpreadsheet, ExternalLink } from 'lucide-react'
 import AutoMetaScanner from '../components/meta-ads/AutoMetaScanner'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import ProductCard from '../components/meta-ads/ProductCard'
 import StarRating from '../components/meta-ads/StarRating'
@@ -419,10 +419,27 @@ export default function Research() {
         })
       : ''
 
+    // Textarea için ref (otomatik genişleme için)
+    const notesTextareaRef = useRef(null)
+
     const handleFieldChange = (key, value) => {
       if (!isOwner) return
       setSelectedProduct(prev => ({ ...prev, [key]: value }))
+      
+      // Not alanı değiştiğinde textarea yüksekliğini ayarla
+      if (key === 'notes' && notesTextareaRef.current) {
+        notesTextareaRef.current.style.height = 'auto'
+        notesTextareaRef.current.style.height = `${notesTextareaRef.current.scrollHeight}px`
+      }
     }
+
+    // Modal açıldığında veya notes değiştiğinde yüksekliği ayarla
+    useEffect(() => {
+      if (notesTextareaRef.current && selectedProduct.notes) {
+        notesTextareaRef.current.style.height = 'auto'
+        notesTextareaRef.current.style.height = `${notesTextareaRef.current.scrollHeight}px`
+      }
+    }, [selectedProduct.notes])
 
     const handleSaveModal = async () => {
       if (!isOwner) return
@@ -752,11 +769,25 @@ export default function Research() {
             <div>
               <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Not</label>
               <textarea
+                ref={notesTextareaRef}
                 value={selectedProduct.notes || ''}
                 onChange={e => handleFieldChange('notes', e.target.value)}
                 disabled={!isOwner}
-                rows={3}
-                style={{ width: '100%', padding: '0.55rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: '10px', resize: 'vertical' }}
+                style={{ 
+                  width: '100%', 
+                  padding: '0.55rem 0.65rem', 
+                  border: '1px solid var(--color-border)', 
+                  borderRadius: '10px', 
+                  resize: 'none',
+                  minHeight: '60px',
+                  overflow: 'hidden',
+                  lineHeight: '1.5'
+                }}
+                onInput={(e) => {
+                  // Otomatik yükseklik ayarlama
+                  e.target.style.height = 'auto'
+                  e.target.style.height = `${e.target.scrollHeight}px`
+                }}
               />
             </div>
 
