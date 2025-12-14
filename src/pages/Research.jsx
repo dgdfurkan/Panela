@@ -1,13 +1,14 @@
 import { useAuth } from '../context/AuthContext'
 import KeywordLauncher from '../components/meta-ads/KeywordLauncher'
 import ProductScanner from '../components/meta-ads/ProductScanner'
-import { Search, Zap, Rocket, Package, MessageSquare, Trash2, Filter, X } from 'lucide-react'
+import { Search, Zap, Rocket, Package, MessageSquare, Trash2, Filter, X, FileSpreadsheet } from 'lucide-react'
 import AutoMetaScanner from '../components/meta-ads/AutoMetaScanner'
 import { useState, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import ProductCard from '../components/meta-ads/ProductCard'
 import StarRating from '../components/meta-ads/StarRating'
 import { supabase } from '../lib/supabaseClient'
+import * as XLSX from 'xlsx'
 
 const CRITERIA = [
   { key: 'innovative', label: 'İnovatif mi?' },
@@ -260,6 +261,106 @@ export default function Research() {
     } catch (error) {
       console.error('Error deleting product:', error)
       alert('Ürün silinemedi')
+    }
+  }
+
+  // Excel'e Aktar fonksiyonu
+  const handleExportToExcel = () => {
+    try {
+      if (products.length === 0) {
+        alert('Export edilecek ürün bulunamadı')
+        return
+      }
+
+      // Ürünleri en güncel tarihten en eskiye sırala (zaten created_at DESC ile geliyor ama yine de sırala)
+      const sortedProducts = [...products].sort((a, b) => {
+        const dateA = new Date(a.created_at || 0)
+        const dateB = new Date(b.created_at || 0)
+        return dateB - dateA // En güncel → en eski
+      })
+
+      // Excel verisi hazırla - eksik veriler boş bırakılacak
+      const excelData = sortedProducts.map(product => {
+        // Satış sayfası: trendyol_link varsa onu kullan, yoksa amazon_link
+        const salesPage = product.trendyol_link || product.amazon_link || ''
+        
+        return {
+          'Adı': product.product_name || '',
+          'Satış Sayfası': salesPage,
+          'Meta Linki': product.meta_link || '',
+          'Reklam Sayısı': product.ad_count ?? '',
+          'Ürün Fiyatı': '' // Tabloda yok, boş bırakılacak
+        }
+      })
+
+      // Workbook oluştur
+      const wb = XLSX.utils.book_new()
+      const ws = XLSX.utils.json_to_sheet(excelData)
+
+      // Köprüleri ekle (HYPERLINK fonksiyonu ile)
+      const range = XLSX.utils.decode_range(ws['!ref'] || 'A1')
+      
+      // Satış Sayfası sütunu (B sütunu, index 1)
+      for (let row = 1; row <= range.e.r; row++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: row, c: 1 })
+        const cell = ws[cellAddress]
+        if (cell && cell.v && typeof cell.v === 'string' && cell.v.startsWith('http')) {
+          // HYPERLINK formülü ekle
+          ws[cellAddress] = {
+            f: `HYPERLINK("${cell.v}","${cell.v}")`,
+            t: 'n' // number type (formula)
+          }
+        }
+      }
+
+      // Meta Linki sütunu (C sütunu, index 2)
+      for (let row = 1; row <= range.e.r; row++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: row, c: 2 })
+        const cell = ws[cellAddress]
+        if (cell && cell.v && typeof cell.v === 'string' && cell.v.startsWith('http')) {
+          // HYPERLINK formülü ekle
+          ws[cellAddress] = {
+            f: `HYPERLINK("${cell.v}","${cell.v}")`,
+            t: 'n' // number type (formula)
+          }
+        }
+      }
+
+      // Sütun genişliklerini ayarla (çok uzun olmasın)
+      ws['!cols'] = [
+        { wch: 30 }, // Adı
+        { wch: 40 }, // Satış Sayfası
+        { wch: 50 }, // Meta Linki
+        { wch: 15 }, // Reklam Sayısı
+        { wch: 15 }  // Ürün Fiyatı
+      ]
+
+      // Header stilleri (kalın)
+      const headerRange = XLSX.utils.decode_range(ws['!ref'] || 'A1')
+      for (let col = 0; col <= headerRange.e.c; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col })
+        if (!ws[cellAddress]) continue
+        ws[cellAddress].s = {
+          font: { bold: true },
+          fill: { fgColor: { rgb: 'E7E6E6' } } // Açık gri arka plan
+        }
+      }
+
+      // Worksheet'i workbook'a ekle
+      XLSX.utils.book_append_sheet(wb, ws, 'Ürünler')
+
+      // Dosya adı: panela-urunler-YYYY-MM-DD.xlsx
+      const today = new Date()
+      const dateStr = today.toISOString().split('T')[0] // YYYY-MM-DD
+      const fileName = `panela-urunler-${dateStr}.xlsx`
+
+      // Excel dosyasını indir
+      XLSX.writeFile(wb, fileName)
+
+      console.log(`Excel dosyası oluşturuldu: ${fileName}, ${excelData.length} ürün export edildi`)
+    } catch (error) {
+      console.error('Excel export hatası:', error)
+      alert('Excel dosyası oluşturulurken hata oluştu: ' + error.message)
     }
   }
 
@@ -732,6 +833,43 @@ export default function Research() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
                 <Filter size={16} color="var(--color-primary)" />
                 <span style={{ fontWeight: '600', fontSize: '14px' }}>Filtrele</span>
+                <button
+                  onClick={handleExportToExcel}
+                  disabled={products.length === 0}
+                  style={{
+                    marginLeft: 'auto',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.65rem 1rem',
+                    background: products.length === 0 ? '#94a3b8' : '#107C41',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 'var(--radius-md)',
+                    fontWeight: '600',
+                    fontSize: '13px',
+                    cursor: products.length === 0 ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s',
+                    boxShadow: products.length === 0 ? 'none' : '0 2px 8px rgba(16, 124, 65, 0.2)'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (products.length > 0) {
+                      e.target.style.background = '#059669'
+                      e.target.style.transform = 'translateY(-1px)'
+                      e.target.style.boxShadow = '0 4px 12px rgba(16, 124, 65, 0.3)'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (products.length > 0) {
+                      e.target.style.background = '#107C41'
+                      e.target.style.transform = 'translateY(0)'
+                      e.target.style.boxShadow = '0 2px 8px rgba(16, 124, 65, 0.2)'
+                    }
+                  }}
+                >
+                  <FileSpreadsheet size={16} />
+                  Excel'e Aktar
+                </button>
                 {hasActiveFilters && (
                   <button
                     onClick={() => {
@@ -742,7 +880,6 @@ export default function Research() {
                       setFilterKeyword('')
                     }}
                     style={{
-                      marginLeft: 'auto',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '0.25rem',
