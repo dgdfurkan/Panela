@@ -17,7 +17,6 @@ export default function ProductScanner({ userId, onProductsChange }) {
   const [formData, setFormData] = useState({
     product_name: '',
     meta_link: '',
-    proof_link: '',
     trendyol_link: '',
     amazon_link: '',
     image_url: '',
@@ -41,17 +40,17 @@ export default function ProductScanner({ userId, onProductsChange }) {
   }, [formData.scores])
 
 
-  // Prefill from last search stored by KeywordLauncher - anlık güncelleme
+  // Prefill from last search stored by KeywordLauncher - anlık güncelleme ve sayfa yenilendiğinde hatırla
   useEffect(() => {
     const updateFromStorage = () => {
       try {
         const raw = localStorage.getItem('meta_last_search')
         if (!raw) return
         const parsed = JSON.parse(raw)
-        if (parsed?.keyword) {
+        if (parsed?.keyword || parsed?.country_code) {
           setFormData(prev => ({
             ...prev,
-            search_keyword: parsed.keyword,
+            search_keyword: parsed.keyword || prev.search_keyword,
             country_code: parsed.country_code || prev.country_code,
             meta_link: parsed.url || prev.meta_link
           }))
@@ -61,7 +60,7 @@ export default function ProductScanner({ userId, onProductsChange }) {
       }
     }
 
-    // İlk yükleme
+    // İlk yükleme - sayfa yenilendiğinde de çalışır
     updateFromStorage()
 
     // Storage değişikliklerini dinle (diğer tab'lardan gelen güncellemeler için)
@@ -120,7 +119,6 @@ export default function ProductScanner({ userId, onProductsChange }) {
         user_id: userId,
         product_name: productName, // Zorunlu alan, null olamaz
         meta_link: formData.meta_link.trim() || null,
-        proof_link: formData.proof_link.trim() || null,
         trendyol_link: formData.trendyol_link.trim() || null,
         amazon_link: formData.amazon_link.trim() || null,
         image_url: formData.image_url.trim() || null,
@@ -146,36 +144,29 @@ export default function ProductScanner({ userId, onProductsChange }) {
         throw new Error('Ürün kaydedildi ama yanıt alınamadı')
       }
 
+      // Başarılı kayıt sonrası formu temizle - ama son arama bilgilerini koru
+      const lastSearch = localStorage.getItem('meta_last_search')
+      let preservedKeyword = ''
+      let preservedCountry = ''
+      if (lastSearch) {
+        try {
+          const parsed = JSON.parse(lastSearch)
+          preservedKeyword = parsed.keyword || ''
+          preservedCountry = parsed.country_code || ''
+        } catch (e) {
+          // ignore
+        }
+      }
+      
       setFormData({
         product_name: '',
         meta_link: '',
-        proof_link: '',
         trendyol_link: '',
         amazon_link: '',
         image_url: '',
         ad_count: '',
-        country_code: '',
-        search_keyword: '',
-        scores: {
-          innovative: 0,
-          lightweight: 0,
-          low_variation: 0,
-          problem_solving: 0,
-          visual_sellable: 0
-        },
-        notes: ''
-      })
-      // Başarılı kayıt sonrası formu temizle
-      setFormData({
-        product_name: '',
-        meta_link: '',
-        proof_link: '',
-        trendyol_link: '',
-        amazon_link: '',
-        image_url: '',
-        ad_count: '',
-        country_code: '',
-        search_keyword: '',
+        country_code: preservedCountry,
+        search_keyword: preservedKeyword,
         scores: {
           innovative: 0,
           lightweight: 0,
@@ -223,7 +214,7 @@ export default function ProductScanner({ userId, onProductsChange }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <div>
-                <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500' }}>Görsel URL</label>
+                <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500' }}>Satış Linki</label>
                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                   <input
                     type="text"
@@ -279,16 +270,6 @@ export default function ProductScanner({ userId, onProductsChange }) {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <div>
-                <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500' }}>Amazon Linki</label>
-                <input
-                  type="text"
-                  value={formData.amazon_link}
-                  onChange={e => setFormData(prev => ({ ...prev, amazon_link: e.target.value }))}
-                  placeholder="https://www.amazon.com/..."
-                  style={{ width: '100%', padding: '0.5rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', fontSize: '13px' }}
-                />
-              </div>
-              <div>
                 <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500' }}>Reklam Sayısı</label>
                 <div style={{ position: 'relative' }}>
                   <input
@@ -305,6 +286,16 @@ export default function ProductScanner({ userId, onProductsChange }) {
                     </span>
                   )}
                 </div>
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500' }}>Amazon Linki</label>
+                <input
+                  type="text"
+                  value={formData.amazon_link}
+                  onChange={e => setFormData(prev => ({ ...prev, amazon_link: e.target.value }))}
+                  placeholder="https://www.amazon.com/..."
+                  style={{ width: '100%', padding: '0.5rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', fontSize: '13px' }}
+                />
               </div>
             </div>
 
@@ -342,26 +333,14 @@ export default function ProductScanner({ userId, onProductsChange }) {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500' }}>Meta Linki (Kanıt)</label>
-                <input
-                  type="text"
-                  value={formData.proof_link}
-                  onChange={e => setFormData(prev => ({ ...prev, proof_link: e.target.value }))}
-                  placeholder="Meta Ads Library linki (search_type=page&view_all_page_id=...)"
-                  style={{ width: '100%', padding: '0.5rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', fontSize: '13px' }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500' }}>Not</label>
-                <textarea
-                  value={formData.notes}
-                  onChange={e => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                  rows={2}
-                  style={{ width: '100%', padding: '0.55rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', fontSize: '13px', resize: 'vertical' }}
-                />
-              </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500' }}>Not</label>
+              <textarea
+                value={formData.notes}
+                onChange={e => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                rows={2}
+                style={{ width: '100%', padding: '0.55rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', fontSize: '13px', resize: 'vertical' }}
+              />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', alignItems: 'end' }}>
