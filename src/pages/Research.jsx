@@ -50,6 +50,14 @@ export default function Research() {
     }
   }, [user?.id])
 
+  // Modal açıldığında veya notes değiştiğinde textarea yüksekliğini ayarla
+  useEffect(() => {
+    if (notesTextareaRef.current && selectedProduct?.notes) {
+      notesTextareaRef.current.style.height = 'auto'
+      notesTextareaRef.current.style.height = `${notesTextareaRef.current.scrollHeight}px`
+    }
+  }, [selectedProduct?.notes])
+
   // Modal açıldığında body scroll'unu engelle ve sayfa kaymasını önle
   useEffect(() => {
     if (selectedProduct) {
@@ -432,14 +440,6 @@ export default function Research() {
         notesTextareaRef.current.style.height = `${notesTextareaRef.current.scrollHeight}px`
       }
     }
-
-    // Modal açıldığında veya notes değiştiğinde yüksekliği ayarla
-    useEffect(() => {
-      if (notesTextareaRef.current && selectedProduct?.notes) {
-        notesTextareaRef.current.style.height = 'auto'
-        notesTextareaRef.current.style.height = `${notesTextareaRef.current.scrollHeight}px`
-      }
-    }, [selectedProduct?.notes])
 
     const handleSaveModal = async () => {
       if (!isOwner) return
