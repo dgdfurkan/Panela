@@ -267,6 +267,11 @@
       if (filteredCount > 0 || removedCount > 0) {
         console.log(`[Panela Filter] Filtrelendi: ${filteredCount} gösterildi, ${removedCount} gizlendi`);
       }
+      
+      // Filtreleme sonrası sayfa arama butonlarını ekle
+      setTimeout(() => {
+        addPageSearchButtons();
+      }, 500);
     } catch (error) {
       console.error('[Panela Filter] Hata:', error);
     } finally {
@@ -291,6 +296,10 @@
         clearTimeout(window.panelaFilterTimeout);
         window.panelaFilterTimeout = setTimeout(() => {
           filterAds();
+          // Filtreleme sonrası butonları ekle
+          setTimeout(() => {
+            addPageSearchButtons();
+          }, 500);
         }, 1500);
       }
     });
@@ -326,6 +335,10 @@
         window.panelaLoadMoreTimeout = setTimeout(() => {
           console.log('[Panela Filter] İçerik yüklendi, filtreleme başlatılıyor...');
           filterAds();
+          // Filtreleme sonrası butonları ekle
+          setTimeout(() => {
+            addPageSearchButtons();
+          }, 500);
         }, 2500);
       }
     }, true); // Capture phase
@@ -352,8 +365,17 @@
       clearTimeout(scrollTimeout);
       scrollTimeout = setTimeout(() => {
         filterAds();
+        // Filtreleme sonrası butonları ekle
+        setTimeout(() => {
+          addPageSearchButtons();
+        }, 500);
       }, 1000); // Scroll'da 1 saniye bekle
     });
+    
+    // İlk yüklemede butonları ekle
+    setTimeout(() => {
+      addPageSearchButtons();
+    }, 2000);
   }
 
   // ============================================
@@ -501,6 +523,172 @@
         end: endDate
       }
     };
+  }
+
+  // Reklam kartından sayfa ID'sini bul
+  function findPageIdFromAdCard(adCard) {
+    // Önce reklam kartındaki tüm linkleri bul
+    const links = adCard.querySelectorAll('a[href]');
+    
+    for (const link of links) {
+      let href = link.getAttribute('href');
+      if (!href) continue;
+      
+      // Relative URL'leri absolute'ye çevir
+      if (href.startsWith('/')) {
+        href = 'https://www.facebook.com' + href;
+      }
+      
+      // Facebook sayfa linklerini kontrol et
+      if (href.includes('facebook.com/')) {
+        // Sayfa ID'si içeren linkleri bul (örnek: /pages/123456789 veya ?page_id=123456789 veya view_all_page_id=123456789)
+        const pageIdMatch = href.match(/[?&](?:page_id|view_all_page_id)=(\d+)/) || 
+                           href.match(/\/pages\/(\d+)/) ||
+                           href.match(/\/page\/(\d+)/);
+        if (pageIdMatch && pageIdMatch[1]) {
+          return pageIdMatch[1];
+        }
+        
+        // Reklam kartı içindeki text'te sayfa ID'si var mı kontrol et
+        const cardText = adCard.textContent || '';
+        const textPageIdMatch = cardText.match(/Kütüphane Kodu:\s*(\d+)/) || 
+                                cardText.match(/Library Code:\s*(\d+)/);
+        if (textPageIdMatch && textPageIdMatch[1]) {
+          return textPageIdMatch[1];
+        }
+      }
+    }
+    
+    // Eğer link bulunamazsa, findAdvertiserLinks kullan
+    const advertisers = findAdvertiserLinks(adCard);
+    if (advertisers.length > 0) {
+      // En yüksek öncelikli advertiser'ın username'ini kullan
+      // Username'i sayfa ID'sine dönüştürmek için sayfa linkini fetch etmek gerekir
+      // Şimdilik username'i döndürelim, createPageSearchLink'te handle edeceğiz
+      return advertisers[0].username;
+    }
+    
+    return null;
+  }
+
+  // Sayfa arama linki oluştur
+  function createPageSearchLink(pageIdOrUsername, country, startDate, endDate) {
+    // Facebook Ads Library sayfa arama linki
+    const baseUrl = 'https://tr-tr.facebook.com/ads/library/';
+    const params = new URLSearchParams({
+      active_status: 'active',
+      ad_type: 'all',
+      country: country,
+      is_targeted_country: 'false',
+      media_type: 'all',
+      search_type: 'page',
+      'start_date[min]': startDate,
+      'start_date[max]': endDate
+    });
+    
+    // Eğer sayısal bir ID ise view_all_page_id kullan
+    if (/^\d+$/.test(pageIdOrUsername)) {
+      params.set('view_all_page_id', pageIdOrUsername);
+    } else {
+      // Username ise, sayfa araması için q parametresi kullan
+      // Facebook Ads Library'de username ile arama yapmak için search_type=page ve q parametresi kullanılabilir
+      params.set('q', pageIdOrUsername);
+      // Username ile arama yaparken search_type'ı keyword_unordered olarak değiştir
+      params.set('search_type', 'keyword_unordered');
+    }
+    
+    return baseUrl + '?' + params.toString();
+  }
+
+  // "Sponsorlu" kısmına buton ekle
+  function addPageSearchButton(adCard) {
+    // "Sponsorlu" içeren div'i bul
+    const sponsorDiv = Array.from(adCard.querySelectorAll('div')).find(div => {
+      const text = div.textContent || '';
+      return text.includes('Sponsorlu') || text.includes('Sponsored');
+    });
+    
+    if (!sponsorDiv) return;
+    
+    // Zaten buton eklenmişse tekrar ekleme
+    if (sponsorDiv.querySelector('.panela-page-search-btn')) return;
+    
+    // Buton oluştur
+    const button = document.createElement('button');
+    button.className = 'panela-page-search-btn';
+    button.textContent = '🔍';
+    button.title = 'Bu şirketin tüm reklamlarını gör';
+    button.style.cssText = `
+      margin-left: 8px;
+      padding: 4px 10px;
+      background: linear-gradient(135deg, #a78bfa, #c4b5fd);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      box-shadow: 0 2px 4px rgba(167, 139, 250, 0.3);
+    `;
+    
+    // Hover efekti
+    button.addEventListener('mouseenter', () => {
+      button.style.transform = 'translateY(-1px)';
+      button.style.boxShadow = '0 4px 8px rgba(167, 139, 250, 0.4)';
+    });
+    
+    button.addEventListener('mouseleave', () => {
+      button.style.transform = 'translateY(0)';
+      button.style.boxShadow = '0 2px 4px rgba(167, 139, 250, 0.3)';
+    });
+    
+    // Tıklama olayı
+    button.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Sayfa ID'sini bul
+      const pageIdOrUsername = findPageIdFromAdCard(adCard);
+      if (!pageIdOrUsername) {
+        alert('Sayfa bilgisi bulunamadı. Lütfen reklam kartında sayfa linki olduğundan emin olun.');
+        return;
+      }
+      
+      // Mevcut arama parametrelerini al
+      const params = getCurrentSearchParams();
+      
+      // Yeni link oluştur
+      const searchLink = createPageSearchLink(
+        pageIdOrUsername,
+        params.country,
+        params.dateRange.start,
+        params.dateRange.end
+      );
+      
+      // Yeni sekmede aç
+      window.open(searchLink, '_blank', 'noopener,noreferrer');
+    });
+    
+    // Butonu "Sponsorlu" div'inin sağına ekle
+    sponsorDiv.style.display = 'flex';
+    sponsorDiv.style.alignItems = 'center';
+    sponsorDiv.style.justifyContent = 'space-between';
+    sponsorDiv.appendChild(button);
+  }
+
+  // Tüm reklam kartlarına sayfa arama butonu ekle
+  function addPageSearchButtons() {
+    const adCards = document.querySelectorAll('[role="article"]');
+    adCards.forEach(card => {
+      // Sadece görünür reklam kartlarına ekle
+      if (card.style.display !== 'none' && card.offsetHeight > 0) {
+        addPageSearchButton(card);
+      }
+    });
   }
 
   // 3 nokta menüsünü bul
