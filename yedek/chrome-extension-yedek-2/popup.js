@@ -16,23 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Progress güncellemelerini dinle
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'updateProgress') {
-      const current = request.current || 0;
-      const total = request.total || 0;
-      const progress = total > 0 ? Math.round((current / total) * 100) : 0;
-      
-      progressFill.style.width = progress + '%';
-      progressText.textContent = `Kontrol ediliyor... ${current}/${total}`;
-      
-      // Sonuçları güncelle
-      if (request.checked !== undefined) {
-        resultsContainer.style.display = 'block';
-        resultsSummary.innerHTML = `
-          <strong>Kontrol Devam Ediyor</strong><br>
-          ${request.checked || 0} sayfa kontrol edildi.<br>
-          ${request.highCount || 0} sayfa 25+ reklam (renkli badge).<br>
-          ${request.lowCount || 0} sayfa 25 altı reklam (gri badge).
-        `;
-      }
+      progressFill.style.width = request.progress + '%';
+      progressText.textContent = `Kontrol ediliyor... ${request.current}/${request.total}`;
     }
   });
 
