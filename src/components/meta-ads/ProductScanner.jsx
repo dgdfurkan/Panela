@@ -344,12 +344,12 @@ export default function ProductScanner({ userId, onProductsChange }) {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <div>
-                <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500' }}>Reklam Sayısı Kanıt Linki</label>
+                <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '12px', fontWeight: '500' }}>Meta Linki (Kanıt)</label>
                 <input
                   type="text"
                   value={formData.proof_link}
                   onChange={e => setFormData(prev => ({ ...prev, proof_link: e.target.value }))}
-                  placeholder="Kanıt linki (Ads Library vb.)"
+                  placeholder="Meta Ads Library linki (search_type=page&view_all_page_id=...)"
                   style={{ width: '100%', padding: '0.5rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', fontSize: '13px' }}
                 />
               </div>

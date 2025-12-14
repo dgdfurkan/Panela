@@ -47,8 +47,89 @@ export default function Research() {
       loadUsers()
       loadProducts()
       loadUnreadCounts()
+      migrateProofLinksToMetaLinks()
     }
   }, [user?.id])
+
+  // Proof link'leri meta link'lere taşı (otomatik düzenleme)
+  const migrateProofLinksToMetaLinks = async () => {
+    try {
+      // Tüm ürünleri getir
+      const { data: products, error } = await supabase
+        .from('discovered_products')
+        .select('id, proof_link, meta_link')
+        .not('proof_link', 'is', null)
+        .neq('proof_link', '')
+
+      if (error) {
+        console.error('[Panela] Proof link migration error:', error)
+        return
+      }
+
+      if (!products || products.length === 0) return
+
+      // Meta link formatını kontrol et
+      const isValidMetaLink = (url) => {
+        if (!url || typeof url !== 'string') return false
+        if (!url.includes('facebook.com/ads/library')) return false
+        // Sadece ?id= içeren linkler meta linki değil
+        if (url.includes('?id=') && !url.includes('search_type=page')) return false
+        // search_type=page ve view_all_page_id içermeli
+        return url.includes('search_type=page') && url.includes('view_all_page_id')
+      }
+
+      // Düzenlenecek ürünleri bul
+      const updates = []
+      for (const product of products) {
+        const proofLink = product.proof_link?.trim()
+        if (!proofLink) continue
+
+        // Eğer proof_link geçerli bir meta link ise ve meta_link boşsa, taşı
+        if (isValidMetaLink(proofLink)) {
+          // meta_link boşsa veya farklıysa taşı
+          if (!product.meta_link || product.meta_link !== proofLink) {
+            updates.push({
+              id: product.id,
+              meta_link: proofLink,
+              proof_link: null // proof_link'i temizle (artık meta_link'te)
+            })
+          } else {
+            // meta_link zaten aynıysa, sadece proof_link'i temizle
+            updates.push({
+              id: product.id,
+              proof_link: null
+            })
+          }
+        }
+      }
+
+      // Toplu güncelleme
+      if (updates.length > 0) {
+        console.log(`[Panela] ${updates.length} ürün için proof_link -> meta_link migration başlatılıyor...`)
+        
+        for (const update of updates) {
+          const { error: updateError } = await supabase
+            .from('discovered_products')
+            .update({
+              meta_link: update.meta_link || undefined,
+              proof_link: update.proof_link
+            })
+            .eq('id', update.id)
+
+          if (updateError) {
+            console.error(`[Panela] Migration error for product ${update.id}:`, updateError)
+          }
+        }
+
+        console.log(`[Panela] Migration tamamlandı: ${updates.length} ürün güncellendi`)
+        
+        // Ürünleri yeniden yükle
+        await loadProducts()
+      }
+    } catch (error) {
+      console.error('[Panela] Proof link migration error:', error)
+    }
+  }
 
   // Modal açıldığında veya notes değiştiğinde textarea yüksekliğini ayarla
   useEffect(() => {
@@ -741,7 +822,7 @@ export default function Research() {
                 }}
                 title={selectedProduct.proof_link ? 'Tıkla: Linki kopyala ve aç' : ''}
               >
-                Reklam Sayısı Kanıt Linki {selectedProduct.proof_link && '🔗'}
+                Meta Linki (Kanıt) {selectedProduct.proof_link && '🔗'}
               </label>
               <input
                 type="text"
