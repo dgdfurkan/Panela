@@ -32,8 +32,9 @@ export default function Research() {
   const [swipeSessionId, setSwipeSessionId] = useState(null)
   const [swipeFinished, setSwipeFinished] = useState(false)
   const [historySessions, setHistorySessions] = useState([])
-  const [swipeLoading, setSwipeLoading] = useState(false)
   const [exportingSession, setExportingSession] = useState(null)
+  const [swipeStart, setSwipeStart] = useState(null)
+  const [swipeDelta, setSwipeDelta] = useState({ x: 0, y: 0 })
 
   const shuffleArray = (arr) => {
     const a = [...arr]
@@ -1770,7 +1771,7 @@ export default function Research() {
                 <Hand size={18} color="var(--color-primary)" />
                 <div>
                   <div style={{ fontWeight: 700 }}>Swipe Alanı</div>
-                  <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Sağa: Seç | Sola: Pas</div>
+                  <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Sola: Pas | Sağa: Seç</div>
                 </div>
                 <div style={{ marginLeft: 'auto', fontSize: '12px', color: 'var(--color-text-muted)' }}>
                   {swipeQueue.length > 0 ? `${Math.min(swipeIndex + 1, swipeQueue.length)} / ${swipeQueue.length}` : ''}
@@ -1784,99 +1785,101 @@ export default function Research() {
               )}
 
               {swipeQueue.length > 0 && swipeIndex < swipeQueue.length && (
-                <div
-                  style={{
-                    border: '1px solid var(--color-border)',
-                    borderRadius: '16px',
-                    padding: '1rem',
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.75rem',
-                    background: 'linear-gradient(135deg, rgba(248,250,252,0.8), rgba(255,255,255,0.95))'
-                  }}
-                >
-                  {(() => {
-                    const p = swipeQueue[swipeIndex]
-                    return (
-                      <>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <h3 style={{ margin: 0, fontSize: '18px' }}>{p.product_name || 'İsimsiz Ürün'}</h3>
-                          {p.ad_count > 30 && (
-                            <span style={{ padding: '0.2rem 0.5rem', background: 'rgba(16,185,129,0.1)', color: 'var(--color-success)', borderRadius: '8px', fontSize: '12px', fontWeight: 700 }}>
-                              🔥 Markalaşma
-                            </span>
-                          )}
-                        </div>
-                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', fontSize: '12px', color: 'var(--color-text-muted)' }}>
-                          {p.country_code && <span style={{ padding: '0.25rem 0.4rem', background: 'rgba(59,130,246,0.08)', borderRadius: '8px' }}>{p.country_code}</span>}
-                          {p.search_keyword && <span style={{ padding: '0.25rem 0.4rem', background: 'rgba(16,185,129,0.08)', borderRadius: '8px' }}>{p.search_keyword}</span>}
-                          <span>Reklam: {p.ad_count ?? '-'}</span>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '13px' }}>
-                          {p.meta_link && (
-                            <a href={p.meta_link} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 700 }}>
-                              Meta Link
-                            </a>
-                          )}
-                          {p.image_url && (
-                            <a href={p.image_url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 700 }}>
-                              Satış Linki
-                            </a>
-                          )}
-                          {p.trendyol_link && (
-                            <a href={p.trendyol_link} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 700 }}>
-                              Trendyol
-                            </a>
-                          )}
-                          {p.amazon_link && (
-                            <a href={p.amazon_link} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 700 }}>
-                              Amazon
-                            </a>
-                          )}
-                        </div>
-                        {p.notes && (
-                          <div style={{ fontSize: '13px', color: 'var(--color-text-muted)', background: 'rgba(148,163,184,0.12)', padding: '0.65rem', borderRadius: '10px' }}>
-                            {p.notes}
-                          </div>
+                (() => {
+                  const p = swipeQueue[swipeIndex]
+                  const rotation = swipeDelta.x / 15
+                  return (
+                    <div
+                      style={{
+                        border: '1px solid var(--color-border)',
+                        borderRadius: '16px',
+                        padding: '1rem',
+                        boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.75rem',
+                        background: 'linear-gradient(135deg, rgba(248,250,252,0.8), rgba(255,255,255,0.95))',
+                        transform: `translateX(${swipeDelta.x}px) translateY(${swipeDelta.y}px) rotate(${rotation}deg)`,
+                        transition: swipeStart ? 'none' : 'transform 0.25s ease, box-shadow 0.25s ease',
+                        userSelect: 'none',
+                        touchAction: 'none'
+                      }}
+                      onPointerDown={(e) => {
+                        // Linke tıklama ise swipe başlatma
+                        const tag = (e.target?.tagName || '').toLowerCase()
+                        if (tag === 'a' || e.target?.closest('a')) return
+                        setSwipeStart({ x: e.clientX, y: e.clientY })
+                        setSwipeDelta({ x: 0, y: 0 })
+                      }}
+                      onPointerMove={(e) => {
+                        if (!swipeStart) return
+                        setSwipeDelta({
+                          x: e.clientX - swipeStart.x,
+                          y: e.clientY - swipeStart.y
+                        })
+                      }}
+                      onPointerUp={(e) => {
+                        if (!swipeStart) return
+                        const dx = e.clientX - swipeStart.x
+                        const threshold = 120
+                        if (dx > threshold) {
+                          handleSwipeDecision('right')
+                        } else if (dx < -threshold) {
+                          handleSwipeDecision('left')
+                        } else {
+                          setSwipeDelta({ x: 0, y: 0 })
+                        }
+                        setSwipeStart(null)
+                      }}
+                      onPointerLeave={() => {
+                        if (!swipeStart) return
+                        setSwipeDelta({ x: 0, y: 0 })
+                        setSwipeStart(null)
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <h3 style={{ margin: 0, fontSize: '18px' }}>{p.product_name || 'İsimsiz Ürün'}</h3>
+                        {p.ad_count > 30 && (
+                          <span style={{ padding: '0.2rem 0.5rem', background: 'rgba(16,185,129,0.1)', color: 'var(--color-success)', borderRadius: '8px', fontSize: '12px', fontWeight: 700 }}>
+                            🔥 Markalaşma
+                          </span>
                         )}
-                        <div style={{ display: 'flex', gap: '0.75rem' }}>
-                          <button
-                            onClick={() => handleSwipeDecision('left')}
-                            style={{
-                              flex: 1,
-                              padding: '0.75rem',
-                              border: '1px solid var(--color-border)',
-                              borderRadius: '12px',
-                              background: 'white',
-                              fontWeight: 700,
-                              color: 'var(--color-text-muted)',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            Pas (Sol)
-                          </button>
-                          <button
-                            onClick={() => handleSwipeDecision('right')}
-                            style={{
-                              flex: 1,
-                              padding: '0.75rem',
-                              border: 'none',
-                              borderRadius: '12px',
-                              background: 'linear-gradient(135deg, #22c55e, #16a34a)',
-                              color: 'white',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              boxShadow: '0 6px 16px rgba(34,197,94,0.25)'
-                            }}
-                          >
-                            Seç (Sağ)
-                          </button>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                        {p.country_code && <span style={{ padding: '0.25rem 0.4rem', background: 'rgba(59,130,246,0.08)', borderRadius: '8px' }}>{p.country_code}</span>}
+                        {p.search_keyword && <span style={{ padding: '0.25rem 0.4rem', background: 'rgba(16,185,129,0.08)', borderRadius: '8px' }}>{p.search_keyword}</span>}
+                        <span>Reklam: {p.ad_count ?? '-'}</span>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '13px' }}>
+                        {p.meta_link && (
+                          <a href={p.meta_link} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 700 }}>
+                            Meta Link
+                          </a>
+                        )}
+                        {p.image_url && (
+                          <a href={p.image_url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 700 }}>
+                            Satış Linki
+                          </a>
+                        )}
+                        {p.trendyol_link && (
+                          <a href={p.trendyol_link} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 700 }}>
+                            Trendyol
+                          </a>
+                        )}
+                        {p.amazon_link && (
+                          <a href={p.amazon_link} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 700 }}>
+                            Amazon
+                          </a>
+                        )}
+                      </div>
+                      {p.notes && (
+                        <div style={{ fontSize: '13px', color: 'var(--color-text-muted)', background: 'rgba(148,163,184,0.12)', padding: '0.65rem', borderRadius: '10px', userSelect: 'none' }}>
+                          {p.notes}
                         </div>
-                      </>
-                    )
-                  })()}
-                </div>
+                      )}
+                    </div>
+                  )
+                })()
               )}
 
               {swipeFinished && (
