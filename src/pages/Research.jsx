@@ -300,6 +300,9 @@ export default function Research() {
       setIsReady(false)
     } catch (err) {
       console.error('Ready kayıtları temizlenemedi:', err)
+      // Hata olsa bile UI'da sıfırla
+      setReadyUsers([])
+      setIsReady(false)
     }
   }
 
@@ -1889,101 +1892,132 @@ export default function Research() {
 
               {swipeQueue.length > 0 && swipeIndex < swipeQueue.length && (
                 (() => {
-                  const p = swipeQueue[swipeIndex]
+                  const current = swipeQueue[swipeIndex]
+                  const next = swipeQueue[swipeIndex + 1]
                   const rotation = swipeDelta.x / 15
+                  const progress = Math.max(-1, Math.min(1, swipeDelta.x / 200))
+                  const overlayColor =
+                    progress > 0
+                      ? `rgba(34,197,94,${Math.min(Math.abs(progress) * 0.25, 0.25)})`
+                      : `rgba(239,68,68,${Math.min(Math.abs(progress) * 0.25, 0.25)})`
                   return (
-                    <div
-                      style={{
-                        border: '1px solid var(--color-border)',
-                        borderRadius: '16px',
-                        padding: '1rem',
-                        boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.75rem',
-                        background: 'linear-gradient(135deg, rgba(248,250,252,0.8), rgba(255,255,255,0.95))',
-                        transform: `translateX(${swipeDelta.x}px) translateY(${swipeDelta.y}px) rotate(${rotation}deg)`,
-                        transition: swipeStart ? 'none' : 'transform 0.25s ease, box-shadow 0.25s ease',
-                        userSelect: 'none',
-                        touchAction: 'none'
-                      }}
-                      onPointerDown={(e) => {
-                        if (swipeAnimating) return
-                        // Linke tıklama ise swipe başlatma
-                        const tag = (e.target?.tagName || '').toLowerCase()
-                        if (tag === 'a' || e.target?.closest('a')) return
-                        setSwipeStart({ x: e.clientX, y: e.clientY })
-                        setSwipeDelta({ x: 0, y: 0 })
-                      }}
-                      onPointerMove={(e) => {
-                        if (swipeAnimating) return
-                        if (!swipeStart) return
-                        setSwipeDelta({
-                          x: e.clientX - swipeStart.x,
-                          y: e.clientY - swipeStart.y
-                        })
-                      }}
-                      onPointerUp={(e) => {
-                        if (swipeAnimating) return
-                        if (!swipeStart) return
-                        const dx = e.clientX - swipeStart.x
-                        const threshold = 120
-                        if (dx > threshold) {
-                          handleSwipeDecision('right')
-                        } else if (dx < -threshold) {
-                          handleSwipeDecision('left')
-                        } else {
-                          setSwipeDelta({ x: 0, y: 0 })
-                        }
-                        setSwipeStart(null)
-                      }}
-                      onPointerLeave={() => {
-                        if (swipeAnimating) return
-                        if (!swipeStart) return
-                        setSwipeDelta({ x: 0, y: 0 })
-                        setSwipeStart(null)
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <h3 style={{ margin: 0, fontSize: '18px' }}>{p.product_name || 'İsimsiz Ürün'}</h3>
-                        {p.ad_count > 30 && (
-                          <span style={{ padding: '0.2rem 0.5rem', background: 'rgba(16,185,129,0.1)', color: 'var(--color-success)', borderRadius: '8px', fontSize: '12px', fontWeight: 700 }}>
-                            🔥 Markalaşma
-                          </span>
-                        )}
-                      </div>
-                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', fontSize: '12px', color: 'var(--color-text-muted)' }}>
-                        {p.country_code && <span style={{ padding: '0.25rem 0.4rem', background: 'rgba(59,130,246,0.08)', borderRadius: '8px' }}>{p.country_code}</span>}
-                        {p.search_keyword && <span style={{ padding: '0.25rem 0.4rem', background: 'rgba(16,185,129,0.08)', borderRadius: '8px' }}>{p.search_keyword}</span>}
-                        <span>Reklam: {p.ad_count ?? '-'}</span>
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '13px' }}>
-                        {p.meta_link && (
-                          <a href={p.meta_link} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 700 }}>
-                            Meta Link
-                          </a>
-                        )}
-                        {p.image_url && (
-                          <a href={p.image_url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 700 }}>
-                            Satış Linki
-                          </a>
-                        )}
-                        {p.trendyol_link && (
-                          <a href={p.trendyol_link} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 700 }}>
-                            Trendyol
-                          </a>
-                        )}
-                        {p.amazon_link && (
-                          <a href={p.amazon_link} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 700 }}>
-                            Amazon
-                          </a>
-                        )}
-                      </div>
-                      {p.notes && (
-                        <div style={{ fontSize: '13px', color: 'var(--color-text-muted)', background: 'rgba(148,163,184,0.12)', padding: '0.65rem', borderRadius: '10px', userSelect: 'none' }}>
-                          {p.notes}
+                    <div style={{ position: 'relative', minHeight: '420px' }}>
+                      {next && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            inset: 0,
+                            border: '1px solid var(--color-border)',
+                            borderRadius: '16px',
+                            padding: '1rem',
+                            background: 'linear-gradient(135deg, rgba(248,250,252,0.8), rgba(255,255,255,0.95))',
+                            boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
+                            transform: 'scale(0.96) translateY(12px)',
+                            opacity: 0.9,
+                            pointerEvents: 'none'
+                          }}
+                        >
+                          <h4 style={{ margin: 0, fontSize: '14px', color: 'var(--color-text-muted)' }}>Sıradaki</h4>
+                          <div style={{ fontWeight: 700 }}>{next.product_name || 'İsimsiz Ürün'}</div>
                         </div>
                       )}
+
+                      <div
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          border: '1px solid var(--color-border)',
+                          borderRadius: '16px',
+                          padding: '1rem',
+                          boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.75rem',
+                          background: 'linear-gradient(135deg, rgba(248,250,252,0.9), rgba(255,255,255,0.98))',
+                          transform: `translateX(${swipeDelta.x}px) translateY(${swipeDelta.y}px) rotate(${rotation}deg)`,
+                          transition: swipeStart ? 'none' : 'transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease',
+                          userSelect: 'none',
+                          touchAction: 'none',
+                          overflow: 'hidden'
+                        }}
+                        onPointerDown={(e) => {
+                          if (swipeAnimating) return
+                          const tag = (e.target?.tagName || '').toLowerCase()
+                          if (tag === 'a' || e.target?.closest('a')) return
+                          setSwipeStart({ x: e.clientX, y: e.clientY })
+                          setSwipeDelta({ x: 0, y: 0 })
+                        }}
+                        onPointerMove={(e) => {
+                          if (swipeAnimating) return
+                          if (!swipeStart) return
+                          setSwipeDelta({
+                            x: e.clientX - swipeStart.x,
+                            y: e.clientY - swipeStart.y
+                          })
+                        }}
+                        onPointerUp={(e) => {
+                          if (swipeAnimating) return
+                          if (!swipeStart) return
+                          const dx = e.clientX - swipeStart.x
+                          const threshold = 120
+                          if (dx > threshold) {
+                            handleSwipeDecision('right')
+                          } else if (dx < -threshold) {
+                            handleSwipeDecision('left')
+                          } else {
+                            setSwipeDelta({ x: 0, y: 0 })
+                          }
+                          setSwipeStart(null)
+                        }}
+                        onPointerLeave={() => {
+                          if (swipeAnimating) return
+                          if (!swipeStart) return
+                          setSwipeDelta({ x: 0, y: 0 })
+                          setSwipeStart(null)
+                        }}
+                      >
+                        <div style={{ position: 'absolute', inset: 0, background: overlayColor, pointerEvents: 'none', transition: 'background 0.2s ease' }} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', position: 'relative' }}>
+                          <h3 style={{ margin: 0, fontSize: '18px' }}>{current.product_name || 'İsimsiz Ürün'}</h3>
+                          {current.ad_count > 30 && (
+                            <span style={{ padding: '0.2rem 0.5rem', background: 'rgba(16,185,129,0.1)', color: 'var(--color-success)', borderRadius: '8px', fontSize: '12px', fontWeight: 700 }}>
+                              🔥 Markalaşma
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', fontSize: '12px', color: 'var(--color-text-muted)', position: 'relative' }}>
+                          {current.country_code && <span style={{ padding: '0.25rem 0.4rem', background: 'rgba(59,130,246,0.08)', borderRadius: '8px' }}>{current.country_code}</span>}
+                          {current.search_keyword && <span style={{ padding: '0.25rem 0.4rem', background: 'rgba(16,185,129,0.08)', borderRadius: '8px' }}>{current.search_keyword}</span>}
+                          <span>Reklam: {current.ad_count ?? '-'}</span>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '13px', position: 'relative' }}>
+                          {current.meta_link && (
+                            <a href={current.meta_link} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 700 }}>
+                              Meta Link
+                            </a>
+                          )}
+                          {current.image_url && (
+                            <a href={current.image_url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 700 }}>
+                              Satış Linki
+                            </a>
+                          )}
+                          {current.trendyol_link && (
+                            <a href={current.trendyol_link} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 700 }}>
+                              Trendyol
+                            </a>
+                          )}
+                          {current.amazon_link && (
+                            <a href={current.amazon_link} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 700 }}>
+                              Amazon
+                            </a>
+                          )}
+                        </div>
+                        {current.notes && (
+                          <div style={{ fontSize: '13px', color: 'var(--color-text-muted)', background: 'rgba(148,163,184,0.12)', padding: '0.65rem', borderRadius: '10px', userSelect: 'none', position: 'relative' }}>
+                            {current.notes}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )
                 })()
