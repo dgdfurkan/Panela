@@ -301,7 +301,7 @@ export default function Research() {
   const clearReadyRecords = async () => {
     try {
       // Soft reset: tüm ready kayıtlarını pasif yap
-      await supabase.from('swipe_ready').update({ is_active: false }).neq('user_id', '')
+      await supabase.from('swipe_ready').update({ is_active: false })
       setReadyUsers([])
       setIsReady(false)
     } catch (err) {
