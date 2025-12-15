@@ -405,7 +405,7 @@ export default function Research() {
   }
 
   const handleSwipeDecision = async (direction) => {
-    if (!swipeQueue.length || swipeFinished || swipeAnimating) return
+    if (!swipeQueue.length || swipeFinished) return
     const current = swipeQueue[swipeIndex]
     const selected = direction === 'right'
     let sessionId = swipeSessionId
@@ -416,37 +416,30 @@ export default function Research() {
       setSwipeSessionId(sessionId)
       setSwipeSessionCode(sessionCode)
     }
-    setSwipeAnimating(true)
-    const exitX = direction === 'right' ? window.innerWidth : -window.innerWidth
-    setSwipeDelta({ x: exitX, y: swipeDelta.y })
-    setTimeout(async () => {
-      try {
-        await insertSelection(sessionId, sessionCode, current.id, selected)
-        const nextIndex = swipeIndex + 1
-        const finished = nextIndex >= swipeQueue.length
-        if (finished) {
-          setSwipeFinished(true)
-          clearSwipeState()
-          await clearReadyRecords()
-          await loadHistorySessions()
-        }
-        setSwipeIndex(nextIndex)
-        setSwipeStart(null)
-        setSwipeDelta({ x: 0, y: 0 })
-        setSwipeAnimating(false)
-        persistSwipeState({
-          sessionId,
-          sessionCode,
-          queueIds: swipeQueue.map(p => p.id),
-          index: nextIndex
-        })
-      } catch (err) {
-        console.error('Swipe kaydedilemedi:', err)
-        setSwipeMessage('Swipe kaydedilemedi, tekrar deneyin.')
-        setSwipeDelta({ x: 0, y: 0 })
-        setSwipeAnimating(false)
+    try {
+      await insertSelection(sessionId, sessionCode, current.id, selected)
+      const nextIndex = swipeIndex + 1
+      const finished = nextIndex >= swipeQueue.length
+      if (finished) {
+        setSwipeFinished(true)
+        clearSwipeState()
+        await clearReadyRecords()
+        await loadHistorySessions()
       }
-    }, 220)
+      setSwipeIndex(nextIndex)
+      setSwipeStart(null)
+      setSwipeDelta({ x: 0, y: 0 })
+      persistSwipeState({
+        sessionId,
+        sessionCode,
+        queueIds: swipeQueue.map(p => p.id),
+        index: nextIndex
+      })
+    } catch (err) {
+      console.error('Swipe kaydedilemedi:', err)
+      setSwipeMessage('Swipe kaydedilemedi, tekrar deneyin.')
+      setSwipeDelta({ x: 0, y: 0 })
+    }
   }
 
   const loadHistorySessions = async () => {
@@ -1914,11 +1907,27 @@ export default function Research() {
                             boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
                             transform: 'scale(0.96) translateY(12px)',
                             opacity: 0.9,
-                            pointerEvents: 'none'
+                            pointerEvents: 'none',
+                            overflow: 'hidden'
                           }}
                         >
-                          <h4 style={{ margin: 0, fontSize: '14px', color: 'var(--color-text-muted)' }}>Sıradaki</h4>
-                          <div style={{ fontWeight: 700 }}>{next.product_name || 'İsimsiz Ürün'}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <h4 style={{ margin: 0, fontSize: '13px', color: 'var(--color-text-muted)' }}>Sıradaki</h4>
+                            <span style={{ fontWeight: 700, fontSize: '14px' }}>{next.product_name || 'İsimsiz Ürün'}</span>
+                          </div>
+                          <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginTop: '0.35rem', fontSize: '11px', color: 'var(--color-text-muted)' }}>
+                            {next.country_code && (
+                              <span style={{ padding: '0.2rem 0.35rem', background: 'rgba(59,130,246,0.06)', borderRadius: '999px' }}>
+                                {next.country_code}
+                              </span>
+                            )}
+                            {next.search_keyword && (
+                              <span style={{ padding: '0.2rem 0.35rem', background: 'rgba(16,185,129,0.06)', borderRadius: '999px' }}>
+                                {next.search_keyword}
+                              </span>
+                            )}
+                            <span>Reklam: {next.ad_count ?? '-'}</span>
+                          </div>
                         </div>
                       )}
 
@@ -1956,10 +1965,9 @@ export default function Research() {
                           })
                         }}
                         onPointerUp={(e) => {
-                          if (swipeAnimating) return
                           if (!swipeStart) return
                           const dx = e.clientX - swipeStart.x
-                          const threshold = 120
+                          const threshold = 80
                           if (dx > threshold) {
                             handleSwipeDecision('right')
                           } else if (dx < -threshold) {
@@ -1970,7 +1978,6 @@ export default function Research() {
                           setSwipeStart(null)
                         }}
                         onPointerLeave={() => {
-                          if (swipeAnimating) return
                           if (!swipeStart) return
                           setSwipeDelta({ x: 0, y: 0 })
                           setSwipeStart(null)
