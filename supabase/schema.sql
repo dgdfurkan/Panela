@@ -717,6 +717,10 @@ create policy "open insert swipe_ready" on swipe_ready for insert with check (tr
 create policy "open update swipe_ready" on swipe_ready for update using (true);
 create policy "open delete swipe_ready" on swipe_ready for delete using (true);
 
+-- Ready durumunu soft reset için flag
+alter table public.swipe_ready
+  add column if not exists is_active boolean default true;
+
 -- Swipe Selections Table (eleme oturumu seçim kayıtları)
 create table if not exists public.swipe_selections (
   id uuid default uuid_generate_v4() primary key,

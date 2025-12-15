@@ -273,7 +273,8 @@ export default function Research() {
     try {
       const { data, error } = await supabase
         .from('swipe_ready')
-        .select('user_id, ready_at, app_users(id, username, full_name)')
+        .select('user_id, ready_at, is_active, app_users(id, username, full_name)')
+        .eq('is_active', true)
         .order('ready_at', { ascending: true })
       if (error) throw error
       setReadyUsers(data || [])
@@ -286,7 +287,11 @@ export default function Research() {
   const handleReadyClick = async () => {
     if (!user?.id) return
     try {
-      await supabase.from('swipe_ready').upsert({ user_id: user.id, ready_at: new Date().toISOString() })
+      await supabase.from('swipe_ready').upsert({
+        user_id: user.id,
+        ready_at: new Date().toISOString(),
+        is_active: true
+      })
       await loadReadyStatus()
     } catch (err) {
       console.error('Hazır işareti eklenemedi:', err)
@@ -295,7 +300,8 @@ export default function Research() {
 
   const clearReadyRecords = async () => {
     try {
-      await supabase.from('swipe_ready').delete().neq('user_id', '')
+      // Soft reset: tüm ready kayıtlarını pasif yap
+      await supabase.from('swipe_ready').update({ is_active: false }).neq('user_id', '')
       setReadyUsers([])
       setIsReady(false)
     } catch (err) {
