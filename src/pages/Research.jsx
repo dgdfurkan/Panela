@@ -350,6 +350,8 @@ export default function Research() {
       setSwipeFinished(finished)
       if (finished) {
         clearSwipeState()
+        // Oturum tamamlandıysa ready bayraklarını da pasifleştir
+        clearReadyRecords()
       }
       setSwipeDelta({ x: 0, y: 0 })
       setSwipeStart(null)
