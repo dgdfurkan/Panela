@@ -1911,23 +1911,54 @@ export default function Research() {
                             overflow: 'hidden'
                           }}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                            <h4 style={{ margin: 0, fontSize: '13px', color: 'var(--color-text-muted)' }}>Sıradaki</h4>
-                            <span style={{ fontWeight: 700, fontSize: '14px' }}>{next.product_name || 'İsimsiz Ürün'}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <h3 style={{ margin: 0, fontSize: '16px' }}>{next.product_name || 'İsimsiz Ürün'}</h3>
+                            {next.ad_count > 30 && (
+                              <span style={{ padding: '0.2rem 0.5rem', background: 'rgba(16,185,129,0.1)', color: 'var(--color-success)', borderRadius: '8px', fontSize: '12px', fontWeight: 700 }}>
+                                🔥 Markalaşma
+                              </span>
+                            )}
                           </div>
-                          <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginTop: '0.35rem', fontSize: '11px', color: 'var(--color-text-muted)' }}>
+                          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
                             {next.country_code && (
-                              <span style={{ padding: '0.2rem 0.35rem', background: 'rgba(59,130,246,0.06)', borderRadius: '999px' }}>
+                              <span style={{ padding: '0.25rem 0.4rem', background: 'rgba(59,130,246,0.08)', borderRadius: '8px' }}>
                                 {next.country_code}
                               </span>
                             )}
                             {next.search_keyword && (
-                              <span style={{ padding: '0.2rem 0.35rem', background: 'rgba(16,185,129,0.06)', borderRadius: '999px' }}>
+                              <span style={{ padding: '0.25rem 0.4rem', background: 'rgba(16,185,129,0.08)', borderRadius: '8px' }}>
                                 {next.search_keyword}
                               </span>
                             )}
                             <span>Reklam: {next.ad_count ?? '-'}</span>
                           </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '13px', marginTop: '0.4rem' }}>
+                            {next.meta_link && (
+                              <a href={next.meta_link} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 700 }}>
+                                Meta Link
+                              </a>
+                            )}
+                            {next.image_url && (
+                              <a href={next.image_url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 700 }}>
+                                Satış Linki
+                              </a>
+                            )}
+                            {next.trendyol_link && (
+                              <a href={next.trendyol_link} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 700 }}>
+                                Trendyol
+                              </a>
+                            )}
+                            {next.amazon_link && (
+                              <a href={next.amazon_link} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 700 }}>
+                                Amazon
+                              </a>
+                            )}
+                          </div>
+                          {next.notes && (
+                            <div style={{ fontSize: '13px', color: 'var(--color-text-muted)', background: 'rgba(148,163,184,0.12)', padding: '0.65rem', borderRadius: '10px', userSelect: 'none', marginTop: '0.4rem' }}>
+                              {next.notes}
+                            </div>
+                          )}
                         </div>
                       )}
 
