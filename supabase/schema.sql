@@ -729,6 +729,9 @@ create table if not exists public.swipe_selections (
 
 create index if not exists idx_swipe_selections_session on public.swipe_selections(session_id);
 create index if not exists idx_swipe_selections_product on public.swipe_selections(product_id);
+alter table public.swipe_selections
+  add column if not exists session_code text;
+create index if not exists idx_swipe_selections_session_code on public.swipe_selections(session_code);
 
 alter table public.swipe_selections enable row level security;
 

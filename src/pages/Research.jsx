@@ -30,11 +30,15 @@ export default function Research() {
   const [swipeQueue, setSwipeQueue] = useState([])
   const [swipeIndex, setSwipeIndex] = useState(0)
   const [swipeSessionId, setSwipeSessionId] = useState(null)
+  const [swipeSessionCode, setSwipeSessionCode] = useState(null)
   const [swipeFinished, setSwipeFinished] = useState(false)
   const [historySessions, setHistorySessions] = useState([])
   const [exportingSession, setExportingSession] = useState(null)
   const [swipeStart, setSwipeStart] = useState(null)
   const [swipeDelta, setSwipeDelta] = useState({ x: 0, y: 0 })
+  const [swipeAnimating, setSwipeAnimating] = useState(false)
+  const swipeRestoredRef = useRef(false)
+  const SWIPE_STORAGE_KEY = 'panela_swipe_state_v1'
 
   const shuffleArray = (arr) => {
     const a = [...arr]
@@ -301,24 +305,95 @@ export default function Research() {
 
   const [swipeMessage, setSwipeMessage] = useState('')
 
+  const persistSwipeState = (state) => {
+    try {
+      localStorage.setItem(SWIPE_STORAGE_KEY, JSON.stringify(state))
+    } catch (_) {}
+  }
+
+  const clearSwipeState = () => {
+    try {
+      localStorage.removeItem(SWIPE_STORAGE_KEY)
+    } catch (_) {}
+  }
+
+  const restoreSwipeState = (allProducts) => {
+    if (swipeRestoredRef.current) return
+    swipeRestoredRef.current = true
+    try {
+      const raw = localStorage.getItem(SWIPE_STORAGE_KEY)
+      if (!raw) return
+      const parsed = JSON.parse(raw)
+      if (!parsed?.sessionId || !Array.isArray(parsed.queueIds)) return
+      const queueProducts = parsed.queueIds
+        .map(id => allProducts.find(p => p.id === id))
+        .filter(Boolean)
+      if (!queueProducts.length) {
+        clearSwipeState()
+        return
+      }
+      const idx = Math.min(parsed.index ?? 0, queueProducts.length)
+      setSwipeSessionId(parsed.sessionId)
+      setSwipeSessionCode(parsed.sessionCode || null)
+      setSwipeQueue(queueProducts)
+      setSwipeIndex(idx)
+      const finished = idx >= queueProducts.length
+      setSwipeFinished(finished)
+      if (finished) {
+        clearSwipeState()
+      }
+      setSwipeDelta({ x: 0, y: 0 })
+      setSwipeStart(null)
+    } catch (_) {
+      // ignore
+    }
+  }
+
+  const fetchNextSessionCode = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('swipe_selections')
+        .select('session_code')
+        .not('session_code', 'is', null)
+        .order('session_code', { ascending: false })
+        .limit(1)
+      if (error) throw error
+      const last = data?.[0]?.session_code
+      const num = last ? parseInt(last, 10) + 1 : 1
+      return String(num).padStart(3, '0')
+    } catch (_) {
+      return '001'
+    }
+  }
+
   // Swipe oturumu başlat
-  const startSwipeSession = () => {
+  const startSwipeSession = async () => {
     if (!user?.id) return
     if (readyUsers.length < 2) {
       setSwipeMessage('İki kullanıcı da hazır olmalı.')
       return
     }
     const sessionId = crypto.randomUUID()
+    const code = await fetchNextSessionCode()
+    const shuffled = shuffleArray(products)
     setSwipeSessionId(sessionId)
-    setSwipeQueue(shuffleArray(products))
+    setSwipeSessionCode(code)
+    setSwipeQueue(shuffled)
     setSwipeIndex(0)
     setSwipeFinished(false)
     setSwipeMessage('')
+    persistSwipeState({
+      sessionId,
+      sessionCode: code,
+      queueIds: shuffled.map(p => p.id),
+      index: 0
+    })
   }
 
-  const insertSelection = async (sessionId, productId, isSelected) => {
+  const insertSelection = async (sessionId, sessionCode, productId, isSelected) => {
     await supabase.from('swipe_selections').insert({
       session_id: sessionId,
+      session_code: sessionCode || null,
       product_id: productId,
       selected_by: user?.id || null,
       is_selected: isSelected,
@@ -327,34 +402,55 @@ export default function Research() {
   }
 
   const handleSwipeDecision = async (direction) => {
-    if (!swipeQueue.length || swipeFinished) return
+    if (!swipeQueue.length || swipeFinished || swipeAnimating) return
     const current = swipeQueue[swipeIndex]
     const selected = direction === 'right'
     let sessionId = swipeSessionId
+    let sessionCode = swipeSessionCode
     if (!sessionId) {
       sessionId = crypto.randomUUID()
+      sessionCode = await fetchNextSessionCode()
       setSwipeSessionId(sessionId)
+      setSwipeSessionCode(sessionCode)
     }
-    try {
-      await insertSelection(sessionId, current.id, selected)
-      const nextIndex = swipeIndex + 1
-      if (nextIndex >= swipeQueue.length) {
-        setSwipeFinished(true)
-        await clearReadyRecords()
-        await loadHistorySessions()
+    setSwipeAnimating(true)
+    const exitX = direction === 'right' ? window.innerWidth : -window.innerWidth
+    setSwipeDelta({ x: exitX, y: swipeDelta.y })
+    setTimeout(async () => {
+      try {
+        await insertSelection(sessionId, sessionCode, current.id, selected)
+        const nextIndex = swipeIndex + 1
+        const finished = nextIndex >= swipeQueue.length
+        if (finished) {
+          setSwipeFinished(true)
+          clearSwipeState()
+          await clearReadyRecords()
+          await loadHistorySessions()
+        }
+        setSwipeIndex(nextIndex)
+        setSwipeStart(null)
+        setSwipeDelta({ x: 0, y: 0 })
+        setSwipeAnimating(false)
+        persistSwipeState({
+          sessionId,
+          sessionCode,
+          queueIds: swipeQueue.map(p => p.id),
+          index: nextIndex
+        })
+      } catch (err) {
+        console.error('Swipe kaydedilemedi:', err)
+        setSwipeMessage('Swipe kaydedilemedi, tekrar deneyin.')
+        setSwipeDelta({ x: 0, y: 0 })
+        setSwipeAnimating(false)
       }
-      setSwipeIndex(nextIndex)
-    } catch (err) {
-      console.error('Swipe kaydedilemedi:', err)
-      setSwipeMessage('Swipe kaydedilemedi, tekrar deneyin.')
-    }
+    }, 220)
   }
 
   const loadHistorySessions = async () => {
     try {
       const { data, error } = await supabase
         .from('swipe_selections')
-        .select('session_id, selected_at, is_selected')
+        .select('session_id, session_code, selected_at, is_selected')
         .order('selected_at', { ascending: false })
       if (error) throw error
       const map = new Map()
@@ -362,6 +458,7 @@ export default function Research() {
         if (!map.has(row.session_id)) {
           map.set(row.session_id, {
             session_id: row.session_id,
+            session_code: row.session_code,
             first_at: row.selected_at,
             total: 0,
             selected: 0
@@ -431,6 +528,12 @@ export default function Research() {
       loadHistorySessions()
     }
   }, [activeTab, user?.id])
+
+  useEffect(() => {
+    if (activeTab === 'swipe' && !productsLoading && products.length > 0) {
+      restoreSwipeState(products)
+    }
+  }, [activeTab, productsLoading, products])
 
   const loadProductViews = async () => {
     if (!user?.id) return
@@ -1725,7 +1828,7 @@ export default function Research() {
                     }}
                   >
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 700 }}>Oturum: {session.session_id.slice(0, 6)}...</div>
+                      <div style={{ fontWeight: 700 }}>Oturum: {session.session_code || session.session_id?.slice(0, 6) || '-'}</div>
                       <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
                         Tarih: {session.first_at ? new Date(session.first_at).toLocaleString('tr-TR') : '-'}
                       </div>
@@ -1805,6 +1908,7 @@ export default function Research() {
                         touchAction: 'none'
                       }}
                       onPointerDown={(e) => {
+                        if (swipeAnimating) return
                         // Linke tıklama ise swipe başlatma
                         const tag = (e.target?.tagName || '').toLowerCase()
                         if (tag === 'a' || e.target?.closest('a')) return
@@ -1812,6 +1916,7 @@ export default function Research() {
                         setSwipeDelta({ x: 0, y: 0 })
                       }}
                       onPointerMove={(e) => {
+                        if (swipeAnimating) return
                         if (!swipeStart) return
                         setSwipeDelta({
                           x: e.clientX - swipeStart.x,
@@ -1819,6 +1924,7 @@ export default function Research() {
                         })
                       }}
                       onPointerUp={(e) => {
+                        if (swipeAnimating) return
                         if (!swipeStart) return
                         const dx = e.clientX - swipeStart.x
                         const threshold = 120
@@ -1832,6 +1938,7 @@ export default function Research() {
                         setSwipeStart(null)
                       }}
                       onPointerLeave={() => {
+                        if (swipeAnimating) return
                         if (!swipeStart) return
                         setSwipeDelta({ x: 0, y: 0 })
                         setSwipeStart(null)
