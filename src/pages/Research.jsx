@@ -416,6 +416,9 @@ export default function Research() {
       setSwipeSessionId(sessionId)
       setSwipeSessionCode(sessionCode)
     }
+    // Yeni kart gelmeden önce pozisyonu sıfırla ki bir sonraki kart hep merkezden başlasın
+    setSwipeStart(null)
+    setSwipeDelta({ x: 0, y: 0 })
     try {
       await insertSelection(sessionId, sessionCode, current.id, selected)
       const nextIndex = swipeIndex + 1
@@ -427,8 +430,6 @@ export default function Research() {
         await loadHistorySessions()
       }
       setSwipeIndex(nextIndex)
-      setSwipeStart(null)
-      setSwipeDelta({ x: 0, y: 0 })
       persistSwipeState({
         sessionId,
         sessionCode,
