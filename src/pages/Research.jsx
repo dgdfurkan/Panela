@@ -497,25 +497,101 @@ export default function Research() {
         setExportingSession(null)
         return
       }
-      const rows = selectedProducts.map(p => ({
-        'Adı': p.product_name || '',
-        'Satış Sayfası': p.image_url || '',
-        'Meta Linki': p.meta_link || '',
-        'Reklam Sayısı': p.ad_count ?? '',
-        'Ülke': p.country_code || '',
-        'Anahtar Kelime': p.search_keyword || '',
-        'Not': p.notes || '',
-        'Eklenme Tarihi': p.created_at ? new Date(p.created_at).toLocaleString('tr-TR', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        }) : ''
-      }))
+      // Ürünler tabındaki export ile aynı format
+      const sortedProducts = [...selectedProducts].sort((a, b) => {
+        const dateA = new Date(a.created_at || 0)
+        const dateB = new Date(b.created_at || 0)
+        return dateB - dateA
+      })
+
+      const excelData = sortedProducts.map(product => {
+        const salesPage = product.image_url || ''
+        const createdAtFormatted = product.created_at
+          ? new Date(product.created_at).toLocaleString('tr-TR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })
+          : ''
+
+        return {
+          'Adı': product.product_name || '',
+          'Satış Sayfası': salesPage,
+          'Meta Linki': product.meta_link || '',
+          'Reklam Sayısı': product.ad_count ?? '',
+          'Ürün Fiyatı': '',
+          'Eklenme Tarihi': createdAtFormatted
+        }
+      })
 
       const wb = XLSX.utils.book_new()
-      const ws = XLSX.utils.json_to_sheet(rows)
+      const ws = XLSX.utils.json_to_sheet(excelData)
+
+      const range = XLSX.utils.decode_range(ws['!ref'] || 'A1')
+
+      // Satış Sayfası (B)
+      for (let row = 1; row <= range.e.r; row++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: row, c: 1 })
+        const cell = ws[cellAddress]
+        if (cell && cell.v && typeof cell.v === 'string' && cell.v.startsWith('http')) {
+          cell.l = { Target: cell.v, Tooltip: cell.v }
+        }
+      }
+
+      // Meta Linki (C)
+      for (let row = 1; row <= range.e.r; row++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: row, c: 2 })
+        const cell = ws[cellAddress]
+        if (cell && cell.v && typeof cell.v === 'string' && cell.v.startsWith('http')) {
+          cell.l = { Target: cell.v, Tooltip: cell.v }
+        }
+      }
+
+      ws['!cols'] = [
+        { wch: 45 },
+        { wch: 60 },
+        { wch: 75 },
+        { wch: 22 },
+        { wch: 22 },
+        { wch: 20 }
+      ]
+
+      const headerRange = XLSX.utils.decode_range(ws['!ref'] || 'A1')
+      for (let col = 0; col <= headerRange.e.c; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col })
+        if (!ws[cellAddress]) continue
+        ws[cellAddress].s = {
+          font: { bold: true },
+          fill: { fgColor: { rgb: 'E7E6E6' } }
+        }
+      }
+
+      for (let row = 1; row <= range.e.r; row++) {
+        const isOddRow = row % 2 === 1
+        for (let col = 0; col <= range.e.c; col++) {
+          const cellAddress = XLSX.utils.encode_cell({ r: row, c: col })
+          if (!ws[cellAddress]) {
+            ws[cellAddress] = { t: 's', v: '' }
+          }
+          if (!ws[cellAddress].s) {
+            ws[cellAddress].s = {}
+          }
+          if (isOddRow) {
+            ws[cellAddress].s.fill = {
+              patternType: 'solid',
+              fgColor: { rgb: 'E3F2FD' }
+            }
+          } else {
+            ws[cellAddress].s.fill = {
+              patternType: 'solid',
+              fgColor: { rgb: 'FFFFFF' }
+            }
+          }
+        }
+      }
+
       XLSX.utils.book_append_sheet(wb, ws, 'Seçilenler')
       const dateStr = new Date().toISOString().split('T')[0]
       XLSX.writeFile(wb, `panela-swipe-${sessionId}-${dateStr}.xlsx`)
