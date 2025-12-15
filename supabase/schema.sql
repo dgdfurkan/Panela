@@ -696,3 +696,48 @@ create policy "open view product_views" on product_views for select using (true)
 create policy "open insert product_views" on product_views for insert with check (true);
 create policy "open update product_views" on product_views for update using (true);
 create policy "open delete product_views" on product_views for delete using (true);
+
+-- Swipe Ready Table (eleme hazır sinyali)
+create table if not exists public.swipe_ready (
+  id uuid default uuid_generate_v4() primary key,
+  user_id uuid not null references public.app_users(id),
+  ready_at timestamptz default timezone('utc'::text, now()),
+  unique (user_id)
+);
+
+alter table public.swipe_ready enable row level security;
+
+drop policy if exists "open view swipe_ready" on swipe_ready;
+drop policy if exists "open insert swipe_ready" on swipe_ready;
+drop policy if exists "open update swipe_ready" on swipe_ready;
+drop policy if exists "open delete swipe_ready" on swipe_ready;
+
+create policy "open view swipe_ready" on swipe_ready for select using (true);
+create policy "open insert swipe_ready" on swipe_ready for insert with check (true);
+create policy "open update swipe_ready" on swipe_ready for update using (true);
+create policy "open delete swipe_ready" on swipe_ready for delete using (true);
+
+-- Swipe Selections Table (eleme oturumu seçim kayıtları)
+create table if not exists public.swipe_selections (
+  id uuid default uuid_generate_v4() primary key,
+  session_id uuid not null,
+  product_id uuid not null references public.discovered_products(id) on delete cascade,
+  selected_by uuid references public.app_users(id),
+  is_selected boolean not null default false,
+  selected_at timestamptz default timezone('utc'::text, now())
+);
+
+create index if not exists idx_swipe_selections_session on public.swipe_selections(session_id);
+create index if not exists idx_swipe_selections_product on public.swipe_selections(product_id);
+
+alter table public.swipe_selections enable row level security;
+
+drop policy if exists "open view swipe_selections" on swipe_selections;
+drop policy if exists "open insert swipe_selections" on swipe_selections;
+drop policy if exists "open update swipe_selections" on swipe_selections;
+drop policy if exists "open delete swipe_selections" on swipe_selections;
+
+create policy "open view swipe_selections" on swipe_selections for select using (true);
+create policy "open insert swipe_selections" on swipe_selections for insert with check (true);
+create policy "open update swipe_selections" on swipe_selections for update using (true);
+create policy "open delete swipe_selections" on swipe_selections for delete using (true);

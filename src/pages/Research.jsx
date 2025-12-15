@@ -1,7 +1,7 @@
 import { useAuth } from '../context/AuthContext'
 import KeywordLauncher from '../components/meta-ads/KeywordLauncher'
 import ProductScanner from '../components/meta-ads/ProductScanner'
-import { Search, Zap, Rocket, Package, MessageSquare, Trash2, Filter, X, FileSpreadsheet, ExternalLink } from 'lucide-react'
+import { Search, Zap, Rocket, Package, MessageSquare, Trash2, Filter, X, FileSpreadsheet, ExternalLink, Hand, Sparkles } from 'lucide-react'
 import AutoMetaScanner from '../components/meta-ads/AutoMetaScanner'
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
@@ -20,11 +20,29 @@ const CRITERIA = [
 
 export default function Research() {
   const { user } = useAuth()
-  const [activeTab, setActiveTab] = useState('classic') // classic | products | auto
+  const [activeTab, setActiveTab] = useState('classic') // classic | products | swipe | auto
   const [products, setProducts] = useState([])
   const [productsLoading, setProductsLoading] = useState(true)
   const [unreadCounts, setUnreadCounts] = useState({})
   const [allUsers, setAllUsers] = useState([])
+  const [readyUsers, setReadyUsers] = useState([])
+  const [isReady, setIsReady] = useState(false)
+  const [swipeQueue, setSwipeQueue] = useState([])
+  const [swipeIndex, setSwipeIndex] = useState(0)
+  const [swipeSessionId, setSwipeSessionId] = useState(null)
+  const [swipeFinished, setSwipeFinished] = useState(false)
+  const [historySessions, setHistorySessions] = useState([])
+  const [swipeLoading, setSwipeLoading] = useState(false)
+  const [exportingSession, setExportingSession] = useState(null)
+
+  const shuffleArray = (arr) => {
+    const a = [...arr]
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[a[i], a[j]] = [a[j], a[i]]
+    }
+    return a
+  }
   const [productViews, setProductViews] = useState({}) // product_id -> first_seen_at
   
   // Filters
@@ -243,6 +261,175 @@ export default function Research() {
       console.error('Error loading unread counts:', error)
     }
   }
+
+  // Ready durumunu yükle
+  const loadReadyStatus = async () => {
+    if (!user?.id) return
+    try {
+      const { data, error } = await supabase
+        .from('swipe_ready')
+        .select('user_id, ready_at, app_users(id, username, full_name)')
+        .order('ready_at', { ascending: true })
+      if (error) throw error
+      setReadyUsers(data || [])
+      setIsReady(!!data?.find(r => r.user_id === user.id))
+    } catch (err) {
+      console.error('Ready durum yüklenemedi:', err)
+    }
+  }
+
+  const handleReadyClick = async () => {
+    if (!user?.id) return
+    try {
+      await supabase.from('swipe_ready').upsert({ user_id: user.id, ready_at: new Date().toISOString() })
+      await loadReadyStatus()
+    } catch (err) {
+      console.error('Hazır işareti eklenemedi:', err)
+    }
+  }
+
+  const clearReadyRecords = async () => {
+    try {
+      await supabase.from('swipe_ready').delete().neq('user_id', '')
+      setReadyUsers([])
+      setIsReady(false)
+    } catch (err) {
+      console.error('Ready kayıtları temizlenemedi:', err)
+    }
+  }
+
+  const [swipeMessage, setSwipeMessage] = useState('')
+
+  // Swipe oturumu başlat
+  const startSwipeSession = () => {
+    if (!user?.id) return
+    if (readyUsers.length < 2) {
+      setSwipeMessage('İki kullanıcı da hazır olmalı.')
+      return
+    }
+    const sessionId = crypto.randomUUID()
+    setSwipeSessionId(sessionId)
+    setSwipeQueue(shuffleArray(products))
+    setSwipeIndex(0)
+    setSwipeFinished(false)
+    setSwipeMessage('')
+  }
+
+  const insertSelection = async (sessionId, productId, isSelected) => {
+    await supabase.from('swipe_selections').insert({
+      session_id: sessionId,
+      product_id: productId,
+      selected_by: user?.id || null,
+      is_selected: isSelected,
+      selected_at: new Date().toISOString()
+    })
+  }
+
+  const handleSwipeDecision = async (direction) => {
+    if (!swipeQueue.length || swipeFinished) return
+    const current = swipeQueue[swipeIndex]
+    const selected = direction === 'right'
+    let sessionId = swipeSessionId
+    if (!sessionId) {
+      sessionId = crypto.randomUUID()
+      setSwipeSessionId(sessionId)
+    }
+    try {
+      await insertSelection(sessionId, current.id, selected)
+      const nextIndex = swipeIndex + 1
+      if (nextIndex >= swipeQueue.length) {
+        setSwipeFinished(true)
+        await clearReadyRecords()
+        await loadHistorySessions()
+      }
+      setSwipeIndex(nextIndex)
+    } catch (err) {
+      console.error('Swipe kaydedilemedi:', err)
+      setSwipeMessage('Swipe kaydedilemedi, tekrar deneyin.')
+    }
+  }
+
+  const loadHistorySessions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('swipe_selections')
+        .select('session_id, selected_at, is_selected')
+        .order('selected_at', { ascending: false })
+      if (error) throw error
+      const map = new Map()
+      data?.forEach(row => {
+        if (!map.has(row.session_id)) {
+          map.set(row.session_id, {
+            session_id: row.session_id,
+            first_at: row.selected_at,
+            total: 0,
+            selected: 0
+          })
+        }
+        const entry = map.get(row.session_id)
+        entry.total += 1
+        if (row.is_selected) entry.selected += 1
+        if (row.selected_at && entry.first_at && new Date(row.selected_at) < new Date(entry.first_at)) {
+          entry.first_at = row.selected_at
+        }
+      })
+      setHistorySessions(Array.from(map.values()))
+    } catch (err) {
+      console.error('Geçmiş oturumlar yüklenemedi:', err)
+    }
+  }
+
+  const exportSessionToExcel = async (sessionId) => {
+    try {
+      setExportingSession(sessionId)
+      const { data, error } = await supabase
+        .from('swipe_selections')
+        .select('product_id, is_selected, discovered_products(*)')
+        .eq('session_id', sessionId)
+        .eq('is_selected', true)
+      if (error) throw error
+      const selectedProducts = (data || []).map(d => d.discovered_products).filter(Boolean)
+      if (!selectedProducts.length) {
+        alert('Bu oturumda seçili ürün yok.')
+        setExportingSession(null)
+        return
+      }
+      const rows = selectedProducts.map(p => ({
+        'Adı': p.product_name || '',
+        'Satış Sayfası': p.image_url || '',
+        'Meta Linki': p.meta_link || '',
+        'Reklam Sayısı': p.ad_count ?? '',
+        'Ülke': p.country_code || '',
+        'Anahtar Kelime': p.search_keyword || '',
+        'Not': p.notes || '',
+        'Eklenme Tarihi': p.created_at ? new Date(p.created_at).toLocaleString('tr-TR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }) : ''
+      }))
+
+      const wb = XLSX.utils.book_new()
+      const ws = XLSX.utils.json_to_sheet(rows)
+      XLSX.utils.book_append_sheet(wb, ws, 'Seçilenler')
+      const dateStr = new Date().toISOString().split('T')[0]
+      XLSX.writeFile(wb, `panela-swipe-${sessionId}-${dateStr}.xlsx`)
+    } catch (err) {
+      console.error('Excel export hatası:', err)
+      alert('Excel indirilemedi.')
+    } finally {
+      setExportingSession(null)
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab === 'swipe' && user?.id) {
+      loadReadyStatus()
+      loadHistorySessions()
+    }
+  }, [activeTab, user?.id])
 
   const loadProductViews = async () => {
     if (!user?.id) return
@@ -1169,6 +1356,24 @@ export default function Research() {
             Ürünler
           </button>
           <button
+            onClick={() => setActiveTab('swipe')}
+            className="primary"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.65rem 1rem',
+              background: activeTab === 'swipe' ? 'linear-gradient(135deg, #a855f7, #6366f1)' : 'white',
+              color: activeTab === 'swipe' ? 'white' : 'var(--color-text-main)',
+              border: activeTab === 'swipe' ? 'none' : '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-md)',
+              boxShadow: activeTab === 'swipe' ? 'var(--shadow-glow)' : 'none'
+            }}
+          >
+            <Hand size={16} />
+            Eleme
+          </button>
+          <button
             onClick={() => setActiveTab('auto')}
             className="primary"
             style={{
@@ -1397,6 +1602,320 @@ export default function Research() {
                 })}
               </div>
             )}
+          </div>
+        ) : activeTab === 'swipe' ? (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            {/* Left: Ready ve kontrol paneli */}
+            <div
+              style={{
+                padding: '1rem',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-md)',
+                background: 'white',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.75rem'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Sparkles size={18} color="var(--color-primary)" />
+                <div>
+                  <div style={{ fontWeight: 700 }}>Eleme / Swipe Hazırlık</div>
+                  <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                    İki kullanıcı da "Hazırım" dedikten sonra swipe başlayabilir. Sayfayı yenileyerek karşı tarafın durumunu görürsünüz.
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <button
+                  onClick={handleReadyClick}
+                  disabled={isReady}
+                  style={{
+                    padding: '0.6rem 1rem',
+                    background: isReady ? '#94a3b8' : 'linear-gradient(135deg, #10b981, #059669)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 'var(--radius-md)',
+                    fontWeight: 700,
+                    cursor: isReady ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 4px 14px rgba(16, 185, 129, 0.25)'
+                  }}
+                >
+                  {isReady ? 'Hazırsın' : 'Hazırım'}
+                </button>
+                <button
+                  onClick={startSwipeSession}
+                  disabled={readyUsers.length < 2 || products.length === 0}
+                  style={{
+                    padding: '0.6rem 1rem',
+                    background: readyUsers.length < 2 ? '#cbd5e1' : 'linear-gradient(135deg, #a855f7, #6366f1)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 'var(--radius-md)',
+                    fontWeight: 700,
+                    cursor: readyUsers.length < 2 ? 'not-allowed' : 'pointer',
+                    boxShadow: readyUsers.length < 2 ? 'none' : '0 4px 14px rgba(99, 102, 241, 0.25)'
+                  }}
+                >
+                  Swipe'i Başlat
+                </button>
+              </div>
+
+              <div style={{ padding: '0.75rem', border: '1px dashed var(--color-border)', borderRadius: '12px', background: 'var(--color-background)' }}>
+                <div style={{ fontWeight: 700, marginBottom: '0.35rem' }}>Hazır Olanlar</div>
+                {readyUsers.length === 0 ? (
+                  <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Henüz kimse hazır değil.</div>
+                ) : (
+                  <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+                    {readyUsers.map(u => (
+                      <span
+                        key={u.user_id}
+                        style={{
+                          padding: '0.35rem 0.55rem',
+                          borderRadius: '999px',
+                          background: 'rgba(99,102,241,0.08)',
+                          color: 'var(--color-primary)',
+                          fontSize: '12px',
+                          fontWeight: 700
+                        }}
+                      >
+                        {u.app_users?.username || u.app_users?.full_name || u.user_id.slice(0, 6)}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {swipeMessage && (
+                <div style={{ fontSize: '12px', color: 'var(--color-error)', fontWeight: 600 }}>
+                  {swipeMessage}
+                </div>
+              )}
+
+              {/* Geçmiş oturumlar */}
+              <div
+                style={{
+                  marginTop: '0.5rem',
+                  padding: '0.75rem',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: '12px',
+                  background: 'white',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.5rem'
+                }}
+              >
+                <div style={{ fontWeight: 700 }}>Geçmiş Oturumlar</div>
+                {historySessions.length === 0 && (
+                  <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Henüz kayıtlı oturum yok.</div>
+                )}
+                {historySessions.map(session => (
+                  <div
+                    key={session.session_id}
+                    style={{
+                      border: '1px solid var(--color-border)',
+                      borderRadius: '10px',
+                      padding: '0.65rem 0.75rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}
+                  >
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700 }}>Oturum: {session.session_id.slice(0, 6)}...</div>
+                      <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                        Tarih: {session.first_at ? new Date(session.first_at).toLocaleString('tr-TR') : '-'}
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                        Seçilen: {session.selected} / {session.total}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => exportSessionToExcel(session.session_id)}
+                      disabled={exportingSession === session.session_id}
+                      style={{
+                        padding: '0.5rem 0.75rem',
+                        background: '#107C41',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '10px',
+                        fontWeight: 700,
+                        cursor: exportingSession === session.session_id ? 'wait' : 'pointer'
+                      }}
+                    >
+                      {exportingSession === session.session_id ? 'İndiriliyor...' : 'Excel İndir'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right: Swipe alanı */}
+            <div
+              style={{
+                padding: '1rem',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-md)',
+                background: 'white',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+                minHeight: '540px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Hand size={18} color="var(--color-primary)" />
+                <div>
+                  <div style={{ fontWeight: 700 }}>Swipe Alanı</div>
+                  <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Sağa: Seç | Sola: Pas</div>
+                </div>
+                <div style={{ marginLeft: 'auto', fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                  {swipeQueue.length > 0 ? `${Math.min(swipeIndex + 1, swipeQueue.length)} / ${swipeQueue.length}` : ''}
+                </div>
+              </div>
+
+              {(!swipeQueue.length || swipeIndex >= swipeQueue.length) && !swipeFinished && (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>
+                  Swipe için başlat butonuna basın. Ürünler rastgele sıralanır. (Kısıt: iki kullanıcı hazır olmalı)
+                </div>
+              )}
+
+              {swipeQueue.length > 0 && swipeIndex < swipeQueue.length && (
+                <div
+                  style={{
+                    border: '1px solid var(--color-border)',
+                    borderRadius: '16px',
+                    padding: '1rem',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.75rem',
+                    background: 'linear-gradient(135deg, rgba(248,250,252,0.8), rgba(255,255,255,0.95))'
+                  }}
+                >
+                  {(() => {
+                    const p = swipeQueue[swipeIndex]
+                    return (
+                      <>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <h3 style={{ margin: 0, fontSize: '18px' }}>{p.product_name || 'İsimsiz Ürün'}</h3>
+                          {p.ad_count > 30 && (
+                            <span style={{ padding: '0.2rem 0.5rem', background: 'rgba(16,185,129,0.1)', color: 'var(--color-success)', borderRadius: '8px', fontSize: '12px', fontWeight: 700 }}>
+                              🔥 Markalaşma
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                          {p.country_code && <span style={{ padding: '0.25rem 0.4rem', background: 'rgba(59,130,246,0.08)', borderRadius: '8px' }}>{p.country_code}</span>}
+                          {p.search_keyword && <span style={{ padding: '0.25rem 0.4rem', background: 'rgba(16,185,129,0.08)', borderRadius: '8px' }}>{p.search_keyword}</span>}
+                          <span>Reklam: {p.ad_count ?? '-'}</span>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '13px' }}>
+                          {p.meta_link && (
+                            <a href={p.meta_link} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 700 }}>
+                              Meta Link
+                            </a>
+                          )}
+                          {p.image_url && (
+                            <a href={p.image_url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 700 }}>
+                              Satış Linki
+                            </a>
+                          )}
+                          {p.trendyol_link && (
+                            <a href={p.trendyol_link} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 700 }}>
+                              Trendyol
+                            </a>
+                          )}
+                          {p.amazon_link && (
+                            <a href={p.amazon_link} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 700 }}>
+                              Amazon
+                            </a>
+                          )}
+                        </div>
+                        {p.notes && (
+                          <div style={{ fontSize: '13px', color: 'var(--color-text-muted)', background: 'rgba(148,163,184,0.12)', padding: '0.65rem', borderRadius: '10px' }}>
+                            {p.notes}
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', gap: '0.75rem' }}>
+                          <button
+                            onClick={() => handleSwipeDecision('left')}
+                            style={{
+                              flex: 1,
+                              padding: '0.75rem',
+                              border: '1px solid var(--color-border)',
+                              borderRadius: '12px',
+                              background: 'white',
+                              fontWeight: 700,
+                              color: 'var(--color-text-muted)',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Pas (Sol)
+                          </button>
+                          <button
+                            onClick={() => handleSwipeDecision('right')}
+                            style={{
+                              flex: 1,
+                              padding: '0.75rem',
+                              border: 'none',
+                              borderRadius: '12px',
+                              background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+                              color: 'white',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              boxShadow: '0 6px 16px rgba(34,197,94,0.25)'
+                            }}
+                          >
+                            Seç (Sağ)
+                          </button>
+                        </div>
+                      </>
+                    )
+                  })()}
+                </div>
+              )}
+
+              {swipeFinished && (
+                <div
+                  style={{
+                    padding: '1rem',
+                    border: '1px dashed var(--color-border)',
+                    borderRadius: '14px',
+                    background: 'rgba(16,185,129,0.06)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem'
+                  }}
+                >
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, color: 'var(--color-success)' }}>Oturum tamamlandı.</div>
+                    <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                      Seçilen ürünler için Excel indirebilirsiniz. Ready kayıtları sıfırlandı.
+                    </div>
+                  </div>
+                  {swipeSessionId && (
+                    <button
+                      onClick={() => exportSessionToExcel(swipeSessionId)}
+                      style={{
+                        padding: '0.65rem 1rem',
+                        background: '#107C41',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '12px',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Excel İndir
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         ) : activeTab === 'auto' ? (
           <AutoMetaScanner />
