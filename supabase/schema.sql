@@ -722,20 +722,20 @@ alter table public.swipe_ready
   add column if not exists is_active boolean default true;
 
 -- Swipe Selections Table (eleme oturumu seçim kayıtları)
+-- YENİ YAPI: Her oturum için tek satır, ürünler JSONB içinde
 create table if not exists public.swipe_selections (
   id uuid default uuid_generate_v4() primary key,
-  session_id uuid not null,
-  product_id uuid not null references public.discovered_products(id) on delete cascade,
+  session_id uuid not null unique,
+  session_code text not null,
   selected_by uuid references public.app_users(id),
-  is_selected boolean not null default false,
-  selected_at timestamptz default timezone('utc'::text, now())
+  selected_products jsonb not null default '[]'::jsonb, -- [{product_id, is_selected, selected_at}]
+  created_at timestamptz default timezone('utc'::text, now()),
+  finished_at timestamptz
 );
 
 create index if not exists idx_swipe_selections_session on public.swipe_selections(session_id);
-create index if not exists idx_swipe_selections_product on public.swipe_selections(product_id);
-alter table public.swipe_selections
-  add column if not exists session_code text;
 create index if not exists idx_swipe_selections_session_code on public.swipe_selections(session_code);
+create index if not exists idx_swipe_selections_created on public.swipe_selections(created_at);
 
 alter table public.swipe_selections enable row level security;
 

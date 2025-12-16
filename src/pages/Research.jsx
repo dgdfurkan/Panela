@@ -366,7 +366,7 @@ export default function Research() {
         .from('swipe_selections')
         .select('session_code')
         .not('session_code', 'is', null)
-        .order('session_code', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(1)
       if (error) throw error
       const last = data?.[0]?.session_code
@@ -387,6 +387,21 @@ export default function Research() {
     const sessionId = crypto.randomUUID()
     const code = await fetchNextSessionCode()
     const shuffled = shuffleArray(products)
+    
+    // Oturum kaydını oluştur (henüz ürün yok, boş liste)
+    try {
+      await supabase
+        .from('swipe_selections')
+        .insert({
+          session_id: sessionId,
+          session_code: code,
+          selected_by: user?.id || null,
+          selected_products: []
+        })
+    } catch (err) {
+      console.error('Oturum kaydı oluşturulamadı:', err)
+    }
+    
     setSwipeSessionId(sessionId)
     setSwipeSessionCode(code)
     setSwipeQueue(shuffled)
@@ -401,15 +416,41 @@ export default function Research() {
     })
   }
 
-  const insertSelection = async (sessionId, sessionCode, productId, isSelected) => {
-    await supabase.from('swipe_selections').insert({
-      session_id: sessionId,
-      session_code: sessionCode || null,
+  const createOrUpdateSession = async (sessionId, sessionCode, productId, isSelected) => {
+    // Önce mevcut oturumu kontrol et
+    const { data: existing } = await supabase
+      .from('swipe_selections')
+      .select('selected_products')
+      .eq('session_id', sessionId)
+      .single()
+    
+    const currentProducts = existing?.selected_products || []
+    const newProduct = {
       product_id: productId,
-      selected_by: user?.id || null,
       is_selected: isSelected,
       selected_at: new Date().toISOString()
-    })
+    }
+    
+    // Yeni ürünü listeye ekle
+    const updatedProducts = [...currentProducts, newProduct]
+    
+    if (existing) {
+      // Update
+      await supabase
+        .from('swipe_selections')
+        .update({ selected_products: updatedProducts })
+        .eq('session_id', sessionId)
+    } else {
+      // Insert (ilk swipe)
+      await supabase
+        .from('swipe_selections')
+        .insert({
+          session_id: sessionId,
+          session_code: sessionCode,
+          selected_by: user?.id || null,
+          selected_products: [newProduct]
+        })
+    }
   }
 
   const handleSwipeDecision = async (direction) => {
@@ -428,10 +469,16 @@ export default function Research() {
     setSwipeStart(null)
     setSwipeDelta({ x: 0, y: 0 })
     try {
-      await insertSelection(sessionId, sessionCode, current.id, selected)
+      await createOrUpdateSession(sessionId, sessionCode, current.id, selected)
       const nextIndex = swipeIndex + 1
       const finished = nextIndex >= swipeQueue.length
       if (finished) {
+        // Oturumu tamamlandı olarak işaretle
+        await supabase
+          .from('swipe_selections')
+          .update({ finished_at: new Date().toISOString() })
+          .eq('session_id', sessionId)
+        
         setSwipeFinished(true)
         clearSwipeState()
         await clearReadyRecords()
@@ -455,28 +502,23 @@ export default function Research() {
     try {
       const { data, error } = await supabase
         .from('swipe_selections')
-        .select('session_id, session_code, selected_at, is_selected')
-        .order('selected_at', { ascending: false })
+        .select('session_id, session_code, created_at, finished_at, selected_products')
+        .order('created_at', { ascending: false })
       if (error) throw error
-      const map = new Map()
-      data?.forEach(row => {
-        if (!map.has(row.session_id)) {
-          map.set(row.session_id, {
-            session_id: row.session_id,
-            session_code: row.session_code,
-            first_at: row.selected_at,
-            total: 0,
-            selected: 0
-          })
-        }
-        const entry = map.get(row.session_id)
-        entry.total += 1
-        if (row.is_selected) entry.selected += 1
-        if (row.selected_at && entry.first_at && new Date(row.selected_at) < new Date(entry.first_at)) {
-          entry.first_at = row.selected_at
+      
+      const sessions = (data || []).map(row => {
+        const products = Array.isArray(row.selected_products) ? row.selected_products : []
+        const selected = products.filter(p => p.is_selected).length
+        return {
+          session_id: row.session_id,
+          session_code: row.session_code,
+          first_at: row.created_at,
+          total: products.length,
+          selected: selected
         }
       })
-      setHistorySessions(Array.from(map.values()))
+      
+      setHistorySessions(sessions)
     } catch (err) {
       console.error('Geçmiş oturumlar yüklenemedi:', err)
     }
@@ -487,11 +529,28 @@ export default function Research() {
       setExportingSession(sessionId)
       const { data, error } = await supabase
         .from('swipe_selections')
-        .select('product_id, is_selected, discovered_products(*)')
+        .select('selected_products')
         .eq('session_id', sessionId)
-        .eq('is_selected', true)
+        .single()
       if (error) throw error
-      const selectedProducts = (data || []).map(d => d.discovered_products).filter(Boolean)
+      
+      const products = Array.isArray(data?.selected_products) ? data.selected_products : []
+      const selectedProductIds = products.filter(p => p.is_selected).map(p => p.product_id)
+      
+      if (!selectedProductIds.length) {
+        alert('Bu oturumda seçili ürün yok.')
+        setExportingSession(null)
+        return
+      }
+      
+      // Ürün detaylarını getir
+      const { data: productData, error: productError } = await supabase
+        .from('discovered_products')
+        .select('*')
+        .in('id', selectedProductIds)
+      
+      if (productError) throw productError
+      const selectedProducts = productData || []
       if (!selectedProducts.length) {
         alert('Bu oturumda seçili ürün yok.')
         setExportingSession(null)
