@@ -2083,7 +2083,7 @@ export default function Research() {
                               </a>
                             )}
                             {next.image_url && (
-                              <a href={next.image_url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 700 }}>
+                              <a href={next.image_url.startsWith('http') ? next.image_url : `https://${next.image_url}`} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 700 }}>
                                 Satış Linki
                               </a>
                             )}
@@ -2179,7 +2179,7 @@ export default function Research() {
                             </a>
                           )}
                           {current.image_url && (
-                            <a href={current.image_url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 700 }}>
+                            <a href={current.image_url.startsWith('http') ? current.image_url : `https://${current.image_url}`} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 700 }}>
                               Satış Linki
                             </a>
                           )}
