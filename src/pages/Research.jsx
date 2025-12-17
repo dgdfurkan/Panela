@@ -50,6 +50,7 @@ export default function Research() {
     supplier_name: '',
     contact_number: '',
     contact_email: '',
+    supplier_link: '',
     price: '',
     additional_info: ''
   })
@@ -677,9 +678,10 @@ export default function Research() {
       setSupplierFormData({
         supplier_name: '',
         contact_number: '',
-        contact_email: '',
-        price: '',
-        additional_info: ''
+                        contact_email: '',
+                        supplier_link: '',
+                        price: '',
+                        additional_info: ''
       })
     } catch (err) {
       console.error('Tedarikçi kaydedilemedi:', err)
@@ -2624,6 +2626,7 @@ export default function Research() {
                         supplier_name: '',
                         contact_number: '',
                         contact_email: '',
+                        supplier_link: '',
                         price: '',
                         additional_info: ''
                       })
@@ -2671,13 +2674,14 @@ export default function Research() {
                             <button
                               onClick={() => {
                                 setEditingSupplier(supplier)
-                                setSupplierFormData({
-                                  supplier_name: supplier.supplier_name || '',
-                                  contact_number: supplier.contact_number || '',
-                                  contact_email: supplier.contact_email || '',
-                                  price: supplier.price || '',
-                                  additional_info: supplier.additional_info || ''
-                                })
+                              setSupplierFormData({
+                                supplier_name: supplier.supplier_name || '',
+                                contact_number: supplier.contact_number || '',
+                                contact_email: supplier.contact_email || '',
+                                supplier_link: supplier.supplier_link || '',
+                                price: supplier.price || '',
+                                additional_info: supplier.additional_info || ''
+                              })
                                 setShowSupplierForm(true)
                               }}
                               style={{
@@ -2719,6 +2723,19 @@ export default function Research() {
                             ✉️ {supplier.contact_email}
                           </div>
                         )}
+                        {supplier.supplier_link && (
+                          <div style={{ fontSize: '13px', marginBottom: '0.25rem' }}>
+                            <a
+                              href={supplier.supplier_link.startsWith('http') ? supplier.supplier_link : `https://${supplier.supplier_link}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
+                            >
+                              <ExternalLink size={14} />
+                              Tedarikçi Linki
+                            </a>
+                          </div>
+                        )}
                         {supplier.price && (
                           <div style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>
                             💰 {supplier.price}
@@ -2735,13 +2752,13 @@ export default function Research() {
                             <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Senin puanın:</span>
                             <div style={{ display: 'flex', gap: '0.25rem' }}>
                               {[1, 2, 3, 4, 5].map(rating => {
-                                const currentRating = supplierRatings[supplier.id]?.[user?.id]?.rating || 0
+                                const currentRating = supplierRatings[supplier.id]?.[user?.id]?.rating
                                 return (
                                   <Star
                                     key={rating}
                                     size={18}
-                                    fill={rating <= currentRating ? 'var(--color-warning)' : 'transparent'}
-                                    color={rating <= currentRating ? 'var(--color-warning)' : 'var(--color-border)'}
+                                    fill={currentRating && rating <= currentRating ? 'var(--color-warning)' : 'transparent'}
+                                    color={currentRating && rating <= currentRating ? 'var(--color-warning)' : 'var(--color-border)'}
                                     style={{ cursor: 'pointer' }}
                                     onClick={(e) => {
                                       e.stopPropagation()
@@ -2752,16 +2769,19 @@ export default function Research() {
                               })}
                             </div>
                           </div>
-                          {Object.keys(supplierRatings[supplier.id] || {}).filter(uid => uid !== user?.id).length > 0 && (
-                            <div style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
-                              Diğer kullanıcılar:
+                          {Object.entries(supplierRatings[supplier.id] || {})
+                            .filter(([uid]) => uid !== user?.id)
+                            .filter(([, data]) => data.rating > 0)
+                            .length > 0 && (
+                            <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                               {Object.entries(supplierRatings[supplier.id] || {})
                                 .filter(([uid]) => uid !== user?.id)
+                                .filter(([, data]) => data.rating > 0)
                                 .map(([uid, data]) => {
                                   const u = allUsers.find(u => u.id === uid)
                                   return (
-                                    <span key={uid} style={{ marginLeft: '0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                                      {u?.name || 'Bilinmeyen'}: {data.rating}⭐
+                                    <span key={uid} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                                      {u?.name || u?.username || 'Bilinmeyen'}: {data.rating}⭐
                                     </span>
                                   )
                                 })}
@@ -2824,9 +2844,10 @@ export default function Research() {
             setSupplierFormData({
               supplier_name: '',
               contact_number: '',
-              contact_email: '',
-              price: '',
-              additional_info: ''
+                        contact_email: '',
+                        supplier_link: '',
+                        price: '',
+                        additional_info: ''
             })
           }}
         >
@@ -2854,9 +2875,10 @@ export default function Research() {
                   setSupplierFormData({
                     supplier_name: '',
                     contact_number: '',
-                    contact_email: '',
-                    price: '',
-                    additional_info: ''
+                        contact_email: '',
+                        supplier_link: '',
+                        price: '',
+                        additional_info: ''
                   })
                 }}
                 style={{
@@ -2932,6 +2954,25 @@ export default function Research() {
 
               <div>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '14px', fontWeight: '600' }}>
+                  Tedarikçi Linki
+                </label>
+                <input
+                  type="text"
+                  value={supplierFormData.supplier_link}
+                  onChange={(e) => setSupplierFormData({ ...supplierFormData, supplier_link: e.target.value })}
+                  placeholder="https://..."
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '14px', fontWeight: '600' }}>
                   Fiyat
                 </label>
                 <input
@@ -2994,9 +3035,10 @@ export default function Research() {
                     setSupplierFormData({
                       supplier_name: '',
                       contact_number: '',
-                      contact_email: '',
-                      price: '',
-                      additional_info: ''
+                        contact_email: '',
+                        supplier_link: '',
+                        price: '',
+                        additional_info: ''
                     })
                   }}
                   style={{

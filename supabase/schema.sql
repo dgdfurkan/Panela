@@ -756,6 +756,7 @@ create table if not exists public.product_suppliers (
   supplier_name text,
   contact_number text,
   contact_email text,
+  supplier_link text,
   price text,
   additional_info text,
   created_by uuid references public.app_users(id),
