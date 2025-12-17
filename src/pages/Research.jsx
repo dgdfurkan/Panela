@@ -564,9 +564,46 @@ export default function Research() {
         .in('id', selectedProductIds)
       
       if (productError) throw productError
-      setSupplierProducts(productData || [])
+      const loadedProducts = productData || []
+      setSupplierProducts(loadedProducts)
       setSelectedSupplierProduct(null)
       setSuppliers([])
+      
+      // Tüm ürünler için tedarikçi verilerini yükle
+      if (loadedProducts.length > 0) {
+        const productIds = loadedProducts.map(p => p.id)
+        const { data: allSuppliers, error: suppliersError } = await supabase
+          .from('product_suppliers')
+          .select('*')
+          .in('product_id', productIds)
+        
+        if (!suppliersError && allSuppliers) {
+          setSuppliers(allSuppliers)
+          
+          // Puanlamaları da yükle
+          const supplierIds = allSuppliers.map(s => s.id)
+          if (supplierIds.length > 0) {
+            const { data: ratingsData, error: ratingsError } = await supabase
+              .from('supplier_ratings')
+              .select('*')
+              .in('supplier_id', supplierIds)
+            
+            if (!ratingsError && ratingsData) {
+              const ratingsMap = {}
+              ratingsData.forEach(r => {
+                if (!ratingsMap[r.supplier_id]) {
+                  ratingsMap[r.supplier_id] = {}
+                }
+                ratingsMap[r.supplier_id][r.user_id] = {
+                  rating: r.rating,
+                  notes: r.notes
+                }
+              })
+              setSupplierRatings(prev => ({ ...prev, ...ratingsMap }))
+            }
+          }
+        }
+      }
     } catch (err) {
       console.error('Ürünler yüklenemedi:', err)
       setSupplierProducts([])
@@ -650,6 +687,7 @@ export default function Research() {
         supplier_name: supplierFormData.supplier_name || null,
         contact_number: supplierFormData.contact_number || null,
         contact_email: supplierFormData.contact_email || null,
+        supplier_link: supplierFormData.supplier_link || null,
         price: supplierFormData.price || null,
         additional_info: supplierFormData.additional_info || null,
         created_by: user.id,
@@ -2587,7 +2625,7 @@ export default function Research() {
                             {product.product_name || 'İsimsiz Ürün'}
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '12px', color: 'var(--color-text-muted)' }}>
-                            <span>{productSuppliers.length} tedarikçi</span>
+                            <span>{supplierCount} tedarikçi</span>
                             {avgRating > 0 && (
                               <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                                 <Star size={12} fill="var(--color-warning)" color="var(--color-warning)" />
