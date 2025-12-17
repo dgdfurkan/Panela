@@ -1,0 +1,26 @@
+mixin person(name, photo, age, friends, interest)
+  .box
+    .boxcontent
+      img(src=photo alt='Profile picture')
+      .like Like
+      .nope Nope
+      .info
+        .name= name + ', ' + age
+        if friends !== 0
+          .friends= friends + ' Mutual Friend'
+        if interest !== 0
+          .interest= interest + ' Common Interest'
+          
+#wrapper
+  #container
+    .background
+      svg(
+        xmlns="http://www.w3.org/2000/svg" version="1.1"
+        width="100%" height="100%" viewBox="0 0 350 500")
+        circle(cx=175 cy=250 r=120)
+      .label Made by Hunor
+    +person('Lucia', 'http://hunor.online/codepen/tinderSwipe/girl1.jpg', 20, 0, 0)
+    +person('Marcus', 'http://hunor.online/codepen/tinderSwipe/guy1.jpg', 28, 0, 1)
+    +person('Maria', 'http://hunor.online/codepen/tinderSwipe/girl2.jpg', 32, 2, 0)
+    +person('John', 'http://hunor.online/codepen/tinderSwipe/guy2.jpg', 26, 1, 3)
+    +person('Anna', 'http://hunor.online/codepen/tinderSwipe/girl3.jpg', 22, 2, 10)

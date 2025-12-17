@@ -1,7 +1,7 @@
 import { useAuth } from '../context/AuthContext'
 import KeywordLauncher from '../components/meta-ads/KeywordLauncher'
 import ProductScanner from '../components/meta-ads/ProductScanner'
-import { Search, Zap, Rocket, Package, MessageSquare, Trash2, Filter, X, FileSpreadsheet, ExternalLink, Hand, Sparkles } from 'lucide-react'
+import { Search, Zap, Rocket, Package, MessageSquare, Trash2, Filter, X, FileSpreadsheet, ExternalLink, Hand, Sparkles, Truck, Star, Edit2, Plus } from 'lucide-react'
 import AutoMetaScanner from '../components/meta-ads/AutoMetaScanner'
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
@@ -20,7 +20,7 @@ const CRITERIA = [
 
 export default function Research() {
   const { user } = useAuth()
-  const [activeTab, setActiveTab] = useState('classic') // classic | products | swipe | auto
+  const [activeTab, setActiveTab] = useState('classic') // classic | products | swipe | suppliers | auto
   const [products, setProducts] = useState([])
   const [productsLoading, setProductsLoading] = useState(true)
   const [unreadCounts, setUnreadCounts] = useState({})
@@ -38,6 +38,21 @@ export default function Research() {
   const [swipeDelta, setSwipeDelta] = useState({ x: 0, y: 0 })
   const [swipeAnimating, setSwipeAnimating] = useState(false)
   const swipeRestoredRef = useRef(false)
+  // Tedarikçi tabı state'leri
+  const [selectedSupplierSession, setSelectedSupplierSession] = useState(null)
+  const [supplierProducts, setSupplierProducts] = useState([])
+  const [selectedSupplierProduct, setSelectedSupplierProduct] = useState(null)
+  const [suppliers, setSuppliers] = useState([])
+  const [supplierRatings, setSupplierRatings] = useState({}) // supplier_id -> { user_id -> rating }
+  const [editingSupplier, setEditingSupplier] = useState(null)
+  const [showSupplierForm, setShowSupplierForm] = useState(false)
+  const [supplierFormData, setSupplierFormData] = useState({
+    supplier_name: '',
+    contact_number: '',
+    contact_email: '',
+    price: '',
+    additional_info: ''
+  })
   const SWIPE_STORAGE_KEY = 'panela_swipe_state_v1'
 
   const shuffleArray = (arr) => {
@@ -524,6 +539,175 @@ export default function Research() {
     }
   }
 
+  // Tedarikçi tabı fonksiyonları
+  const loadSupplierProducts = async (sessionId) => {
+    try {
+      const { data, error } = await supabase
+        .from('swipe_selections')
+        .select('selected_products')
+        .eq('session_id', sessionId)
+        .single()
+      if (error) throw error
+      
+      const products = Array.isArray(data?.selected_products) ? data.selected_products : []
+      const selectedProductIds = products.filter(p => p.is_selected).map(p => p.product_id)
+      
+      if (selectedProductIds.length === 0) {
+        setSupplierProducts([])
+        return
+      }
+      
+      const { data: productData, error: productError } = await supabase
+        .from('discovered_products')
+        .select('*')
+        .in('id', selectedProductIds)
+      
+      if (productError) throw productError
+      setSupplierProducts(productData || [])
+      setSelectedSupplierProduct(null)
+      setSuppliers([])
+    } catch (err) {
+      console.error('Ürünler yüklenemedi:', err)
+      setSupplierProducts([])
+    }
+  }
+
+  const loadSuppliersForProduct = async (productId) => {
+    try {
+      const { data, error } = await supabase
+        .from('product_suppliers')
+        .select('*')
+        .eq('product_id', productId)
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      
+      setSuppliers(prev => {
+        const filtered = prev.filter(s => s.product_id !== productId)
+        return [...filtered, ...(data || [])]
+      })
+      
+      // Puanlamaları yükle
+      const supplierIds = (data || []).map(s => s.id)
+      if (supplierIds.length > 0) {
+        const { data: ratingsData, error: ratingsError } = await supabase
+          .from('supplier_ratings')
+          .select('*')
+          .in('supplier_id', supplierIds)
+        
+        if (!ratingsError && ratingsData) {
+          const ratingsMap = {}
+          ratingsData.forEach(r => {
+            if (!ratingsMap[r.supplier_id]) {
+              ratingsMap[r.supplier_id] = {}
+            }
+            ratingsMap[r.supplier_id][r.user_id] = {
+              rating: r.rating,
+              notes: r.notes
+            }
+          })
+          setSupplierRatings(prev => ({ ...prev, ...ratingsMap }))
+        }
+      }
+    } catch (err) {
+      console.error('Tedarikçiler yüklenemedi:', err)
+    }
+  }
+
+  const handleSupplierRating = async (supplierId, rating) => {
+    if (!user?.id) return
+    try {
+      const { error } = await supabase
+        .from('supplier_ratings')
+        .upsert({
+          supplier_id: supplierId,
+          user_id: user.id,
+          rating: rating,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'supplier_id,user_id'
+        })
+      if (error) throw error
+      
+      setSupplierRatings(prev => {
+        const newRatings = { ...prev }
+        if (!newRatings[supplierId]) {
+          newRatings[supplierId] = {}
+        }
+        newRatings[supplierId][user.id] = { rating, notes: null }
+        return newRatings
+      })
+    } catch (err) {
+      console.error('Puanlama kaydedilemedi:', err)
+    }
+  }
+
+  const handleSaveSupplier = async () => {
+    if (!selectedSupplierProduct || !user?.id) return
+    try {
+      const supplierData = {
+        product_id: selectedSupplierProduct.id,
+        supplier_name: supplierFormData.supplier_name || null,
+        contact_number: supplierFormData.contact_number || null,
+        contact_email: supplierFormData.contact_email || null,
+        price: supplierFormData.price || null,
+        additional_info: supplierFormData.additional_info || null,
+        created_by: user.id,
+        updated_at: new Date().toISOString()
+      }
+      
+      if (editingSupplier) {
+        const { error } = await supabase
+          .from('product_suppliers')
+          .update(supplierData)
+          .eq('id', editingSupplier.id)
+        if (error) throw error
+      } else {
+        supplierData.created_at = new Date().toISOString()
+        const { data, error } = await supabase
+          .from('product_suppliers')
+          .insert(supplierData)
+          .select()
+          .single()
+        if (error) throw error
+      }
+      
+      await loadSuppliersForProduct(selectedSupplierProduct.id)
+      setShowSupplierForm(false)
+      setEditingSupplier(null)
+      setSupplierFormData({
+        supplier_name: '',
+        contact_number: '',
+        contact_email: '',
+        price: '',
+        additional_info: ''
+      })
+    } catch (err) {
+      console.error('Tedarikçi kaydedilemedi:', err)
+      alert('Tedarikçi kaydedilemedi, tekrar deneyin.')
+    }
+  }
+
+  const handleDeleteSupplier = async (supplierId) => {
+    if (!confirm('Bu tedarikçiyi silmek istediğinize emin misiniz?')) return
+    try {
+      const { error } = await supabase
+        .from('product_suppliers')
+        .delete()
+        .eq('id', supplierId)
+      if (error) throw error
+      
+      setSuppliers(prev => prev.filter(s => s.id !== supplierId))
+      setSupplierRatings(prev => {
+        const newRatings = { ...prev }
+        delete newRatings[supplierId]
+        return newRatings
+      })
+    } catch (err) {
+      console.error('Tedarikçi silinemedi:', err)
+      alert('Tedarikçi silinemedi, tekrar deneyin.')
+    }
+  }
+
   const exportSessionToExcel = async (sessionId) => {
     try {
       setExportingSession(sessionId)
@@ -665,6 +849,9 @@ export default function Research() {
   useEffect(() => {
     if (activeTab === 'swipe' && user?.id) {
       loadReadyStatus()
+      loadHistorySessions()
+    }
+    if (activeTab === 'suppliers' && user?.id) {
       loadHistorySessions()
     }
   }, [activeTab, user?.id])
@@ -1618,6 +1805,24 @@ export default function Research() {
             Eleme
           </button>
           <button
+            onClick={() => setActiveTab('suppliers')}
+            className="primary"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.65rem 1rem',
+              background: activeTab === 'suppliers' ? 'linear-gradient(135deg, #f59e0b, #ef4444)' : 'white',
+              color: activeTab === 'suppliers' ? 'white' : 'var(--color-text-main)',
+              border: activeTab === 'suppliers' ? 'none' : '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-md)',
+              boxShadow: activeTab === 'suppliers' ? 'var(--shadow-glow)' : 'none'
+            }}
+          >
+            <Truck size={16} />
+            Tedarikçi
+          </button>
+          <button
             onClick={() => setActiveTab('auto')}
             className="primary"
             style={{
@@ -2243,6 +2448,333 @@ export default function Research() {
               )}
             </div>
           </div>
+        ) : activeTab === 'suppliers' ? (
+          <div style={{ display: 'grid', gridTemplateColumns: selectedSupplierProduct ? '300px 1fr 400px' : '300px 1fr', gap: '1rem', transition: 'grid-template-columns 0.3s ease' }}>
+            {/* Sol Panel: Oturum Listesi */}
+            <div
+              style={{
+                padding: '1rem',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-md)',
+                background: 'white',
+                maxHeight: 'calc(100vh - 200px)',
+                overflowY: 'auto'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                <Truck size={18} color="var(--color-primary)" />
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700' }}>Eleme Oturumları</h3>
+              </div>
+              {historySessions.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)', fontSize: '14px' }}>
+                  Henüz oturum yok. Önce Eleme tabında oturum oluşturun.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {historySessions.map(session => (
+                    <div
+                      key={session.session_id}
+                      onClick={() => {
+                        setSelectedSupplierSession(session.session_id)
+                        loadSupplierProducts(session.session_id)
+                      }}
+                      style={{
+                        padding: '1rem',
+                        border: '1px solid var(--color-border)',
+                        borderRadius: 'var(--radius-md)',
+                        background: selectedSupplierSession === session.session_id ? 'rgba(245, 158, 11, 0.1)' : 'white',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        borderColor: selectedSupplierSession === session.session_id ? 'var(--color-primary)' : 'var(--color-border)'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (selectedSupplierSession !== session.session_id) {
+                          e.currentTarget.style.background = 'rgba(0,0,0,0.02)'
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (selectedSupplierSession !== session.session_id) {
+                          e.currentTarget.style.background = 'white'
+                        }
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                        <span style={{ fontWeight: '700', fontSize: '14px' }}>Oturum {session.session_code || 'N/A'}</span>
+                        <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                          {new Date(session.first_at).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' })}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                        {session.selected} / {session.total} seçildi
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Orta Panel: Ürün Listesi */}
+            <div
+              style={{
+                padding: '1rem',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-md)',
+                background: 'white',
+                maxHeight: 'calc(100vh - 200px)',
+                overflowY: 'auto'
+              }}
+            >
+              {!selectedSupplierSession ? (
+                <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--color-text-muted)' }}>
+                  <Truck size={48} style={{ margin: '0 auto 1rem', opacity: 0.3 }} />
+                  <div style={{ fontSize: '16px', fontWeight: '600' }}>Oturum Seçin</div>
+                  <div style={{ fontSize: '14px', marginTop: '0.5rem' }}>Sol panelden bir eleme oturumu seçin</div>
+                </div>
+              ) : supplierProducts.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--color-text-muted)' }}>
+                  <Package size={48} style={{ margin: '0 auto 1rem', opacity: 0.3 }} />
+                  <div style={{ fontSize: '16px', fontWeight: '600' }}>Ürün Bulunamadı</div>
+                  <div style={{ fontSize: '14px', marginTop: '0.5rem' }}>Bu oturumda seçilen ürün yok</div>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                    <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700' }}>Ürünler ({supplierProducts.length})</h3>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+                    {supplierProducts.map(product => {
+                      const productSuppliers = suppliers.filter(s => s.product_id === product.id)
+                      const avgRating = productSuppliers.length > 0
+                        ? productSuppliers.reduce((sum, s) => {
+                            const ratings = supplierRatings[s.id] || {}
+                            const ratingValues = Object.values(ratings).map(r => r.rating).filter(r => r)
+                            if (ratingValues.length === 0) return sum
+                            const avg = ratingValues.reduce((a, b) => a + b, 0) / ratingValues.length
+                            return sum + avg
+                          }, 0) / productSuppliers.length
+                        : 0
+                      
+                      return (
+                        <div
+                          key={product.id}
+                          onClick={() => {
+                            setSelectedSupplierProduct(product)
+                            loadSuppliersForProduct(product.id)
+                          }}
+                          style={{
+                            padding: '1rem',
+                            border: '1px solid var(--color-border)',
+                            borderRadius: 'var(--radius-md)',
+                            background: selectedSupplierProduct?.id === product.id ? 'rgba(245, 158, 11, 0.1)' : 'white',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            borderColor: selectedSupplierProduct?.id === product.id ? 'var(--color-primary)' : 'var(--color-border)'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (selectedSupplierProduct?.id !== product.id) {
+                              e.currentTarget.style.background = 'rgba(0,0,0,0.02)'
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (selectedSupplierProduct?.id !== product.id) {
+                              e.currentTarget.style.background = selectedSupplierProduct?.id === product.id ? 'rgba(245, 158, 11, 0.1)' : 'white'
+                            }
+                          }}
+                        >
+                          <div style={{ fontWeight: '700', fontSize: '14px', marginBottom: '0.5rem' }}>
+                            {product.product_name || 'İsimsiz Ürün'}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                            <span>{productSuppliers.length} tedarikçi</span>
+                            {avgRating > 0 && (
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                <Star size={12} fill="var(--color-warning)" color="var(--color-warning)" />
+                                {avgRating.toFixed(1)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Sağ Sidebar: Tedarikçi Yönetimi */}
+            {selectedSupplierProduct && (
+              <div
+                style={{
+                  padding: '1rem',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'white',
+                  maxHeight: 'calc(100vh - 200px)',
+                  overflowY: 'auto',
+                  position: 'sticky',
+                  top: '1rem'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700' }}>Tedarikçiler</h3>
+                  <button
+                    onClick={() => {
+                      setEditingSupplier(null)
+                      setSupplierFormData({
+                        supplier_name: '',
+                        contact_number: '',
+                        contact_email: '',
+                        price: '',
+                        additional_info: ''
+                      })
+                      setShowSupplierForm(true)
+                    }}
+                    style={{
+                      padding: '0.5rem',
+                      background: 'var(--color-primary)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: 'var(--radius-sm)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.25rem'
+                    }}
+                  >
+                    <Plus size={16} />
+                  </button>
+                </div>
+                <div style={{ fontSize: '14px', color: 'var(--color-text-muted)', marginBottom: '1rem' }}>
+                  {selectedSupplierProduct.product_name}
+                </div>
+                {suppliers.filter(s => s.product_id === selectedSupplierProduct.id).length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)', fontSize: '14px' }}>
+                    Henüz tedarikçi eklenmedi
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {suppliers.filter(s => s.product_id === selectedSupplierProduct.id).map(supplier => (
+                      <div
+                        key={supplier.id}
+                        style={{
+                          padding: '1rem',
+                          border: '1px solid var(--color-border)',
+                          borderRadius: 'var(--radius-md)',
+                          background: 'white'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                          <div style={{ fontWeight: '700', fontSize: '14px' }}>
+                            {supplier.supplier_name || 'İsimsiz Tedarikçi'}
+                          </div>
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button
+                              onClick={() => {
+                                setEditingSupplier(supplier)
+                                setSupplierFormData({
+                                  supplier_name: supplier.supplier_name || '',
+                                  contact_number: supplier.contact_number || '',
+                                  contact_email: supplier.contact_email || '',
+                                  price: supplier.price || '',
+                                  additional_info: supplier.additional_info || ''
+                                })
+                                setShowSupplierForm(true)
+                              }}
+                              style={{
+                                padding: '0.35rem',
+                                background: 'transparent',
+                                border: '1px solid var(--color-border)',
+                                borderRadius: 'var(--radius-sm)',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center'
+                              }}
+                            >
+                              <Edit2 size={14} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteSupplier(supplier.id)}
+                              style={{
+                                padding: '0.35rem',
+                                background: 'transparent',
+                                border: '1px solid var(--color-error)',
+                                borderRadius: 'var(--radius-sm)',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                color: 'var(--color-error)'
+                              }}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                        {supplier.contact_number && (
+                          <div style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>
+                            📞 {supplier.contact_number}
+                          </div>
+                        )}
+                        {supplier.contact_email && (
+                          <div style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>
+                            ✉️ {supplier.contact_email}
+                          </div>
+                        )}
+                        {supplier.price && (
+                          <div style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>
+                            💰 {supplier.price}
+                          </div>
+                        )}
+                        {supplier.additional_info && (
+                          <div style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginTop: '0.5rem', padding: '0.5rem', background: 'rgba(0,0,0,0.02)', borderRadius: 'var(--radius-sm)' }}>
+                            {supplier.additional_info}
+                          </div>
+                        )}
+                        <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--color-border)' }}>
+                          <div style={{ fontSize: '12px', fontWeight: '600', marginBottom: '0.5rem' }}>Puanlama</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                            <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Senin puanın:</span>
+                            <div style={{ display: 'flex', gap: '0.25rem' }}>
+                              {[1, 2, 3, 4, 5].map(rating => {
+                                const currentRating = supplierRatings[supplier.id]?.[user?.id]?.rating || 0
+                                return (
+                                  <Star
+                                    key={rating}
+                                    size={18}
+                                    fill={rating <= currentRating ? 'var(--color-warning)' : 'transparent'}
+                                    color={rating <= currentRating ? 'var(--color-warning)' : 'var(--color-border)'}
+                                    style={{ cursor: 'pointer' }}
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleSupplierRating(supplier.id, rating)
+                                    }}
+                                  />
+                                )
+                              })}
+                            </div>
+                          </div>
+                          {Object.keys(supplierRatings[supplier.id] || {}).filter(uid => uid !== user?.id).length > 0 && (
+                            <div style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
+                              Diğer kullanıcılar:
+                              {Object.entries(supplierRatings[supplier.id] || {})
+                                .filter(([uid]) => uid !== user?.id)
+                                .map(([uid, data]) => {
+                                  const u = allUsers.find(u => u.id === uid)
+                                  return (
+                                    <span key={uid} style={{ marginLeft: '0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                                      {u?.name || 'Bilinmeyen'}: {data.rating}⭐
+                                    </span>
+                                  )
+                                })}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         ) : activeTab === 'auto' ? (
           <AutoMetaScanner />
         ) : (
@@ -2272,6 +2804,220 @@ export default function Research() {
       </div>
 
       {renderModal()}
+
+      {/* Tedarikçi Form Modal */}
+      {showSupplierForm && selectedSupplierProduct && createPortal(
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000,
+            padding: '1rem'
+          }}
+          onClick={() => {
+            setShowSupplierForm(false)
+            setEditingSupplier(null)
+            setSupplierFormData({
+              supplier_name: '',
+              contact_number: '',
+              contact_email: '',
+              price: '',
+              additional_info: ''
+            })
+          }}
+        >
+          <div
+            style={{
+              background: 'white',
+              borderRadius: 'var(--radius-lg)',
+              padding: '1.5rem',
+              maxWidth: '500px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700' }}>
+                {editingSupplier ? 'Tedarikçi Düzenle' : 'Yeni Tedarikçi Ekle'}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowSupplierForm(false)
+                  setEditingSupplier(null)
+                  setSupplierFormData({
+                    supplier_name: '',
+                    contact_number: '',
+                    contact_email: '',
+                    price: '',
+                    additional_info: ''
+                  })
+                }}
+                style={{
+                  padding: '0.35rem',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '14px', fontWeight: '600' }}>
+                  Tedarikçi Adı
+                </label>
+                <input
+                  type="text"
+                  value={supplierFormData.supplier_name}
+                  onChange={(e) => setSupplierFormData({ ...supplierFormData, supplier_name: e.target.value })}
+                  placeholder="Tedarikçi adı..."
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '14px', fontWeight: '600' }}>
+                  İletişim Numarası
+                </label>
+                <input
+                  type="text"
+                  value={supplierFormData.contact_number}
+                  onChange={(e) => setSupplierFormData({ ...supplierFormData, contact_number: e.target.value })}
+                  placeholder="Telefon numarası..."
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '14px', fontWeight: '600' }}>
+                  İletişim Email
+                </label>
+                <input
+                  type="email"
+                  value={supplierFormData.contact_email}
+                  onChange={(e) => setSupplierFormData({ ...supplierFormData, contact_email: e.target.value })}
+                  placeholder="Email adresi..."
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '14px', fontWeight: '600' }}>
+                  Fiyat
+                </label>
+                <input
+                  type="text"
+                  value={supplierFormData.price}
+                  onChange={(e) => setSupplierFormData({ ...supplierFormData, price: e.target.value })}
+                  placeholder="Fiyat bilgisi..."
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '14px', fontWeight: '600' }}>
+                  Ek Bilgiler
+                </label>
+                <textarea
+                  value={supplierFormData.additional_info}
+                  onChange={(e) => setSupplierFormData({ ...supplierFormData, additional_info: e.target.value })}
+                  placeholder="Ek bilgiler..."
+                  rows={4}
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '14px',
+                    resize: 'vertical',
+                    fontFamily: 'inherit'
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <button
+                  onClick={handleSaveSupplier}
+                  style={{
+                    flex: 1,
+                    padding: '0.75rem',
+                    background: 'var(--color-primary)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '14px',
+                    fontWeight: '700',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {editingSupplier ? 'Güncelle' : 'Kaydet'}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowSupplierForm(false)
+                    setEditingSupplier(null)
+                    setSupplierFormData({
+                      supplier_name: '',
+                      contact_number: '',
+                      contact_email: '',
+                      price: '',
+                      additional_info: ''
+                    })
+                  }}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: 'transparent',
+                    color: 'var(--color-text-muted)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  İptal
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* Responsive Styles */}
       <style>{`

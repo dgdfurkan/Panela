@@ -748,3 +748,59 @@ create policy "open view swipe_selections" on swipe_selections for select using 
 create policy "open insert swipe_selections" on swipe_selections for insert with check (true);
 create policy "open update swipe_selections" on swipe_selections for update using (true);
 create policy "open delete swipe_selections" on swipe_selections for delete using (true);
+
+-- Product Suppliers Table (ürün tedarikçileri)
+create table if not exists public.product_suppliers (
+  id uuid default uuid_generate_v4() primary key,
+  product_id uuid not null references public.discovered_products(id) on delete cascade,
+  supplier_name text,
+  contact_number text,
+  contact_email text,
+  price text,
+  additional_info text,
+  created_by uuid references public.app_users(id),
+  created_at timestamptz default timezone('utc'::text, now()),
+  updated_at timestamptz default timezone('utc'::text, now())
+);
+
+create index if not exists idx_product_suppliers_product on public.product_suppliers(product_id);
+create index if not exists idx_product_suppliers_created_by on public.product_suppliers(created_by);
+
+alter table public.product_suppliers enable row level security;
+
+drop policy if exists "open view product_suppliers" on product_suppliers;
+drop policy if exists "open insert product_suppliers" on product_suppliers;
+drop policy if exists "open update product_suppliers" on product_suppliers;
+drop policy if exists "open delete product_suppliers" on product_suppliers;
+
+create policy "open view product_suppliers" on product_suppliers for select using (true);
+create policy "open insert product_suppliers" on product_suppliers for insert with check (true);
+create policy "open update product_suppliers" on product_suppliers for update using (true);
+create policy "open delete product_suppliers" on product_suppliers for delete using (true);
+
+-- Supplier Ratings Table (tedarikçi puanlamaları)
+create table if not exists public.supplier_ratings (
+  id uuid default uuid_generate_v4() primary key,
+  supplier_id uuid not null references public.product_suppliers(id) on delete cascade,
+  user_id uuid not null references public.app_users(id),
+  rating integer not null check (rating >= 1 and rating <= 5),
+  notes text,
+  created_at timestamptz default timezone('utc'::text, now()),
+  updated_at timestamptz default timezone('utc'::text, now()),
+  unique (supplier_id, user_id)
+);
+
+create index if not exists idx_supplier_ratings_supplier on public.supplier_ratings(supplier_id);
+create index if not exists idx_supplier_ratings_user on public.supplier_ratings(user_id);
+
+alter table public.supplier_ratings enable row level security;
+
+drop policy if exists "open view supplier_ratings" on supplier_ratings;
+drop policy if exists "open insert supplier_ratings" on supplier_ratings;
+drop policy if exists "open update supplier_ratings" on supplier_ratings;
+drop policy if exists "open delete supplier_ratings" on supplier_ratings;
+
+create policy "open view supplier_ratings" on supplier_ratings for select using (true);
+create policy "open insert supplier_ratings" on supplier_ratings for insert with check (true);
+create policy "open update supplier_ratings" on supplier_ratings for update using (true);
+create policy "open delete supplier_ratings" on supplier_ratings for delete using (true);
