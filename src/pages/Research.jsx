@@ -2584,6 +2584,7 @@ export default function Research() {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
                     {supplierProducts.map(product => {
                       const productSuppliers = suppliers.filter(s => s.product_id === product.id)
+                      const supplierCount = productSuppliers.length
                       const avgRating = productSuppliers.length > 0
                         ? productSuppliers.reduce((sum, s) => {
                             const ratings = supplierRatings[s.id] || {}
